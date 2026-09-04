@@ -1,0 +1,66 @@
+# Siege of Constantinople — April 12, 1204
+
+The siege sequence of the Fourth Crusade RTTP module, rebuilt as real-time,
+zero-asset procedural 3D. No image files, no model files, nothing fetched over
+the network: every wall, ship, figure and label is generated at runtime from
+primitives, vertex colours and canvas-drawn textures.
+
+## Running it
+
+```bash
+npm install
+```
+
+```bash
+npm run dev
+```
+
+Then open the URL it prints. For classroom use, build once and serve the static
+output — it needs no server of its own:
+
+```bash
+npm run build
+```
+
+Requires Node. If the machine has none, `brew install node`.
+
+## Where things are
+
+| Path | What it holds |
+| --- | --- |
+| `src/game/rules.js` | **The authoritative dice logic**, preserved verbatim from the original `index.html`. Do not change the thresholds or survivor gating here. |
+| `src/game/stages.js` | Reshapes the flat roll queue into per-stage click rounds. Decides nothing; only regroups. |
+| `src/data/characters.json` | The 52-character roster. |
+| `src/screens/` | One file per screen in the flow. |
+| `src/three/` | Scene, palette, runtime textures, renderer config. |
+| `src/three/geometry/` | Procedural wall, tower, pawn, die and defender geometry. |
+| `DECISIONS.md` | Every design and historical call made during the build, and why. |
+
+## How the rules stay intact
+
+`addLandAttackRolls` and `addSeaAttackRolls` are copied unchanged from the
+original implementation. They run once when a stage begins and produce the same
+queue of decided outcomes the old modal stepped through. The 3D layer only
+*reveals* those outcomes: clicking a token animates a die onto the face that was
+already rolled. Nothing in `src/three/` or `src/screens/` ever rolls a die.
+
+A stress test over 4,000 randomised rounds checks the invariants — thresholds of
+5, then 6, then `max(3, 6 − survivors)`; each stage's cohort equal to the
+previous stage's successes; captains never rolling to board; ships never over
+capacity; sunk ships never boarding:
+
+```bash
+node scripts/check-rules.mjs
+```
+
+## State of the build
+
+**Working:** character select, attack declaration, the full land wall sequence
+(staging → outer wall → inner wall → city gates) with per-stage camera framing,
+click-to-resolve tokens, a tumbling die that settles on the decided face, the
+universal dissolve on failure, the first-to-enter callout, round two, the
+round-three bribery screen, the gate-opening sequence, and the results and sack
+order hand-off.
+
+**Not yet built:** the sea wall visuals and the title screen. See "What's next"
+in `DECISIONS.md`.
