@@ -17,8 +17,38 @@ import * as THREE from 'three'
 import { PALETTE } from '../palette.js'
 import { nameLabelTexture } from '../textures.js'
 
-const PAWN_SCALE = 0.62
+const PAWN_SCALE = 0.71
 const DISSOLVE_SECONDS = 1.1
+
+/**
+ * A contact shadow: a disc that fades out toward its rim.
+ *
+ * The falloff is vertex alpha, not a texture — three takes a four-component
+ * colour attribute, so a circle with an opaque centre vertex and transparent
+ * rim vertices gives a soft blob for nothing. This is the cheap part of what
+ * people are asking for when they ask for ray tracing: it stops the figures
+ * looking pasted onto the ground.
+ */
+function buildContactShadow(radius = 0.72, segments = 24) {
+  const g = new THREE.CircleGeometry(radius, segments)
+  const count = g.attributes.position.count
+  const colours = new Float32Array(count * 4)
+  const pos = g.attributes.position
+  for (let i = 0; i < count; i++) {
+    const r = Math.hypot(pos.getX(i), pos.getY(i)) / radius
+    // Opaque under the feet, gone by the rim.
+    const a = Math.pow(1 - Math.min(1, r), 1.5) * 0.44
+    colours[i * 4] = 0
+    colours[i * 4 + 1] = 0
+    colours[i * 4 + 2] = 0
+    colours[i * 4 + 3] = a
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(colours, 4))
+  g.rotateX(-Math.PI / 2)
+  return g
+}
+
+const CONTACT_SHADOW = buildContactShadow()
 
 function NamePlate({ name, y, height = 0.6 }) {
   const { texture, aspect } = useMemo(() => nameLabelTexture(name), [name])
@@ -144,6 +174,16 @@ export function Pawn({
       )}
 
       <group ref={bodyRef} scale={PAWN_SCALE}>
+      {/* Contact shadow, under everything. */}
+      <mesh geometry={CONTACT_SHADOW} position={[0, 0.015, 0]} renderOrder={-1}>
+        <meshBasicMaterial
+          vertexColors
+          transparent
+          opacity={1}
+          depthWrite={false}
+        />
+      </mesh>
+
       {/* Selection ring on the ground */}
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, 0]}>
         <ringGeometry args={[0.8, 1.15, 28]} />
@@ -156,19 +196,19 @@ export function Pawn({
       </mesh>
 
       {/* Legs below the surcoat */}
-      <mesh position={[0, 0.22, 0]}>
+      <mesh position={[0, 0.22, 0]} castShadow>
         <boxGeometry args={[0.34, 0.46, 0.26]} />
         <meshLambertMaterial color="#4a4038" flatShading />
       </mesh>
 
       {/* Surcoat over the hauberk: a skirt, wider at the hem */}
-      <mesh position={[0, 0.62, 0]}>
+      <mesh position={[0, 0.62, 0]} castShadow>
         <cylinderGeometry args={[0.28, 0.44, 0.72, 10]} />
         <meshLambertMaterial color={PALETTE.crusaderSurcoat} flatShading />
       </mesh>
 
       {/* Mail torso and shoulders showing above the surcoat */}
-      <mesh position={[0, 1.08, 0]}>
+      <mesh position={[0, 1.08, 0]} castShadow>
         <capsuleGeometry args={[0.28, 0.3, 4, 10]} />
         <meshLambertMaterial color={PALETTE.crusaderMail} flatShading />
       </mesh>
@@ -178,19 +218,37 @@ export function Pawn({
         <sphereGeometry args={[0.19, 10, 8]} />
         <meshLambertMaterial color={PALETTE.crusaderMail} flatShading />
       </mesh>
-      <mesh position={[0, 1.62, 0]}>
+      <mesh position={[0, 1.62, 0]} castShadow>
         <coneGeometry args={[0.21, 0.34, 8]} />
         <meshLambertMaterial color="#8d939a" flatShading />
       </mesh>
 
-      {/* Kite shield, turned toward the viewer so it reads as a shield */}
-      <group position={[-0.4, 0.92, 0.22]} rotation={[0.12, 0.35, 0.1]}>
-        <mesh>
+      {/* The cross on the chest. These are men who took the cross; it is the
+          one marker that says so at a glance, and it was missing entirely —
+          what sat on the shield before was a shrunken copy of the shield's own
+          outline, not a cross. */}
+      <mesh position={[0, 1.06, 0.255]}>
+        <boxGeometry args={[0.1, 0.38, 0.04]} />
+        <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
+      </mesh>
+      <mesh position={[0, 1.15, 0.255]}>
+        <boxGeometry args={[0.3, 0.1, 0.04]} />
+        <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
+      </mesh>
+
+      {/* Kite shield. The prism is turned so a flat face — not an edge — is
+          presented to the lane camera, which is what lets it carry a device. */}
+      <group position={[-0.4, 0.92, 0.2]} rotation={[0.1, -0.5, 0.08]}>
+        <mesh rotation={[0, Math.PI / 3, 0]}>
           <cylinderGeometry args={[0.27, 0.045, 0.82, 3, 1]} />
           <meshLambertMaterial color={PALETTE.crusaderSurcoat} flatShading />
         </mesh>
-        <mesh position={[0, 0.02, 0.045]} scale={[0.55, 0.6, 0.5]}>
-          <cylinderGeometry args={[0.27, 0.045, 0.82, 3, 1]} />
+        <mesh position={[0, 0.06, 0.15]}>
+          <boxGeometry args={[0.075, 0.46, 0.03]} />
+          <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
+        </mesh>
+        <mesh position={[0, 0.17, 0.15]}>
+          <boxGeometry args={[0.26, 0.075, 0.03]} />
           <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
         </mesh>
       </group>

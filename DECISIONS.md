@@ -599,3 +599,51 @@ to strike, a sling hanging from the arm's head with its stone in the pouch, the
 bundle of hauling ropes at the short arm — this is a traction engine, and those
 ropes are how it is thrown — a windlass for cocking the arm back down, and shot
 piled ready beside it.
+
+---
+
+## Revision: the crusader pawns, first pass
+
+Three changes, chosen off a ranked list. Faction colour, banner-bearers and
+grouping the staging by contingent are all still open decisions.
+
+**Every crusader now wears a cross**, on the chest and repeated on the shield.
+This was not a matter of size: there was no cross on the pawn at all. What sat
+on the shield before was a shrunken copy of the shield's own outline, which
+read as a device but said nothing. Taking the cross is the best-attested marker
+these men had, so this is the rare change that is both the most historically
+grounded and the cheapest.
+
+Making it visible needed one fix to the shield. It is a three-sided prism, and
+a prism presents an *edge* rather than a face to the camera unless it is turned
+— so the shield is rotated a sixth of a turn on its own axis, and the group's
+yaw flipped, to put a flat face square to the lane camera. A device on an edge
+is not a device.
+
+**The figures are about fifteen per cent larger.** They were roughly a third
+the height of the outer wall, which is about right in proportion but cost
+legibility on a projector.
+
+**Contact shadows, and real cast shadows.** The pawns were the only thing in
+the lane not casting into the shadow map, so they sat on the grass rather than
+in it. They now cast, and each also carries a soft disc that fades to nothing
+at its rim — the falloff is vertex alpha on a four-component colour attribute,
+not a texture, so it costs nothing. This is the affordable part of what people
+are reaching for when they ask about ray tracing.
+
+Calibration note: the disc was first drawn at 0.44 units, which hid it
+completely underneath the figure. It reads at 0.72.
+
+## Still open, and the caveat that goes with them
+
+Faction colour is a **game convention, not a historical one**. Uniform livery
+by contingent is anachronistic for 1204 — heraldry was personal and familial,
+and contingents were not dressed alike. If that matters, the defensible version
+is to leave the surcoat naturalistic with the cross on it and put the faction
+colour on the shield and a pennon instead, since contingents genuinely did
+identify by banner: "these men follow that lord" rather than "these men bought
+matching kit."
+
+There are five factions to colour, not four — N. French 12, Venetian 11,
+Indeterminate 11, Clerical 10, Imperial 8 — and Indeterminate needs either a
+colour of its own or a deliberate decision to leave it plain.
