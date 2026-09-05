@@ -202,8 +202,8 @@ function GalataBank() {
     const edge = SEA_LANE.shoreX
 
     // The bank itself, running off both ends of the frame.
-    const bank = new THREE.BoxGeometry(70, 0.8, 340)
-    bank.translate(edge - 35, 0.4, 0)
+    const bank = new THREE.BoxGeometry(60, 0.8, 340)
+    bank.translate(edge - 30, 0.4, 0)
     parts.push(paint(bank, '#6f7350'))
 
     // A shingle beach where the ships are drawn up.
@@ -212,8 +212,8 @@ function GalataBank() {
     parts.push(paint(beach, '#8e8a6c'))
 
     // Houses of Pera, set back from the water.
-    for (let i = 0; i < 70; i++) {
-      const x = edge - 9 - rand(i) * 24
+    for (let i = 0; i < 26; i++) {
+      const x = edge - 11 - rand(i) * 13
       const z = -105 + rand(i + 11) * 210
       const w = 0.7 + rand(i + 3) * 1.1
       const h = 0.7 + rand(i + 7) * 1.3
@@ -226,8 +226,8 @@ function GalataBank() {
     }
 
     // The crusader camp, pitched along the shore.
-    for (let i = 0; i < 40; i++) {
-      const x = edge - 4 - rand(i + 41) * 9
+    for (let i = 0; i < 16; i++) {
+      const x = edge - 4 - rand(i + 41) * 6
       const z = -95 + rand(i + 53) * 190
       const r = 0.4 + rand(i + 61) * 0.3
       const h = 0.62 + rand(i + 67) * 0.4
@@ -253,7 +253,7 @@ function GalataBank() {
 }
 
 /** Galata's great tower, where the chain was made fast. */
-function ChainTower({ position = [SEA_LANE.shoreX - 13, -34] }) {
+function ChainTower({ position = [SEA_LANE.shoreX - 16, -40] }) {
   const [px, pz] = position
   const base = 0.8
   return (

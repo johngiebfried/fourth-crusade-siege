@@ -58,7 +58,16 @@ function tentParts({ x, z, r, h, tone, flag }) {
   return parts
 }
 
-/** A mangonel: beam, sling, and the frame it pivots in. */
+/**
+ * A mangonel — the traction stone-thrower of the period.
+ *
+ * Not a counterweight trebuchet: that machine is later than 1204 for a western
+ * army in the field. This is the older kind, where a crew hauls on ropes at
+ * the short arm to swing the long one over. So the parts that matter are the
+ * A-frames, the axle the beam pivots on, the sling at the beam's head, the
+ * bundle of hauling ropes at the other end, and the padded crossbeam the beam
+ * slams into at the top of its swing.
+ */
 function mangonelParts({ x, z, facing = 1 }) {
   const parts = []
   const add = (g, hex, tone = 1) => {
@@ -67,42 +76,107 @@ function mangonelParts({ x, z, facing = 1 }) {
     parts.push(paint(g, hex, tone))
   }
 
-  // Baulk frame.
-  for (const dz of [-0.75, 0.75]) {
-    const sill = new THREE.BoxGeometry(2.6, 0.24, 0.24)
-    sill.translate(0, 0.12, dz)
-    add(sill, PALETTE.hullTimberDark)
-    const post = new THREE.BoxGeometry(0.22, 1.7, 0.22)
-    post.translate(0.1, 0.85, dz)
-    add(post, PALETTE.hullTimber)
+  const beamTilt = -0.66 // cocked back, ready to throw
+  const axleY = 1.95
+
+  // Ground sills, laid on skids so the machine can be shifted.
+  for (const dz of [-1.05, 1.05]) {
+    const sill = new THREE.BoxGeometry(3.6, 0.26, 0.3)
+    sill.translate(0, 0.13, dz)
+    add(sill, PALETTE.hullTimberDark, 0.92)
   }
-  const crossbar = new THREE.BoxGeometry(0.2, 0.2, 1.7)
-  crossbar.translate(0.1, 1.7, 0)
-  add(crossbar, PALETTE.hullTimberDark)
-
-  // Throwing beam, cocked back.
-  const beam = new THREE.BoxGeometry(3.4, 0.18, 0.2)
-  beam.rotateZ(-0.72)
-  beam.translate(-0.5, 1.5, 0)
-  add(beam, PALETTE.hullTimber)
-
-  // Sling and stone at the beam's head.
-  const stone = new THREE.BoxGeometry(0.34, 0.32, 0.34)
-  stone.translate(-1.72, 0.42, 0)
-  add(stone, '#8f8673')
-
-  // Crew rope bundle at the short arm.
-  const ropes = new THREE.CylinderGeometry(0.16, 0.2, 0.5, 6)
-  ropes.translate(0.86, 2.32, 0)
-  add(ropes, PALETTE.rigging)
-
-  // Spare shot, piled beside it.
-  for (let i = 0; i < 5; i++) {
-    const s = 0.22 + (i % 3) * 0.05
-    const shot = new THREE.BoxGeometry(s, s, s)
-    shot.translate(1.5 + (i % 3) * 0.32, s / 2, -1.3 + Math.floor(i / 3) * 0.42)
-    add(shot, '#8f8673', 0.9 + (i % 3) * 0.05)
+  for (const dx of [-1.4, 1.4]) {
+    const tie = new THREE.BoxGeometry(0.24, 0.2, 2.4)
+    tie.translate(dx, 0.1, 0)
+    add(tie, PALETTE.hullTimberDark, 0.88)
   }
+
+  // A-frames either side, carrying the axle.
+  for (const dz of [-1.05, 1.05]) {
+    for (const lean of [-1, 1]) {
+      const legLen = Math.hypot(axleY, 0.85)
+      const leg = new THREE.BoxGeometry(0.2, legLen, 0.2)
+      leg.rotateZ(lean * Math.atan2(0.85, axleY))
+      leg.translate(lean * 0.42, axleY / 2, dz)
+      add(leg, PALETTE.hullTimber, 0.95)
+    }
+    // Collar where the two legs meet.
+    const collar = new THREE.BoxGeometry(0.42, 0.24, 0.3)
+    collar.translate(0, axleY, dz)
+    add(collar, PALETTE.hullTimberDark)
+  }
+
+  // The axle itself, and the padded crossbeam the throwing arm strikes.
+  const axle = new THREE.CylinderGeometry(0.09, 0.09, 2.5, 8)
+  axle.rotateX(Math.PI / 2)
+  axle.translate(0, axleY, 0)
+  add(axle, '#6d7178')
+
+  const stop = new THREE.BoxGeometry(0.3, 0.3, 2.3)
+  stop.translate(-1.15, axleY + 0.5, 0)
+  add(stop, PALETTE.hullTimberDark)
+  const padding = new THREE.BoxGeometry(0.34, 0.2, 2.0)
+  padding.translate(-1.15, axleY + 0.68, 0)
+  add(padding, '#6f5f4a')
+
+  // Throwing beam: long arm forward and down, short arm cocked up behind.
+  const longArm = new THREE.BoxGeometry(4.2, 0.22, 0.24)
+  longArm.rotateZ(beamTilt)
+  longArm.translate(Math.cos(beamTilt) * 1.55, axleY + Math.sin(beamTilt) * 1.55, 0)
+  add(longArm, PALETTE.hullTimber, 1.02)
+
+  const shortArm = new THREE.BoxGeometry(1.5, 0.26, 0.28)
+  shortArm.rotateZ(beamTilt)
+  shortArm.translate(-Math.cos(beamTilt) * 0.75, axleY - Math.sin(beamTilt) * 0.75, 0)
+  add(shortArm, PALETTE.hullTimberDark)
+
+  // Sling hanging from the head of the long arm, with its stone in the pouch.
+  const headX = Math.cos(beamTilt) * 3.5
+  const headY = axleY + Math.sin(beamTilt) * 3.5
+  for (const dz of [-0.22, 0.22]) {
+    const cord = new THREE.CylinderGeometry(0.028, 0.028, 1.0, 4)
+    cord.translate(headX, headY - 0.5, dz)
+    add(cord, PALETTE.rigging)
+  }
+  const pouch = new THREE.BoxGeometry(0.5, 0.16, 0.5)
+  pouch.translate(headX, headY - 1.02, 0)
+  add(pouch, '#6f5f4a')
+  const shot = new THREE.SphereGeometry(0.26, 8, 6)
+  shot.translate(headX, headY - 1.18, 0)
+  add(shot, '#8f8673', 0.95)
+
+  // Hauling ropes bunched at the short arm — this is a traction engine, and
+  // the ropes are how it is actually thrown.
+  const tailX = -Math.cos(beamTilt) * 1.4
+  const tailY = axleY - Math.sin(beamTilt) * 1.4
+  for (let i = 0; i < 6; i++) {
+    const dz = -0.6 + (i / 5) * 1.2
+    const rope = new THREE.CylinderGeometry(0.022, 0.022, 1.9, 4)
+    rope.rotateZ(0.5)
+    rope.translate(tailX - 0.45, tailY - 0.85, dz)
+    add(rope, PALETTE.rigging, 0.9 + (i % 2) * 0.14)
+  }
+
+  // Windlass for cocking the arm back down.
+  const drum = new THREE.CylinderGeometry(0.2, 0.2, 1.5, 8)
+  drum.rotateX(Math.PI / 2)
+  drum.translate(1.5, 0.55, 0)
+  add(drum, PALETTE.hullTimber)
+  for (const dz of [-0.85, 0.85]) {
+    const spoke = new THREE.BoxGeometry(0.08, 0.6, 0.08)
+    spoke.rotateX(0.6)
+    spoke.translate(1.5, 0.55, dz)
+    add(spoke, PALETTE.hullTimberDark)
+  }
+
+  // Shot piled ready beside the machine.
+  for (let i = 0; i < 6; i++) {
+    const r = 0.2 + (i % 3) * 0.045
+    const ball = new THREE.SphereGeometry(r, 7, 5)
+    ball.translate(1.9 + (i % 3) * 0.5, r * 0.85, -1.7 + Math.floor(i / 3) * 0.55)
+    add(ball, '#8f8673', 0.86 + (i % 3) * 0.07)
+  }
+
   return parts
 }
 

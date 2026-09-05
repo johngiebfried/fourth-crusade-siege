@@ -272,24 +272,21 @@ function SiegeCamp() {
 }
 
 /**
- * Bridges thrown across the moat, so the army has a way over the ditch. Spaced
- * along the line, where the ladders go up.
+ * A bridge thrown across the moat, so the army has a way over the ditch.
+ *
+ * One of them, not a row: a besieging army bridges the ditch where it means to
+ * assault, and a single crossing reads as an effort that cost something rather
+ * than as fencing along the bank.
  */
-function MoatBridges() {
-  const geometries = useMemo(() => {
-    const span = LANE.moatWidth + 2.6
-    return [-24, -8, 8, 24].map((z, i) =>
-      buildMoatBridge({ x: LANE.moatX, z, span, seed: 3 + i })
-    )
-  }, [])
+function MoatBridge() {
+  const geometry = useMemo(
+    () => buildMoatBridge({ x: LANE.moatX, z: -4, span: LANE.moatWidth + 3.0, seed: 3 }),
+    []
+  )
   return (
-    <group>
-      {geometries.map((g, i) => (
-        <mesh key={i} geometry={g} castShadow receiveShadow>
-          <meshLambertMaterial vertexColors flatShading />
-        </mesh>
-      ))}
-    </group>
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 
@@ -374,7 +371,7 @@ export function LandTerrain() {
       />
 
       <SiegeCamp />
-      <MoatBridges />
+      <MoatBridge />
       <Walls />
       <Gate />
       <CityBackdrop />

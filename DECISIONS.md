@@ -570,3 +570,32 @@ Naming a local variable `station`, not `stage`. A local `const stage` inside
 the ship-view loop shadowed the assault stage the component was resolving, so
 `stage?.key === 'piloting'` was quietly testing a string, and every ship became
 unclickable with no error anywhere.
+
+---
+
+## Revision: proportions
+
+**Tower spacing, both walls.** They were set close enough to read as a picket
+fence. Spacing is up about a third — land walls from 5.8 units to 7.9, the sea
+wall from 6.3 to 8.3 — which is still close, as the real circuit is, but no
+longer shoulder to shoulder. Expressed as counts rather than spacings, because
+the wall's length is what they divide.
+
+**The Golden Horn was overcorrected.** Told once that it was too wide, it went
+from 34 units to 27, which was too far the other way. It is now 38, and the
+Galata side has been cut right back — a quarter of the houses and tents, on a
+narrower bank — so the water gets roughly the middle of the frame rather than
+being squeezed between a crowded foreground and the wall. The camera also
+looks down a little more steeply, nineteen degrees rather than fourteen, which
+gives the channel more of the screen without losing the far shore.
+
+**One bridge over the moat, not four.** A besieging army bridges the ditch
+where it means to assault. A single crossing reads as an effort that cost
+something; four read as fencing along the bank.
+
+**The mangonel is now actually a mangonel.** It was a frame with a stick in it.
+It has A-frames carrying a proper axle, a padded crossbeam for the throwing arm
+to strike, a sling hanging from the arm's head with its stone in the pouch, the
+bundle of hauling ropes at the short arm — this is a traction engine, and those
+ropes are how it is thrown — a windlass for cocking the arm back down, and shot
+piled ready beside it.

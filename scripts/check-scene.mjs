@@ -166,7 +166,7 @@ console.log('\nSea lane')
     L.SEA_LANE.approachX > L.SEA_LANE.stagingX && L.SEA_LANE.approachX < L.SEA_LANE.atWallX
   )
   const channel = L.SEA_LANE.wallX - L.SEA_LANE.shoreX
-  check('the Horn is a channel, not an ocean', channel > 18 && channel < 34, `${channel} units`)
+  check('the Horn is a channel, not an ocean', channel > 26 && channel < 46, `${channel} units`)
 
   // A ship at the wall must be clear of it, and its gangway must reach.
   const shipBow = L.SEA_LANE.atWallX + 2.76

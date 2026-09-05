@@ -40,9 +40,15 @@ export const HEIGHTS = {
   gate: 6.2,
 }
 
-/** Towers march along each wall; the outer line's are smaller and interleaved. */
-export const INNER_TOWERS = 26
-export const OUTER_TOWERS = 26
+/**
+ * Towers march along each wall; the outer line's are smaller and interleaved.
+ *
+ * Counts rather than spacings, because the wall length is what they divide.
+ * Set about a third further apart than they first were — close together, as
+ * the real circuit is, but not shoulder to shoulder.
+ */
+export const INNER_TOWERS = 19
+export const OUTER_TOWERS = 19
 
 export const LAND_FOV = 22
 
@@ -148,11 +154,11 @@ export const GATE_STREET = { halfWidth: 11, untilX: 32 }
  */
 export const SEA_LANE = {
   /** Where the Galata bank ends and the water begins. */
-  shoreX: -27,
+  shoreX: -38,
   /** Ships drawn up on the beach, before they push off. */
-  stagingX: -23.5,
+  stagingX: -34,
   /** Mid-channel — where a ship that founders goes down. */
-  approachX: -14,
+  approachX: -21,
   atWallX: -7.4,
   wallX: 0,
   wallWidth: 1.9,
@@ -201,7 +207,7 @@ export function gangwayGeometry() {
   }
 }
 
-export const SEA_TOWERS = 24
+export const SEA_TOWERS = 18
 export const SEA_FOV = 32
 
 /**
@@ -210,13 +216,13 @@ export const SEA_FOV = 32
  * field but wrong here: it hides the far shore, and the point of this lane is
  * that the fleet is inside the Golden Horn with Galata opposite.
  */
-export const SEA_OFFSET = [-0.7, 0.242, 0.67]
+export const SEA_OFFSET = [-0.7, 0.33, 0.63]
 
 export const SEA_FRAMINGS = {
-  approach: { at: [-12, 4.5, 0], height: 38 },
-  piloting: { at: [-11, 4.5, 0], height: 36 },
-  boarding: { at: [-4.0, 5.6, 0], height: 28 },
-  breaking: { at: [2.5, 5.4, 0], height: 28 },
+  approach: { at: [-19, 4.5, 0], height: 40 },
+  piloting: { at: [-18, 4.5, 0], height: 38 },
+  boarding: { at: [-5.0, 5.6, 0], height: 29 },
+  breaking: { at: [2.0, 5.4, 0], height: 29 },
 }
 
 /* --------------------------------------------------------------- helpers */
