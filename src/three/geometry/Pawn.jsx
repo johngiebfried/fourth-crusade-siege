@@ -16,6 +16,8 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PALETTE } from '../palette.js'
 import { nameLabelTexture } from '../textures.js'
+import { pawnGeometry } from './pawnBuilder.js'
+import { factionFlagTexture } from '../factions.js'
 
 const PAWN_SCALE = 0.71
 const DISSOLVE_SECONDS = 1.1
@@ -82,6 +84,9 @@ export function Pawn({
   showName = true,
   travelSpeed = 2.6,
   plateLift = 0,
+  faction = 'Indeterminate',
+  showFlag = true,
+  bearer = false,
 }) {
   const group = useRef()
   const bodyRef = useRef()
@@ -89,6 +94,12 @@ export function Pawn({
   const plate = useRef()
   const dissolveClock = useRef(0)
   const placed = useRef(false)
+
+  const body = useMemo(() => pawnGeometry(faction), [faction])
+  const flag = useMemo(
+    () => (showFlag ? factionFlagTexture(faction) : null),
+    [faction, showFlag]
+  )
 
   const target = useMemo(
     () => new THREE.Vector3(position[0], position[1], position[2]),
@@ -173,15 +184,9 @@ export function Pawn({
         </mesh>
       )}
 
-      <group ref={bodyRef} scale={PAWN_SCALE}>
       {/* Contact shadow, under everything. */}
       <mesh geometry={CONTACT_SHADOW} position={[0, 0.015, 0]} renderOrder={-1}>
-        <meshBasicMaterial
-          vertexColors
-          transparent
-          opacity={1}
-          depthWrite={false}
-        />
+        <meshBasicMaterial vertexColors transparent opacity={1} depthWrite={false} />
       </mesh>
 
       {/* Selection ring on the ground */}
@@ -195,74 +200,36 @@ export function Pawn({
         />
       </mesh>
 
-      {/* Legs below the surcoat */}
-      <mesh position={[0, 0.22, 0]} castShadow>
-        <boxGeometry args={[0.34, 0.46, 0.26]} />
-        <meshLambertMaterial color="#4a4038" flatShading />
-      </mesh>
-
-      {/* Surcoat over the hauberk: a skirt, wider at the hem */}
-      <mesh position={[0, 0.62, 0]} castShadow>
-        <cylinderGeometry args={[0.28, 0.44, 0.72, 10]} />
-        <meshLambertMaterial color={PALETTE.crusaderSurcoat} flatShading />
-      </mesh>
-
-      {/* Mail torso and shoulders showing above the surcoat */}
-      <mesh position={[0, 1.08, 0]} castShadow>
-        <capsuleGeometry args={[0.28, 0.3, 4, 10]} />
-        <meshLambertMaterial color={PALETTE.crusaderMail} flatShading />
-      </mesh>
-
-      {/* Coif and conical nasal helm */}
-      <mesh position={[0, 1.45, 0]}>
-        <sphereGeometry args={[0.19, 10, 8]} />
-        <meshLambertMaterial color={PALETTE.crusaderMail} flatShading />
-      </mesh>
-      <mesh position={[0, 1.62, 0]} castShadow>
-        <coneGeometry args={[0.21, 0.34, 8]} />
-        <meshLambertMaterial color="#8d939a" flatShading />
-      </mesh>
-
-      {/* The cross on the chest. These are men who took the cross; it is the
-          one marker that says so at a glance, and it was missing entirely —
-          what sat on the shield before was a shrunken copy of the shield's own
-          outline, not a cross. */}
-      <mesh position={[0, 1.06, 0.255]}>
-        <boxGeometry args={[0.1, 0.38, 0.04]} />
-        <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
-      </mesh>
-      <mesh position={[0, 1.15, 0.255]}>
-        <boxGeometry args={[0.3, 0.1, 0.04]} />
-        <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
-      </mesh>
-
-      {/* Kite shield. The prism is turned so a flat face — not an edge — is
-          presented to the lane camera, which is what lets it carry a device. */}
-      <group position={[-0.4, 0.92, 0.2]} rotation={[0.1, -0.5, 0.08]}>
-        <mesh rotation={[0, Math.PI / 3, 0]}>
-          <cylinderGeometry args={[0.27, 0.045, 0.82, 3, 1]} />
-          <meshLambertMaterial color={PALETTE.crusaderSurcoat} flatShading />
+      <group ref={bodyRef} scale={PAWN_SCALE}>
+        {/* Helmet, cape and spear, merged and lit into its vertex colours. */}
+        <mesh geometry={body} castShadow>
+          <meshLambertMaterial vertexColors flatShading side={THREE.DoubleSide} />
         </mesh>
-        <mesh position={[0, 0.06, 0.15]}>
-          <boxGeometry args={[0.075, 0.46, 0.03]} />
-          <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
-        </mesh>
-        <mesh position={[0, 0.17, 0.15]}>
-          <boxGeometry args={[0.26, 0.075, 0.03]} />
-          <meshLambertMaterial color={PALETTE.crusaderCross} flatShading />
-        </mesh>
-      </group>
 
-      {/* Spear */}
-      <mesh position={[0.4, 1.05, -0.06]} rotation={[0, 0, -0.07]}>
-        <cylinderGeometry args={[0.032, 0.032, 2.3, 6]} />
-        <meshLambertMaterial color={PALETTE.hullTimberDark} />
-      </mesh>
-      <mesh position={[0.48, 2.2, -0.06]}>
-        <coneGeometry args={[0.07, 0.28, 6]} />
-        <meshLambertMaterial color="#b9bcc0" flatShading />
-      </mesh>
+        {/* The contingent's flag. A pennon on the spear for most; the man
+            with the highest standing in each following carries a full
+            standard on a taller staff, which is how a contingent was actually
+            picked out on a field. Turned to face the lane camera, because a
+            flag edge-on says nothing. */}
+        {flag && (
+          <group
+            position={bearer ? [0.44, 2.42, -0.04] : [0.44, 1.86, -0.04]}
+            rotation={[0, -0.5, 0.05]}
+          >
+            <mesh position={[bearer ? 0.4 : 0.26, 0, 0]}>
+              <planeGeometry args={bearer ? [0.78, 0.56] : [0.5, 0.34]} />
+              <meshBasicMaterial map={flag} side={THREE.DoubleSide} toneMapped={false} />
+            </mesh>
+          </group>
+        )}
 
+        {/* The bearer's staff runs higher than a spear. */}
+        {bearer && (
+          <mesh position={[0.44, 1.55, -0.04]} castShadow>
+            <cylinderGeometry args={[0.035, 0.035, 3.1, 6]} />
+            <meshLambertMaterial color={PALETTE.hullTimberDark} />
+          </mesh>
+        )}
       </group>
 
       {/* Plate sits outside the scaled group so it keeps a readable world size. */}

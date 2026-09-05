@@ -280,6 +280,8 @@ function SeaScene({
           dissolving={c.dissolving}
           showName={c.showName !== false}
           plateLift={c.plateLift}
+          faction={c.faction}
+          bearer={c.bearer}
           travelSpeed={c.onBridge ? 1.5 : SHIP_DAMP}
           onClick={() => onCrewClick(c.id)}
         />
@@ -407,11 +409,32 @@ export default function SeaAssault({ sea, stages, onComplete }) {
     const out = new Map()
     for (const s of sea.ships) {
       for (const p of s.manifest.passengers) {
-        if (!out.has(p.id)) out.set(p.id, { id: p.id, name: p.name, shipId: s.id })
+        if (!out.has(p.id)) {
+          out.set(p.id, {
+            id: p.id,
+            name: p.name,
+            shipId: s.id,
+            faction: p.faction ?? 'Indeterminate',
+            fama: p.fama ?? 0,
+          })
+        }
       }
     }
     return out
   }, [sea.ships])
+
+  // One standard per contingent, carried by its senior man — the same rule the
+  // land lane uses. Ties break on id so the bearer never changes between loads.
+  const bannerBearers = useMemo(() => {
+    const best = new Map()
+    for (const [id, r] of roster) {
+      const held = best.get(r.faction)
+      if (!held || r.fama > held.fama || (r.fama === held.fama && id < held.id)) {
+        best.set(r.faction, { id, fama: r.fama })
+      }
+    }
+    return new Set([...best.values()].map((b) => b.id))
+  }, [roster])
 
   const crewViews = useMemo(() => {
     const live = [...roster.values()].filter((r) => !goneIds.has(r.id))
@@ -440,6 +463,8 @@ export default function SeaAssault({ sea, stages, onComplete }) {
         return {
           id: r.id,
           name: r.name,
+          faction: r.faction,
+          bearer: bannerBearers.has(r.id),
           // Crew of a foundering ship ride it down rather than dissolving —
           // the sinking is the one failure with its own treatment.
           position: going ? [base[0], base[1] - 6.2, base[2]] : base,
@@ -457,6 +482,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       })
   }, [
     roster,
+    bannerBearers,
     goneIds,
     sunkShips,
     sinkingShips,

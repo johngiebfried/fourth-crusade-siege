@@ -39,6 +39,11 @@ export function buildLandAssault(attackers) {
   const queue = []
   addLandAttackRolls(queue, attackers)
 
+  // Faction and fama travel with each entry so the visual layer can colour a
+  // contingent and pick out the man who carries its banner. The roll itself is
+  // untouched — this is identity, not outcome.
+  const who = new Map(attackers.map((a) => [a.id, a]))
+
   const byStage = new Map()
   for (const item of queue) {
     if (item.type !== 'roll') continue
@@ -58,6 +63,8 @@ export function buildLandAssault(attackers) {
       entries: entries.map((e) => ({
         playerId: e.playerId,
         player: e.player,
+        faction: who.get(e.playerId)?.faction ?? 'Indeterminate',
+        fama: who.get(e.playerId)?.fama ?? 0,
         roll: e.roll,
         bonus: e.bonus,
         total: e.total,
@@ -88,8 +95,13 @@ export function buildSeaAssault(attackers) {
     formed.map((s) => [
       s.id,
       {
-        captain: { id: s.captain.id, name: s.captain.name },
-        passengers: s.passengers.map((p) => ({ id: p.id, name: p.name })),
+        captain: { id: s.captain.id, name: s.captain.name, faction: s.captain.faction },
+        passengers: s.passengers.map((p) => ({
+          id: p.id,
+          name: p.name,
+          faction: p.faction,
+          fama: p.fama,
+        })),
       },
     ])
   )

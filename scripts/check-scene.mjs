@@ -12,6 +12,8 @@
  * units to the side of the arch, and nothing caught it for two commits.
  */
 
+import { readFile } from 'node:fs/promises'
+
 const base = new URL('..', import.meta.url).pathname
 const L = await import(base + 'src/three/lane.js')
 const city = await import(base + 'src/three/geometry/cityBuilder.js')
@@ -213,6 +215,48 @@ console.log('\nCity landmarks stand on land')
   check('the Golden Horn is water', !city.insidePolygon(city.EUROPE, 0, -18))
   check('Galata joins the mainland round the head of the Horn', city.insidePolygon(city.EUROPE, -70, -31))
   check('the chain tower stands on Galata', city.wellInside(city.GALATA, 27, -23.5, 1.2))
+}
+
+console.log('\nEvery figure on screen has a livery')
+{
+  const factions = await import(base + 'src/three/factions.js')
+  const stages = await import(base + 'src/game/stages.js')
+  const characters = JSON.parse(
+    await readFile(base + 'src/data/characters.json', 'utf8')
+  )
+
+  const known = Object.keys(factions.FACTIONS)
+  const roster = characters.slice(0, 20).map((c) => ({ ...c }))
+
+  check(
+    'every character in the roster belongs to a faction we can dress',
+    characters.every((c) => known.includes(c.faction)),
+    characters.filter((c) => !known.includes(c.faction)).map((c) => c.faction).join(', ')
+  )
+
+  // The land lane dresses figures from the stage entries.
+  const land = stages.buildLandAssault(roster)
+  const landEntries = land.stages.flatMap((s) => s.entries)
+  check(
+    'every land stage entry carries a faction',
+    landEntries.length > 0 && landEntries.every((e) => known.includes(e.faction)),
+    `${landEntries.length} entries`
+  )
+
+  // The sea lane dresses crew from the ship manifests, not the roll queue —
+  // passengers of a foundered ship never roll and would otherwise be liveried
+  // as Indeterminate, standing out from their own contingent.
+  const sea = stages.buildSeaAssault(roster)
+  const passengers = sea.ships.flatMap((s) => s.manifest.passengers)
+  check(
+    'every ship passenger carries a faction',
+    passengers.length > 0 && passengers.every((p) => known.includes(p.faction)),
+    `${passengers.length} passengers`
+  )
+  check(
+    'a banner bearer can be picked — passengers carry fama',
+    passengers.every((p) => typeof p.fama === 'number')
+  )
 }
 
 console.log('')

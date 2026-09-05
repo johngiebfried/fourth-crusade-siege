@@ -634,16 +634,87 @@ are reaching for when they ask about ray tracing.
 Calibration note: the disc was first drawn at 0.44 units, which hid it
 completely underneath the figure. It reads at 0.72.
 
+## Revision: the crusader pawns, second pass — helm, livery, banners
+
+**The great helm, and no shield.** Everyone now wears the same flat-topped
+great helm: a shallow cylinder with a top plate, a dark vision slit, a vertical
+reinforce down the face and three breaths bored beside it. Your call, and the
+right one — the great helm is just emerging by 1204, it silhouettes cleanly at
+forty pixels, and a single form reads as an army rather than as a costume
+parade. The shield is gone entirely. At this camera you see helmet, cape and
+spear; the shield was geometry paying no rent.
+
+**Livery, by faction.**
+
+| Faction | Colour | Device |
+| --- | --- | --- |
+| Venetian | Red | Lion of St Mark |
+| N. French | Blue | Fleur-de-lis |
+| Imperial | Yellow, black device | Eagle |
+| Clerical | White, red cross | Crossed keys of St Peter |
+| Indeterminate | Undyed buff wool | *(blank flag)* |
+
+Indeterminate was left to me, so it is undyed wool — the colour of a man who
+has not been given one. It reads as neutral beside four saturated contingents
+without looking like a fifth faction, and its flag is deliberately blank.
+
+Two deliberate anachronisms, both yours and both defensible as game
+conventions: the Lion in its early-modern red form, and the fleur-de-lis, which
+is not yet a fixed royal arms in 1204. One deliberate *avoidance*: the imperial
+eagle is **single-headed**. The double-headed HRE eagle is fifteenth-century,
+and the double-headed Byzantine eagle is post-1261 — either would have been
+wrong here, and wrong in the specific way this project is trying not to be.
+
+Devices are drawn to a 128×96 canvas at runtime and cached per faction. A
+`CanvasTexture` is generated, never fetched — the no-asset rule holds.
+
+**Banner-bearers.** The senior man of each contingent — highest fama, ties
+broken on id so it never changes between loads — carries a standard on a taller
+staff instead of a pennon. This is the strongest available answer to "how do
+these people come together": it groups them without uniforming them, and it is
+the one part of the livery scheme that is straightforwardly historical.
+
+**The staging is grouped by contingent.** Pawns are sorted by faction before
+slots are handed out, so the Venetians stand with the Venetians. Presentation
+only — it touches no roll, and the dice logic never sees the ordering.
+
+**One geometry per faction.** The helm, cape, mail neck, boots, spear and cross
+are merged into a single 577-vertex geometry per faction with ambient occlusion
+baked into the vertex colours, cached and shared. Five geometries dress the
+whole army.
+
+**Where the cross had to go.** It was on the geometric front of the figure
+(+Z), which the lane camera looks at about forty-five degrees off, so it read
+as a smudge on the flank. It now sits at azimuth −0.8 rad — square to the
+camera — and is larger. Same lesson as the flags, learned twice: on a figure
+this small, a device is only a device if a flat face carries it toward the
+viewer.
+
+**Both lanes, not just the land one.** The sea crew are dressed from the ship
+manifests rather than the roll queue. That matters: passengers of a ship that
+founders never roll to board, so they exist nowhere in the queue, and dressing
+from the queue would have left them undyed — standing out from their own
+contingent at the exact moment they go down with the ship. Two new scene
+invariants now hold the wiring in place, one per lane, plus one that every
+passenger carries the fama a bearer is picked on.
+
 ## Still open, and the caveat that goes with them
 
-Faction colour is a **game convention, not a historical one**. Uniform livery
-by contingent is anachronistic for 1204 — heraldry was personal and familial,
-and contingents were not dressed alike. If that matters, the defensible version
-is to leave the surcoat naturalistic with the cross on it and put the faction
-colour on the shield and a pennon instead, since contingents genuinely did
-identify by banner: "these men follow that lord" rather than "these men bought
-matching kit."
+Faction colour is a **game convention, not a historical one**, and it should be
+said out loud rather than buried. Uniform livery by contingent is anachronistic
+for 1204 — heraldry was personal and familial, and contingents were not dressed
+alike. It was adopted knowingly, because a wargame counter has to be readable
+at forty pixels on a projector, and because the banner-bearer half of the
+scheme *is* historical: contingents genuinely identified by standard. If a
+later pass wants to walk it back, the defensible version is a naturalistic
+surcoat with the cross on it and the faction colour confined to the banner.
 
-There are five factions to colour, not four — N. French 12, Venetian 11,
-Indeterminate 11, Clerical 10, Imperial 8 — and Indeterminate needs either a
-colour of its own or a deliberate decision to leave it plain.
+Deferred by choice, not forgotten:
+
+- **Round two should feel more desperate than round one** — no visual
+  distinction between them yet.
+- **The first-to-enter callout is undressed** — it is the dramatic peak of the
+  whole sequence and currently reads as plain text.
+- **Name plates still collide** when tokens bunch. Legible, but untidy.
+- **Helm and shield variety** was considered and declined: one great helm for
+  everybody, no shields.

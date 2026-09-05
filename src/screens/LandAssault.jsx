@@ -189,6 +189,8 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }
           clickable={p.clickable}
           dissolving={p.dissolving}
           plateLift={p.plateLift}
+          faction={p.faction}
+          bearer={p.bearer}
           onClick={() => onPawnClick(p.id)}
         />
       ))}
@@ -235,22 +237,49 @@ export default function LandAssault({ stages, onComplete }) {
 
   const stage = stages[stageIndex] || null
 
-  // Name lookup across every stage, so a pawn keeps its plate as it advances.
-  const nameById = useMemo(() => {
+  // Identity lookup across every stage, so a pawn keeps its name, colours and
+  // standing as it advances.
+  const whoById = useMemo(() => {
     const seen = new Map()
     for (const s of stages) {
       for (const e of s.entries) {
-        if (!seen.has(e.playerId)) seen.set(e.playerId, e.player)
+        if (!seen.has(e.playerId)) {
+          seen.set(e.playerId, { name: e.player, faction: e.faction, fama: e.fama })
+        }
       }
     }
     return seen
   }, [stages])
 
+  /**
+   * The one man in each contingent who carries its banner: the highest fama
+   * present. Ties break on id so it is stable from render to render.
+   */
+  const bannerBearers = useMemo(() => {
+    const best = new Map()
+    for (const [id, w] of whoById) {
+      const held = best.get(w.faction)
+      if (!held || w.fama > held.fama || (w.fama === held.fama && id < held.id)) {
+        best.set(w.faction, { id, fama: w.fama })
+      }
+    }
+    return new Set([...best.values()].map((b) => b.id))
+  }, [whoById])
+
   // Stable slot per pawn for this stage. Keyed off the stage's own entry order
   // so a pawn's position never shifts because a neighbour dissolved.
   const slots = useMemo(() => {
     const m = new Map()
-    if (stage) stage.entries.forEach((e, i) => m.set(e.playerId, i))
+    if (!stage) return m
+    // Lay contingents out together rather than in roll order, so the army
+    // reads as a set of followings rather than a queue. Ordering here is
+    // presentation only — it does not touch who rolls what.
+    const ordered = [...stage.entries].sort((a, b) => {
+      if (a.faction !== b.faction) return a.faction < b.faction ? -1 : 1
+      if (a.fama !== b.fama) return b.fama - a.fama
+      return a.playerId - b.playerId
+    })
+    ordered.forEach((e, i) => m.set(e.playerId, i))
     return m
   }, [stage])
 
@@ -267,14 +296,16 @@ export default function LandAssault({ stages, onComplete }) {
         const level = levels[id] ?? LEVELS.camp
         return {
           id,
-          name: nameById.get(id) ?? '',
+          name: whoById.get(id)?.name ?? '',
+          faction: whoById.get(id)?.faction ?? 'Indeterminate',
+          bearer: bannerBearers.has(id),
           position: positionFor(level, slots.get(id) ?? 0, count),
           plateLift: ((slots.get(id) ?? 0) % 3) * 0.55,
           clickable: !busy && !resolvedIds.has(id),
           dissolving: dissolvingIds.has(id),
         }
       })
-  }, [stageIds, goneIds, levels, resolvedIds, dissolvingIds, slots, busy, nameById])
+  }, [stageIds, goneIds, levels, resolvedIds, dissolvingIds, slots, busy, whoById, bannerBearers])
 
   const advanceStage = useCallback(() => {
     if (stageIndex + 1 >= stages.length) {
