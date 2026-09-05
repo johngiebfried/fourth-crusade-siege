@@ -11,6 +11,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import allCharacters from './data/characters.json'
 import { buildLandAssault, buildSeaAssault, buildSeaStages } from './game/stages.js'
+import TitleScreen from './screens/TitleScreen.jsx'
 import CharacterSelect from './screens/CharacterSelect.jsx'
 import AttackDeclaration from './screens/AttackDeclaration.jsx'
 import LandAssault from './screens/LandAssault.jsx'
@@ -22,7 +23,7 @@ import Bribery from './screens/Bribery.jsx'
 import GateOpening from './screens/GateOpening.jsx'
 
 export default function App() {
-  const [gameState, setGameState] = useState('character-select')
+  const [gameState, setGameState] = useState('title')
   const [players, setPlayers] = useState([])
   const [currentRound, setCurrentRound] = useState(1)
   const [cityFallen, setCityFallen] = useState(false)
@@ -246,7 +247,7 @@ export default function App() {
   /* ------------------------------------------------------------- reset */
 
   const resetGame = useCallback(() => {
-    setGameState('character-select')
+    setGameState('title')
     setPlayers([])
     setCurrentRound(1)
     setCityFallen(false)
@@ -266,6 +267,9 @@ export default function App() {
   const charactersForSelect = useMemo(() => allCharacters, [])
 
   switch (gameState) {
+    case 'title':
+      return <TitleScreen onBegin={() => setGameState('character-select')} />
+
     case 'character-select':
       return <CharacterSelect allCharacters={charactersForSelect} onStart={startGame} />
 

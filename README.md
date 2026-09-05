@@ -32,7 +32,7 @@ Requires Node. If the machine has none, `brew install node`.
 | `src/game/stages.js` | Reshapes the flat roll queue into per-stage click rounds. Decides nothing; only regroups. |
 | `src/data/characters.json` | The 52-character roster. |
 | `src/screens/` | One file per screen in the flow. |
-| `src/three/` | Scene, palette, runtime textures, renderer config. |
+| `src/three/` | Scenes (land lane, sea lane, city panorama), palette, runtime textures, renderer config. |
 | `src/three/geometry/` | Procedural wall, tower, pawn, die and defender geometry. |
 | `DECISIONS.md` | Every design and historical call made during the build, and why. |
 
@@ -55,7 +55,8 @@ node scripts/check-rules.mjs
 
 ## State of the build
 
-**Working:** character select, attack declaration, the full land wall sequence
+**Working:** the title screen (isometric establishing shot with a crusader-cam
+inset on the camp and fleet at Galata), character select, attack declaration, the full land wall sequence
 (staging → outer wall → inner wall → city gates), the full sea wall sequence
 (fleet stands in → piloting → boarding over the flying bridge → breaking
 through), per-stage camera framing on both, click-to-resolve tokens in any
@@ -67,4 +68,5 @@ gate-opening sequence, and the results and sack order hand-off.
 When a round has both land and sea attackers, the two sequences play in order
 and the round resolves once both are done.
 
-**Not yet built:** the title screen. See "What's next" in `DECISIONS.md`.
+Every screen in the module's flow is now built. Remaining work is polish —
+see "What's next" in `DECISIONS.md`.

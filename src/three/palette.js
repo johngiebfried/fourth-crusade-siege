@@ -29,7 +29,7 @@ export const PALETTE = {
   cityWall: '#ded2ba',
   domeLead: '#8fa3a8',
   domeGold: '#c8a552',
-  hagiaDome: '#b9a87c',
+  hagiaDome: '#a8b0ad',
 
   // Figures.
   crusaderMail: '#9aa0a6',

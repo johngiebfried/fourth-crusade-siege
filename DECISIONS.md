@@ -139,14 +139,12 @@ the instance R3F builds, in `onCreated`.
 
 ## What's next
 
-1. **Title screen.** The isometric establishing shot: Hagia Sophia's shallow
-   dome on its windowed drum with flanking half-domes, scattered smaller domed
-   churches, the Hippodrome obelisks, the peninsula between Marmara and the
-   Golden Horn, and Blachernae where the land walls meet the water. No
-   minarets. The domed-church silhouettes already used behind both lanes are
-   the groundwork for it.
-2. Polish: name plate collision avoidance when many tokens bunch together, and
-   richer defender reactions.
+Every screen in the flow is built. What remains is polish:
+
+1. Name plate collision avoidance when many tokens bunch together in one spot.
+2. Richer defender reactions on the ramparts.
+3. The crusader-cam inset could carry more life — figures moving between the
+   tents, or a boat pulling off the shore.
 
 ## Sea sequence, as built
 
@@ -176,3 +174,38 @@ that the underlying rule is gentler than the visual: a failed boarder is not
 lost, they simply do not advance and take no fama penalty. If you would rather
 they visibly drop back onto the deck than dissolve, that is a small change in
 `resolveCrew` in `src/screens/SeaAssault.jsx`.
+
+## Title screen, as built
+
+**Stylised scale, honest shape.** The whole city is about 65 units across, so a
+true-to-scale 12-metre wall would be a tenth of a unit and disappear. Walls and
+landmarks are sized to read at a glance, the way a medieval map exaggerates
+what matters. What is kept honest is the geography: the triangular peninsula,
+the Golden Horn north and the Sea of Marmara south, the Theodosian land walls
+closing the western base with Blachernae at their northern end, the sea walls
+as a single lower line following the coast, and Hagia Sophia dominating the
+eastern tip beside the Hippodrome and the Great Palace.
+
+**Hagia Sophia** is a shallow lead dome on a drum ringed with windows, flanked
+by two half-domes on the east–west axis, with buttress piers at the corners.
+Deliberately no minarets: those arrive with the Ottoman conquest in 1453, two
+and a half centuries after this scene. The dome was first coloured a sandy
+tone, which read as a later mosque; it is lead-grey now.
+
+**The Hippodrome** carries its curved sphendone, the Obelisk of Theodosius with
+its pyramidion, the rougher Walled Obelisk, and the Serpent Column between them.
+
+**The skyline is domes, not spires** — around sixty domed churches scattered
+through five hundred houses, a handful of them gilded. The whole townscape is
+merged into a single vertex-coloured geometry, so several hundred buildings
+cost one draw call. It is generated from a seeded RNG, so it is the same city
+every time it loads.
+
+**The camera is isometric** — an orthographic camera whose zoom is solved from
+the viewport so the peninsula fits at any aspect, with a very slow drift so the
+shot breathes without becoming a spin. This is the only screen that is not
+locked side-on.
+
+**The crusader cam** is a second canvas in the corner, showing the camp pitched
+on the Galata shore with the fleet moored off it — the camp is also visible
+across the Horn in the main shot.
