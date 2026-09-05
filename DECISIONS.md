@@ -209,3 +209,62 @@ locked side-on.
 **The crusader cam** is a second canvas in the corner, showing the camp pitched
 on the Galata shore with the fleet moored off it — the camp is also visible
 across the Horn in the main shot.
+
+
+---
+
+## Revision: geography and the setup flow
+
+### The geography was wrong, and it mattered
+
+The first version drew the peninsula as an **island**. That is the one mistake
+that undoes the whole scene, because it makes the Theodosian land walls face
+open water — and the land walls exist precisely because there is open ground
+behind them. Corrected:
+
+- **Europe is one landmass**, traced as a single outline from the Marmara coast
+  round Seraglio Point, back west along the Horn's south shore, **around the
+  head of the Golden Horn**, and east again along its north shore to Galata
+  Point. Thrace lies beyond the land walls; Galata joins the same landmass
+  around the head of the inlet, because the Horn is an inlet and not a strait.
+- **The Golden Horn is the notch** that outline leaves behind, not a channel
+  between two separate shapes.
+- **Asia** is a separate landmass east of the Bosphorus, with Chalcedon and
+  Chrysopolis on it so it reads as settled rather than as a bare slab.
+- **Hagia Sophia no longer overflows into the Horn.** Every landmark is now
+  placed by a point-in-polygon test with a clearance margin bigger than its own
+  footprint, and the four landmarks are checked against each other for overlap.
+- **The city stands on a ridge** matching `groundHeight` exactly, so the
+  townscape sits on the terrain instead of floating above a flat plate.
+
+### Galata's chain tower
+
+Galata now has its tower as the central icon: a stout ashlar tower with a
+machicolated crown and conical roof. **The chain is not shown.** The crusaders
+broke it in July 1203, which is exactly why the fleet in this scene is inside
+the Horn rather than shut out of it. The ring it was made fast to is still
+there at the waterline.
+
+### The setup flow, rebuilt over the city shot
+
+The old flow asked for fifty-two checkboxes and then fifty-two land/sea/sit-out
+choices, on screens that looked nothing like the opening image. It now runs as
+four questions laid over the living city shot:
+
+1. **How many crusaders are attacking?** A number. The roster is pre-scripted,
+   so a count of fifteen means the first fifteen names on the list — no picking.
+2. **Does anyone refuse?** Name them from a dropdown. Sitting out still costs
+   1 fama, exactly as before.
+3. **Land walls, sea walls, or split?**
+4. **Only if split:** two numbers that must add up to the attackers, then name
+   the *smaller* group from a dropdown. The rest go the other way.
+
+The dropdown is a custom panel rather than a native multi-select, which is
+unreadable on a projector. If the sea party ends up with no Venetian and no
+Oberto, the panel says so before the dice are thrown rather than after.
+
+Round two re-runs the same flow from step 2, since the roster is already fixed.
+
+`CharacterSelect.jsx`, `AttackDeclaration.jsx` and `TitleScreen.jsx` are
+superseded and removed; the city shot now lives in `CityBackdrop.jsx` and the
+whole opening in `Opening.jsx`.

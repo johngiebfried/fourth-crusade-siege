@@ -8,12 +8,9 @@
  * calculation are carried over from the original implementation unchanged.
  */
 
-import { useCallback, useMemo, useState } from 'react'
-import allCharacters from './data/characters.json'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { buildLandAssault, buildSeaAssault, buildSeaStages } from './game/stages.js'
-import TitleScreen from './screens/TitleScreen.jsx'
-import CharacterSelect from './screens/CharacterSelect.jsx'
-import AttackDeclaration from './screens/AttackDeclaration.jsx'
+import Opening from './screens/Opening.jsx'
 import LandAssault from './screens/LandAssault.jsx'
 import SeaAssault from './screens/SeaAssault.jsx'
 import FirstToEnter from './screens/FirstToEnter.jsx'
@@ -22,9 +19,24 @@ import { CancelledNotice } from './screens/AssaultHud.jsx'
 import Bribery from './screens/Bribery.jsx'
 import GateOpening from './screens/GateOpening.jsx'
 
+/**
+ * Runs the round's rolls once, on mount. The opening now decides everything,
+ * so there is no screen between choosing and executing.
+ */
+function RunRound({ players, onRun }) {
+  const fired = useRef(false)
+  useEffect(() => {
+    if (fired.current) return
+    fired.current = true
+    onRun(players)
+  }, [players, onRun])
+  return <div className="h-screen w-screen bg-[#1c1512]" />
+}
+
 export default function App() {
-  const [gameState, setGameState] = useState('title')
+  const [gameState, setGameState] = useState('opening')
   const [players, setPlayers] = useState([])
+  const [roster, setRoster] = useState(null)
   const [currentRound, setCurrentRound] = useState(1)
   const [cityFallen, setCityFallen] = useState(false)
   const [firstToEnter, setFirstToEnter] = useState(null)
@@ -41,25 +53,15 @@ export default function App() {
 
   /* ------------------------------------------------------------- setup */
 
-  const startGame = useCallback((selectedIds) => {
-    const initialPlayers = allCharacters
-      .filter((c) => selectedIds.includes(c.id))
-      .map((char) => ({
-        ...char,
-        attackChoice: null,
-        shipId: null,
-        stage: 0,
-        status: 'ready',
-        rollHistory: [],
-      }))
-    setPlayers(initialPlayers)
-    setGameState('attack-choice')
-  }, [])
-
-  const chooseAttackType = useCallback((playerId, type) => {
-    setPlayers((prev) =>
-      prev.map((p) => (p.id === playerId ? { ...p, attackChoice: type } : p))
-    )
+  /**
+   * The opening hands back a fully-decided player list: everyone's
+   * attackChoice is already 'land', 'sea' or 'sit_out'. There is no separate
+   * declaration screen any more.
+   */
+  const beginRound = useCallback((decidedPlayers, chosenRoster) => {
+    setRoster(chosenRoster)
+    setPlayers(decidedPlayers)
+    setGameState('execute')
   }, [])
 
   /* ------------------------------------------------- round resolution */
@@ -129,7 +131,7 @@ export default function App() {
         })
         setPlayers(penalizedPlayers)
         setCurrentRound((r) => r + 1)
-        setGameState('attack-choice')
+        setGameState('opening')
       } else {
         setPlayers(updatedPlayers)
         setGameState('bribery')
@@ -140,8 +142,8 @@ export default function App() {
 
   /* --------------------------------------------------------- execution */
 
-  const executeAttack = useCallback(() => {
-    const attackers = players.filter((p) => p.attackChoice !== 'sit_out')
+  const executeAttack = useCallback((source) => {
+    const attackers = source.filter((p) => p.attackChoice !== 'sit_out')
 
     if (attackers.length === 0) {
       setFinalSummary(['No one attacked! The crusade has failed.'])
@@ -193,7 +195,7 @@ export default function App() {
     } else {
       finishRound(queue)
     }
-  }, [players, finishRound])
+  }, [finishRound])
 
   const SEQUENCE_SCREENS = {
     land: 'land-assault',
@@ -247,8 +249,9 @@ export default function App() {
   /* ------------------------------------------------------------- reset */
 
   const resetGame = useCallback(() => {
-    setGameState('title')
+    setGameState('opening')
     setPlayers([])
+    setRoster(null)
     setCurrentRound(1)
     setCityFallen(false)
     setFirstToEnter(null)
@@ -264,24 +267,19 @@ export default function App() {
 
   /* ------------------------------------------------------------ render */
 
-  const charactersForSelect = useMemo(() => allCharacters, [])
-
   switch (gameState) {
-    case 'title':
-      return <TitleScreen onBegin={() => setGameState('character-select')} />
-
-    case 'character-select':
-      return <CharacterSelect allCharacters={charactersForSelect} onStart={startGame} />
-
-    case 'attack-choice':
+    case 'opening':
       return (
-        <AttackDeclaration
-          players={players}
-          currentRound={currentRound}
-          onChoose={chooseAttackType}
-          onExecute={executeAttack}
+        <Opening
+          key={`round-${currentRound}`}
+          round={currentRound}
+          roster={roster}
+          onComplete={beginRound}
         />
       )
+
+    case 'execute':
+      return <RunRound players={players} onRun={executeAttack} />
 
     case 'land-assault':
       return <LandAssault stages={landStages} onComplete={nextSequence} />

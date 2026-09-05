@@ -1,22 +1,19 @@
 /**
- * Constantinople, seen whole.
+ * The geography of Constantinople and its waters.
  *
- * The governing facts, all of which change what shapes you reach for:
+ * The thing that has to be right, because everything else reads off it:
+ * Constantinople is not an island. It sits at the eastern end of a European
+ * landmass, and the Theodosian land walls exist precisely because there is
+ * open ground — Thrace — on the other side of them. Beyond the walls is an
+ * army's approach, not water.
  *
- *  - The skyline is domes, not spires. Hundreds of them.
- *  - There are no minarets. They arrive with the Ottoman conquest in 1453,
- *    nearly 250 years after this scene.
- *  - The city sits on a triangular peninsula: the Golden Horn to the north,
- *    the Sea of Marmara to the south, the Theodosian land walls closing the
- *    western base, and Seraglio Point at the eastern tip.
- *  - Hagia Sophia is the one dominant landmark — a shallow dome on a windowed
- *    drum, flanked by two half-domes — standing near the tip beside the
- *    Hippodrome and the Great Palace.
- *  - Blachernae holds the north-west corner, where the land walls meet the
- *    water.
+ * The Golden Horn is an inlet, not a strait. It opens off the Bosphorus at the
+ * east and runs inland to the north-west, where it ends. That means the land
+ * north of the Horn — Galata and Pera, where the crusader camp stood — joins
+ * the same European landmass around the head of the inlet. Europe is therefore
+ * one shape with a notch cut into it, not two shapes with a channel between.
  *
- * The townscape is merged into a single vertex-coloured geometry so several
- * hundred buildings cost one draw call.
+ * East of the Bosphorus is Asia. South of the peninsula is the Sea of Marmara.
  */
 
 import * as THREE from 'three'
@@ -48,70 +45,179 @@ function paint(geometry, hex) {
   return geometry
 }
 
-/** The peninsula outline, west (land walls) to east (Seraglio Point). */
-export const PENINSULA = [
-  [-31, -20.5],
-  [-14, -17.5],
-  [4, -13],
-  [19, -8.5],
-  [31, -2.5],
-  [33.5, 1.5],
-  [22, 8],
-  [6, 13.5],
-  [-12, 18],
-  [-31, 20.5],
+/* --------------------------------------------------------------- outlines */
+
+/**
+ * The European landmass, traced as one closed outline:
+ *   Marmara coast running east → Seraglio Point → back west along the Horn's
+ *   south shore → around the head of the Horn → east again along its north
+ *   shore (Galata) → Galata Point → north up the Bosphorus → far inland.
+ * The Golden Horn is the notch this leaves behind.
+ */
+export const EUROPE = [
+  // Marmara coast, west to east
+  [-104, 48],
+  [-72, 41],
+  [-50, 33],
+  [-31, 25.5],
+  [-14, 20.5],
+  [2, 16],
+  [16, 10.5],
+  [27, 5],
+  // Seraglio Point — the eastern tip of the peninsula
+  [34, 1],
+  [35.5, -1.5],
+  // Golden Horn, south shore: east back to west
+  [27, -5],
+  [14, -9.5],
+  [0, -13.5],
+  [-16, -17.5],
+  [-31, -21.5],
+  [-45, -25],
+  [-56, -28.5],
+  // Head of the Horn — the inlet ends here, and the land joins around it
+  [-63, -31.5],
+  // Golden Horn, north shore: west back to east
+  [-56, -36.5],
+  [-42, -35],
+  [-26, -32.5],
+  [-8, -29],
+  [10, -25.5],
+  [24, -22],
+  [31, -20],
+  // Galata Point, where the Horn meets the Bosphorus
+  [36, -18],
+  // Bosphorus, European bank running north
+  [39, -30],
+  [41, -56],
+  [41, -95],
+  // Inland
+  [-104, -95],
 ]
 
-/** Land surface of the peninsula, with a little relief inland. */
-export function buildPeninsula({ thickness = 1.6 } = {}) {
-  const shape = new THREE.Shape()
-  shape.moveTo(PENINSULA[0][0], PENINSULA[0][1])
-  for (let i = 1; i < PENINSULA.length; i++) shape.lineTo(PENINSULA[i][0], PENINSULA[i][1])
-  shape.closePath()
+/** Asia, across the Bosphorus. */
+export const ASIA = [
+  [55, -95],
+  [112, -95],
+  [112, 66],
+  [62, 66],
+  [56, 34],
+  [52, 8],
+  [54, -14],
+  [52, -40],
+  [55, -66],
+]
 
-  const g = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false })
-  // Shape is built in XY; lay it flat so Y is up.
-  g.rotateX(Math.PI / 2)
-  g.translate(0, thickness, 0)
-  paint(g, '#8d8a63')
-  g.computeVertexNormals()
-  return g
+/**
+ * The city itself: the peninsula between the Horn and the Marmara, closed at
+ * the west by the land walls. Used for placing buildings and running the sea
+ * walls — not for the land, which is part of EUROPE.
+ */
+export const PENINSULA = [
+  [-31, -21.5],
+  [-16, -17.5],
+  [0, -13.5],
+  [14, -9.5],
+  [27, -5],
+  [35.5, -1.5],
+  [34, 1],
+  [27, 5],
+  [16, 10.5],
+  [2, 16],
+  [-14, 20.5],
+  [-31, 25.5],
+]
+
+/** Galata and Pera, the shore north of the Horn where the camp stood. */
+export const GALATA = [
+  [-34, -34],
+  [-18, -31],
+  [-2, -28],
+  [14, -24.8],
+  [31, -20.4],
+  [36.5, -18.4],
+  [38, -28],
+  [22, -32],
+  [4, -35.5],
+  [-16, -38],
+  [-34, -40],
+]
+
+/** Where the land walls stand, and how far they run. */
+export const LAND_WALL_X = -31
+export const LAND_WALL_FROM = -21.5
+export const LAND_WALL_TO = 25.5
+
+/* ---------------------------------------------------------------- terrain */
+
+/** Sea level, and the height of the flat coastal land. */
+export const SHORE_Y = 1.6
+
+/**
+ * The city stands on a ridge — the "seven hills" — so the ground rises inland
+ * from the shore. This is the surface buildings sit on, and it is matched by
+ * an actual ridge mesh in the scene so nothing floats above the terrain.
+ */
+export function groundHeight(x, z) {
+  const u = (x - 6) / 27
+  const v = (z - 1.5) / 9.5
+  const r = 1 - u * u - v * v
+  return SHORE_Y + (r > 0 ? Math.sqrt(r) * 0.95 : 0)
 }
 
-/** Where the ground is, given how far inland — the city sits on a low ridge. */
-export function groundHeight(x, z, base = 1.6) {
-  const ridge = Math.exp(-Math.pow((z + 1) / 11, 2)) * 2.4
-  const rise = Math.exp(-Math.pow((x - 12) / 26, 2)) * 1.1
-  return base + ridge + rise
-}
+export const RIDGE = { cx: 6, cz: 1.5, rx: 27, rz: 9.5, height: 0.95 }
 
-/** Is this point inside the peninsula outline? */
-export function insidePeninsula(x, z, margin = 2) {
+/* ------------------------------------------------------------- point tests */
+
+export function insidePolygon(points, x, z) {
   let inside = false
-  for (let i = 0, j = PENINSULA.length - 1; i < PENINSULA.length; j = i++) {
-    const [xi, zi] = PENINSULA[i]
-    const [xj, zj] = PENINSULA[j]
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, zi] = points[i]
+    const [xj, zj] = points[j]
     const hit = zi > z !== zj > z && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi
     if (hit) inside = !inside
   }
-  if (!inside) return false
-  // Keep a margin in from the coast so nothing straddles the shoreline.
-  for (let i = 0, j = PENINSULA.length - 1; i < PENINSULA.length; j = i++) {
-    const [xi, zi] = PENINSULA[i]
-    const [xj, zj] = PENINSULA[j]
+  return inside
+}
+
+/** Inside the polygon, and at least `margin` clear of any edge. */
+export function wellInside(points, x, z, margin = 2) {
+  if (!insidePolygon(points, x, z)) return false
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, zi] = points[i]
+    const [xj, zj] = points[j]
     const dx = xj - xi
     const dz = zj - zi
     const t = Math.max(0, Math.min(1, ((x - xi) * dx + (z - zi) * dz) / (dx * dx + dz * dz)))
-    const px = xi + t * dx
-    const pz = zi + t * dz
-    if (Math.hypot(x - px, z - pz) < margin) return false
+    if (Math.hypot(x - (xi + t * dx), z - (zi + t * dz)) < margin) return false
   }
   return true
 }
 
+export const insidePeninsula = (x, z, margin = 2) => wellInside(PENINSULA, x, z, margin)
+
+/* --------------------------------------------------------------- landmass */
+
+/** Extrude a coastline outline into a landmass with cliff edges at the shore. */
+export function buildLandmass(points, { thickness = SHORE_Y, hex = '#8d8a63' } = {}) {
+  const shape = new THREE.Shape()
+  shape.moveTo(points[0][0], points[0][1])
+  for (let i = 1; i < points.length; i++) shape.lineTo(points[i][0], points[i][1])
+  shape.closePath()
+
+  const g = new THREE.ExtrudeGeometry(shape, { depth: thickness, bevelEnabled: false })
+  g.rotateX(Math.PI / 2) // shape is built in XY; lay it flat
+  g.translate(0, thickness, 0)
+  paint(g, hex)
+  g.computeVertexNormals()
+  return g
+}
+
+/* -------------------------------------------------------------- townscape */
+
 /**
- * The townscape: dense housing with domed churches scattered through it.
- * Everything merges into one geometry.
+ * The townscape: dense housing with domed churches through it. Merged into one
+ * vertex-coloured geometry, so several hundred buildings cost one draw call.
  */
 export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
   const rand = rng(seed)
@@ -119,14 +225,13 @@ export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
 
   const pick = () => {
     for (let tries = 0; tries < 40; tries++) {
-      const x = -31 + rand() * 65
-      const z = -21 + rand() * 42
-      if (insidePeninsula(x, z, 2.2)) return [x, z]
+      const x = -31 + rand() * 68
+      const z = -22 + rand() * 48
+      if (insidePeninsula(x, z, 2.0)) return [x, z]
     }
     return null
   }
 
-  // Ordinary housing: low blocks with tiled roofs.
   for (let i = 0; i < houses; i++) {
     const spot = pick()
     if (!spot) continue
@@ -147,8 +252,8 @@ export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
     parts.push(roof)
   }
 
-  // Churches: a drum and a shallow dome. This is the shape that makes the
-  // skyline read as Byzantine rather than as a western European town.
+  // The shape that makes the skyline Byzantine rather than western European:
+  // a drum carrying a shallow dome. No spires anywhere in this city.
   for (let i = 0; i < churches; i++) {
     const spot = pick()
     if (!spot) continue
@@ -172,6 +277,43 @@ export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
     paint(dome, rand() > 0.82 ? PALETTE.domeGold : PALETTE.domeLead)
     dome.translate(x, y + h + 0.42, z)
     parts.push(dome)
+  }
+
+  const merged = mergeGeometries(parts, false)
+  parts.forEach((p) => p.dispose())
+  merged.computeVertexNormals()
+  return merged
+}
+
+/** Galata's houses, on the far shore. Merged the same way. */
+export function buildGalataTown({ seed = 41, houses = 90 } = {}) {
+  const rand = rng(seed)
+  const parts = []
+
+  for (let i = 0; i < houses; i++) {
+    let spot = null
+    for (let tries = 0; tries < 30; tries++) {
+      const x = -32 + rand() * 68
+      const z = -39 + rand() * 20
+      if (wellInside(GALATA, x, z, 1.4)) {
+        spot = [x, z]
+        break
+      }
+    }
+    if (!spot) continue
+    const [x, z] = spot
+    const w = 0.45 + rand() * 0.6
+    const h = 0.45 + rand() * 0.8
+
+    const body = new THREE.BoxGeometry(w, h, w)
+    paint(body, rand() > 0.5 ? '#cdc0a4' : '#bfb197')
+    body.translate(x, SHORE_Y + h / 2, z)
+    parts.push(body)
+
+    const roof = new THREE.BoxGeometry(w * 1.15, 0.14, w * 1.15)
+    paint(roof, '#9d6a4c')
+    roof.translate(x, SHORE_Y + h + 0.07, z)
+    parts.push(roof)
   }
 
   const merged = mergeGeometries(parts, false)

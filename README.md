@@ -31,7 +31,7 @@ Requires Node. If the machine has none, `brew install node`.
 | `src/game/rules.js` | **The authoritative dice logic**, preserved verbatim from the original `index.html`. Do not change the thresholds or survivor gating here. |
 | `src/game/stages.js` | Reshapes the flat roll queue into per-stage click rounds. Decides nothing; only regroups. |
 | `src/data/characters.json` | The 52-character roster. |
-| `src/screens/` | One file per screen in the flow. |
+| `src/screens/` | One file per screen. `Opening.jsx` is the title and setup; `CityBackdrop.jsx` is the city shot they play over. |
 | `src/three/` | Scenes (land lane, sea lane, city panorama), palette, runtime textures, renderer config. |
 | `src/three/geometry/` | Procedural wall, tower, pawn, die and defender geometry. |
 | `DECISIONS.md` | Every design and historical call made during the build, and why. |
@@ -55,8 +55,9 @@ node scripts/check-rules.mjs
 
 ## State of the build
 
-**Working:** the title screen (isometric establishing shot with a crusader-cam
-inset on the camp and fleet at Galata), character select, attack declaration, the full land wall sequence
+**Working:** the opening — an isometric establishing shot of the city with a
+crusader-cam inset, over which the whole setup runs (how many crusaders, who
+refuses, land/sea/split, and naming the smaller group on a split) — the full land wall sequence
 (staging → outer wall → inner wall → city gates), the full sea wall sequence
 (fleet stands in → piloting → boarding over the flying bridge → breaking
 through), per-stage camera framing on both, click-to-resolve tokens in any
