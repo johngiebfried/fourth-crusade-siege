@@ -13,6 +13,7 @@ import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { LandTerrain, LANE, HEIGHTS } from '../three/LandScene.jsx'
 import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
+import { SiegeLadder } from '../three/geometry/SiegeLadder.jsx'
 import { Die } from '../three/geometry/Die.jsx'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
 import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
@@ -56,6 +57,20 @@ function positionFor(level, index, count) {
       return [LANE.campX + row * 2.6, 0, z + (row - 1) * 1.4]
     }
   }
+}
+
+/**
+ * The wall a stage is fought against, and the ladder that gets raised for it.
+ * The gates are a gate — nothing to scale — so that stage raises none.
+ */
+function ladderFor(stageKey, z) {
+  if (stageKey === 'first-wall') {
+    return { position: [LANE.outerWallX - 1.05, 0, z], height: HEIGHTS.outerWall + 1.0 }
+  }
+  if (stageKey === 'second-wall') {
+    return { position: [LANE.innerWallX - 1.55, 0, z], height: HEIGHTS.innerWall + 1.2 }
+  }
+  return null
 }
 
 /** Where the die is thrown for a pawn resolving at a given level. */
@@ -193,7 +208,7 @@ function Lighting() {
 
 /* ------------------------------------------------------------------ scene */
 
-function AssaultScene({ pawns, activeRoll, bursts, focus, onPawnClick }) {
+function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }) {
   return (
     <>
       <CameraRig focus={focus} />
@@ -210,6 +225,10 @@ function AssaultScene({ pawns, activeRoll, bursts, focus, onPawnClick }) {
           plateLift={p.plateLift}
           onClick={() => onPawnClick(p.id)}
         />
+      ))}
+
+      {ladders.map((l) => (
+        <SiegeLadder key={l.key} position={l.position} height={l.height} phase={l.phase} />
       ))}
 
       {bursts.map((b) => (
@@ -238,6 +257,7 @@ export default function LandAssault({ stages, onComplete }) {
   const [goneIds, setGoneIds] = useState(() => new Set())
   const [activeRoll, setActiveRoll] = useState(null)
   const [bursts, setBursts] = useState([])
+  const [ladders, setLadders] = useState([])
   const [busy, setBusy] = useState(false)
 
   const stage = stages[stageIndex] || null
@@ -306,6 +326,14 @@ export default function LandAssault({ stages, onComplete }) {
       const level = levels[playerId] ?? LEVELS.camp
       const pawnPos = positionFor(level, slots.get(playerId) ?? 0, stageIds.length)
 
+      const ladder = ladderFor(stage.key, pawnPos[2])
+      if (ladder) {
+        setLadders((l) => [
+          ...l,
+          { key: `${stage.key}-${playerId}`, playerId, phase: 'rising', ...ladder },
+        ])
+      }
+
       setActiveRoll({
         entry,
         phase: 'tumbling',
@@ -320,9 +348,17 @@ export default function LandAssault({ stages, onComplete }) {
       setTimeout(() => {
         if (entry.success) {
           setLevels((l) => ({ ...l, [playerId]: level + 1 }))
+          setLadders((l) =>
+            l.map((x) => (x.playerId === playerId && x.phase === 'rising' ? { ...x, phase: 'up' } : x))
+          )
         } else {
           setDissolvingIds((d) => new Set(d).add(playerId))
           setBursts((b) => [...b, { key: `${playerId}-${Date.now()}`, position: pawnPos }])
+          setLadders((l) =>
+            l.map((x) =>
+              x.playerId === playerId && x.phase === 'rising' ? { ...x, phase: 'falling' } : x
+            )
+          )
         }
         setResolvedIds((r) => new Set(r).add(playerId))
       }, BEAT.tumble + BEAT.hold)
@@ -344,6 +380,12 @@ export default function LandAssault({ stages, onComplete }) {
         done.add(playerId)
         if (stageIds.every((id) => done.has(id))) {
           setTimeout(advanceStage, 1100)
+        }
+        if (!entry.success) {
+          setTimeout(
+            () => setLadders((l) => l.filter((x) => !(x.playerId === playerId && x.phase === 'falling'))),
+            1400
+          )
         }
       }, BEAT.tumble + BEAT.hold + BEAT.resolve)
     },
@@ -368,6 +410,7 @@ export default function LandAssault({ stages, onComplete }) {
       >
         <AssaultScene
           pawns={pawns}
+          ladders={ladders}
           activeRoll={activeRoll}
           bursts={bursts}
           focus={stage?.key}

@@ -307,3 +307,33 @@ tuning. Around thirty degrees is the current setting. Lower and the wall lines
 overlap into one mass; higher and you look down onto their tops and lose the
 faces, and the horizon leaves the frame entirely. A steeper on-screen diagonal
 costs wall face, one for one.
+
+
+---
+
+## Revision: ladders, ground detail, and how far the walls run
+
+**The walls now run far past every edge of the frame.** Lane depth went from 46
+to 150 units, with towers and garrison spread to match. The old length still
+let the far end of the chain appear at the top of the shot; nothing is cut off
+now.
+
+**Ladders are raised during the assault, not scenery.** A ladder comes up out
+of the grass as a crusader's attempt begins, stays against the wall if they get
+over, and topples back if they do not. The wall therefore accumulates the
+ladders of everyone who made it, which shows the assault's progress without any
+extra interface. The gates stage raises none — a gate is not scaled.
+
+**Ground detail, easy tier.** Grass is one instanced mesh — fourteen thousand
+tufts in a single draw call, with per-instance tint so the field is not one
+flat green. Two mistakes worth recording: blades were first sized for a much
+bigger world (a crusader token is only about 1.15 units, so grass must be a
+tenth of that, not half), and the material had `vertexColors` set while the
+geometry carried no colour attribute, which rendered the whole field black.
+Instance colour is applied by the renderer independently of that flag.
+
+**The moat is a lit material with waves injected into its shader**, not a raw
+ShaderMaterial. A raw shader receives no lighting and no fog, which made the
+ditch read as a black trench cut through the field rather than as water sitting
+in the landscape. Still no textures anywhere — the ripples and the glint on the
+crests are arithmetic.

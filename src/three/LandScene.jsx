@@ -23,6 +23,7 @@ import { useMemo } from 'react'
 import { PALETTE } from './palette.js'
 import { buildBandedWall, buildTower, buildGround } from './geometry/wallBuilder.js'
 import { RampartGarrison } from './geometry/Defender.jsx'
+import { GrassField, MoatWater } from './geometry/Field.jsx'
 
 /** Lane landmarks, in world X. Everything else positions off these. */
 export const LANE = {
@@ -34,8 +35,9 @@ export const LANE = {
   innerWallX: 0,
   gateX: 9,
   cityX: 14,
-  /** Wall length along Z. Deliberately longer than the camera can see. */
-  laneDepth: 46,
+  /** Wall length along Z. Deliberately far longer than the camera sees,
+   *  so no end of the chain is ever in frame. */
+  laneDepth: 150,
 }
 
 export const HEIGHTS = {
@@ -47,8 +49,8 @@ export const HEIGHTS = {
 }
 
 /** Towers march along the wall; the outer line's are smaller and interleaved. */
-const INNER_TOWERS = 8
-const OUTER_TOWERS = 8
+const INNER_TOWERS = 26
+const OUTER_TOWERS = 26
 
 function Walls() {
   const outer = useMemo(
@@ -182,23 +184,23 @@ function Ground() {
   // Explicit spans, so no slab is drawn over the one next to it, and all of
   // them run well past the frame.
   const span = (from, to, hex, y = 0) =>
-    buildGround({ width: to - from, depth: 150, hex, x: (from + to) / 2, y })
+    buildGround({ width: to - from, depth: 320, hex, x: (from + to) / 2, y })
 
   const moatFrom = LANE.moatX - LANE.moatWidth / 2
   const moatTo = LANE.moatX + LANE.moatWidth / 2
 
-  const field = useMemo(() => span(-70, moatFrom, PALETTE.fieldGrass), [])
-  const moat = useMemo(() => span(moatFrom, moatTo, PALETTE.moatWater, -0.6), [])
+  const field = useMemo(() => span(-120, moatFrom, PALETTE.fieldGrass), [])
+  const moatBed = useMemo(() => span(moatFrom, moatTo, '#3a5148', -0.7), [])
   const berm = useMemo(() => span(moatTo, LANE.outerWallX - 0.7, PALETTE.fieldDirt), [])
   const terrace = useMemo(
     () => span(LANE.outerWallX + 0.7, LANE.innerWallX - 1.1, PALETTE.fieldDirt),
     []
   )
-  const inside = useMemo(() => span(LANE.innerWallX + 1.1, 80, PALETTE.fieldDirt), [])
+  const inside = useMemo(() => span(LANE.innerWallX + 1.1, 120, PALETTE.fieldDirt), [])
 
   return (
     <group>
-      {[field, moat, berm, terrace, inside].map((g, i) => (
+      {[field, moatBed, berm, terrace, inside].map((g, i) => (
         <mesh key={i} geometry={g} receiveShadow>
           <meshLambertMaterial vertexColors />
         </mesh>
@@ -212,12 +214,12 @@ function CityBackdrop() {
   const buildings = useMemo(() => {
     const out = []
     const rand = (n) => Math.abs((Math.sin(n * 127.1) * 43758.5453) % 1)
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 150; i++) {
       const r = rand(i)
       const r2 = rand(i + 40)
       out.push({
         x: LANE.cityX + 1 + r * 24,
-        z: -30 + r2 * 60,
+        z: -95 + r2 * 190,
         w: 1.6 + r * 2.4,
         h: 1.6 + r2 * 2.8,
         domed: i % 3 !== 2,
@@ -260,94 +262,62 @@ function CityBackdrop() {
   )
 }
 
-const rungHeights = (h) => {
-  const out = []
-  for (let i = 1; i * 0.42 < h; i++) out.push(i * 0.42)
-  return out
-}
-
-function Ladder({ x, z, height, lean }) {
-  return (
-    <group position={[x, 0, z]} rotation={[0, 0, lean]}>
-      {[-0.22, 0.22].map((off, i) => (
-        <mesh key={i} position={[off, height / 2, 0]} castShadow>
-          <cylinderGeometry args={[0.05, 0.05, height, 6]} />
-          <meshLambertMaterial color={PALETTE.hullTimber} />
-        </mesh>
-      ))}
-      {rungHeights(height).map((ry, i) => (
-        <mesh key={`r${i}`} position={[0, ry, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.035, 0.035, 0.44, 5]} />
-          <meshLambertMaterial color={PALETTE.hullTimberDark} />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-/** Ladders along both walls, so the climb has something to climb. */
-function Ladders() {
-  const outerZs = [-16, -8, -1, 6, 14]
-  const innerZs = [-13, -5, 3, 11, 18]
-  return (
-    <group>
-      {outerZs.map((z, i) => (
-        <Ladder
-          key={`o${i}`}
-          x={LANE.outerWallX - 1.05}
-          z={z}
-          height={HEIGHTS.outerWall + 1.0}
-          lean={0.2}
-        />
-      ))}
-      {innerZs.map((z, i) => (
-        <Ladder
-          key={`i${i}`}
-          x={LANE.innerWallX - 1.6}
-          z={z}
-          height={HEIGHTS.innerWall + 1.2}
-          lean={0.17}
-        />
-      ))}
-    </group>
-  )
-}
-
 /** Static scenery for the land lane. Contains no game state. */
 export function LandTerrain() {
   return (
     <group>
       <Ground />
+      <MoatWater x={LANE.moatX} width={LANE.moatWidth} />
+
+      {/* Grass over the ground the army crosses, and on the terrace between
+          the two wall lines. */}
+      <GrassField
+        xFrom={-46}
+        xTo={LANE.moatX - LANE.moatWidth / 2 - 0.2}
+        zFrom={-70}
+        zTo={70}
+        count={14000}
+        seed={11}
+      />
+      <GrassField
+        xFrom={LANE.moatX + LANE.moatWidth / 2 + 0.3}
+        xTo={LANE.outerWallX - 0.9}
+        zFrom={-70}
+        zTo={70}
+        count={3200}
+        seed={29}
+        colour="#7a7d4c"
+      />
+
       <Walls />
       <Gate />
-      <Ladders />
       <CityBackdrop />
 
       {/* Defenders hold both wall lines and the gate. */}
       <RampartGarrison
         x={LANE.outerWallX}
         y={HEIGHTS.outerWall}
-        zFrom={-20}
-        zTo={20}
-        count={11}
+        zFrom={-70}
+        zTo={70}
+        count={34}
         seed={2}
         banners={0}
       />
       <RampartGarrison
         x={LANE.innerWallX}
         y={HEIGHTS.innerWall}
-        zFrom={-21}
-        zTo={21}
-        count={14}
+        zFrom={-72}
+        zTo={72}
+        count={44}
         seed={5}
         banners={3}
       />
       <RampartGarrison
         x={LANE.gateX}
         y={HEIGHTS.gate}
-        zFrom={-14}
-        zTo={14}
-        count={7}
+        zFrom={-60}
+        zTo={60}
+        count={22}
         seed={9}
         banners={2}
       />
