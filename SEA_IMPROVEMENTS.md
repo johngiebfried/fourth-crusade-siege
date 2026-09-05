@@ -51,16 +51,16 @@ The Horn is most of the frame here, and it is currently a flat coloured slab.
       a lit material with wave displacement injected into its shader, no
       textures. Scale the swell up — this is open water, not a ditch.
 
-- [ ] **B2. Wakes behind moving ships.** A tapering V of lighter water,
+- [x] **B2. Wakes behind moving ships.** A tapering V of lighter water,
       strongest while a ship is under way and fading as it comes to rest.
 
-- [ ] **B3. Foam where hull meets water**, and a wash against the wall foot.
+- [x] **B3. Foam where hull meets water**, and a wash against the wall foot.
 
 - [x] **B4. Ships should ride the water they are actually on** — tie the
       existing bob to the same wave function so hulls sit in the swell rather
       than on top of it.
 
-- [ ] **B5. A sinking ship should disturb the water it goes down in** — the
+- [x] **B5. A sinking ship should disturb the water it goes down in** — the
       splash exists, but the surface around it does not react.
 
 ---
@@ -80,7 +80,7 @@ The Horn is most of the frame here, and it is currently a flat coloured slab.
 - [x] **C4. Rigging.** Shrouds from the mast-head to the rail, a forestay and
       backstay. Lines do more for a ship's silhouette than almost anything.
 
-- [ ] **C5. Oars** on the lower hull, since these are being rowed into
+- [x] **C5. Oars** on the lower hull, since these are being rowed into
       position rather than sailed.
 
 - [x] **C6. Waterline detail** — a painted band, and the hull sitting at a
@@ -101,12 +101,12 @@ equivalents are all still static.
       to a fixed angle rather than to wherever the wall is, which is the same
       bug the ladders had.
 
-- [ ] **D3. Grapples and lines** thrown to the rampart before boarding.
+- [x] **D3. Grapples and lines** thrown to the rampart before boarding.
 
 - [x] **D4. Decided: failed boarders keep dissolving.** Clean, and the
       ambiguity is the point — the module does not claim they died.
 
-- [ ] **D5. Defenders should react at the point of contact** — crowding to
+- [x] **D5. Defenders should react at the point of contact** — crowding to
       the threatened stretch of rampart rather than standing evenly spaced.
 
 ---
@@ -123,7 +123,7 @@ equivalents are all still static.
 - [x] **E3. The city rising behind the sea wall** — domes and roofs, as the
       land lane has.
 
-- [ ] **E4. Smoke** over the city from the earlier fires.
+- [x] **E4. Smoke** over the city from the earlier fires.
 
 ---
 
@@ -156,10 +156,31 @@ from above.
 
 ## Still open
 
-- [ ] **B2.** Wakes behind moving ships.
-- [ ] **B3.** Foam at the hull and against the wall foot.
-- [ ] **B5.** The surface reacting where a ship goes down.
-- [ ] **C5.** Oars.
-- [ ] **D3.** Grapples and lines thrown before boarding.
-- [ ] **D5.** Defenders crowding to the threatened stretch of rampart.
-- [ ] **E4.** Smoke over the city from the earlier fires.
+Nothing from the original list. What follows was completed in a later pass:
+
+- [x] **B2.** Wakes behind moving ships.
+- [x] **B3.** Foam at the hull and against the wall foot.
+- [x] **B5.** The surface reacting where a ship goes down.
+- [x] **C5.** Oars.
+- [x] **D3.** Grapples and lines thrown before boarding.
+- [x] **D5.** Defenders crowding to the threatened stretch of rampart.
+- [x] **E4.** Smoke over the city from the earlier fires.
+
+
+---
+
+## Second pass — everything else on the list
+
+- **Wash and wake.** A foam collar at each hull's waterline, and a wake astern
+  that fades as the ship comes to rest.
+- **The water reacts to a sinking.** An expanding ring of disturbed surface
+  spreads from where a ship goes down, alongside the splash.
+- **Oars.** These ships are being rowed into position, not sailed, so the oars
+  are the reason they are moving at all.
+- **Grapples** thrown up to the rampart alongside the gangway.
+- **Defenders mass at the contact point.** The standing garrison is evenly
+  spaced along the whole wall, which is right while the fleet is standing in
+  and wrong the moment it arrives. A second, denser line appears over the
+  threatened bays once there is something to defend against.
+- **Smoke** standing over the city from the fires of the first assault, in both
+  lanes.

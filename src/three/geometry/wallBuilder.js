@@ -127,17 +127,51 @@ function wallParts({
     const pitch = merlonWidth + merlonGap
     const runs = Math.floor(depth / pitch)
     const startZ = z - (runs * pitch) / 2 + pitch / 2
+
+    // The parapet stands on the outer edge of the wall-walk rather than across
+    // its full thickness, so the walk itself reads as a surface men stand on
+    // and the merlons throw a shadow across it.
+    const parapetW = topW * 0.42
+    const parapetX = x - topW * 0.29
+
+    // Walk floor, set a little below the parapet.
+    parts.push(
+      courseBox(topW, depth, 0.16, PALETTE.towerStone, x, capY + 0.08, z, {
+        tone: 0.9,
+        aoHeight: 0.5,
+      })
+    )
+    // Inner kerb, so the walk is bounded on both sides.
+    parts.push(
+      courseBox(topW * 0.2, depth, merlonHeight * 0.5, PALETTE.wallStoneAlt, x + topW * 0.4,
+        capY + merlonHeight * 0.25 + 0.16, z, { tone: 0.88, aoHeight: 0.4 })
+    )
+
     for (let i = 0; i < runs; i++) {
       parts.push(
         courseBox(
-          topW,
+          parapetW,
           merlonWidth,
           merlonHeight,
           i % 2 === 0 ? PALETTE.wallStone : PALETTE.wallStoneAlt,
-          x,
-          capY + merlonHeight / 2,
+          parapetX,
+          capY + merlonHeight / 2 + 0.16,
           startZ + i * pitch,
           { tone: 0.96 + rand() * 0.1, aoHeight: 0.4 }
+        )
+      )
+      // An embrasure sill between every pair of merlons — the gap a defender
+      // actually shoots and looks through.
+      parts.push(
+        courseBox(
+          parapetW,
+          merlonGap,
+          merlonHeight * 0.32,
+          PALETTE.wallStoneAlt,
+          parapetX,
+          capY + merlonHeight * 0.16 + 0.16,
+          startZ + i * pitch + pitch / 2,
+          { tone: 0.82, aoHeight: 0.4 }
         )
       )
     }

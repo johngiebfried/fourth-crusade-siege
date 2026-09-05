@@ -167,3 +167,127 @@ export function RippleWater({
 export function MoatWater({ x, width, depth = 320, y = -0.1 }) {
   return <RippleWater x={x} width={width} depth={depth} y={y} swell={1} />
 }
+
+/* ------------------------------------------------------- water reactions */
+
+/**
+ * The disturbance a hull makes: a foam collar at the waterline, and a wake
+ * fanning out astern that fades as the ship comes to rest.
+ *
+ * Both are flat geometry with vertex colour, sitting just above the water
+ * surface. No textures, and nothing that needs a transparent sort beyond a
+ * single additive-ish layer.
+ */
+export function ShipWash({ length = 6.2, beam = 4.2, moving = 0 }) {
+  const wake = useRef()
+  const collar = useRef()
+
+  useFrame((state, delta) => {
+    if (wake.current) {
+      wake.current.material.opacity = THREE.MathUtils.damp(
+        wake.current.material.opacity,
+        0.34 * moving,
+        3,
+        delta
+      )
+      // Drift the wake backwards so it reads as being left behind.
+      wake.current.position.x = -length * 0.55 - moving * 1.2
+    }
+    if (collar.current) {
+      const t = state.clock.elapsedTime
+      collar.current.scale.setScalar(1 + Math.sin(t * 1.6) * 0.02)
+      collar.current.material.opacity = 0.3 + 0.08 * Math.sin(t * 1.6)
+    }
+  })
+
+  return (
+    <group>
+      {/* Foam collar at the waterline. */}
+      <mesh ref={collar} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.09, 0]}>
+        <ringGeometry args={[beam * 0.34, beam * 0.52, 28]} />
+        <meshBasicMaterial
+          color="#cfe0e2"
+          transparent
+          opacity={0.3}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Wake astern, tapering away. */}
+      <mesh ref={wake} rotation={[-Math.PI / 2, 0, 0]} position={[-length * 0.55, 0.08, 0]}>
+        <planeGeometry args={[length * 2.4, beam * 1.15]} />
+        <meshBasicMaterial
+          color="#bcd3d6"
+          transparent
+          opacity={0}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+/**
+ * The water closing over a ship that has gone down: an expanding ring of
+ * disturbed surface, on its own clock.
+ */
+export function SinkRing({ position }) {
+  const ref = useRef()
+  const clock = useRef(0)
+
+  useFrame((_, delta) => {
+    if (!ref.current) return
+    clock.current += delta
+    const t = Math.min(1, clock.current / 3.4)
+    ref.current.scale.setScalar(0.5 + t * 5.5)
+    ref.current.material.opacity = 0.5 * (1 - t)
+  })
+
+  return (
+    <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={position}>
+      <ringGeometry args={[0.5, 0.95, 32]} />
+      <meshBasicMaterial color="#d8e6e6" transparent opacity={0.5} depthWrite={false} />
+    </mesh>
+  )
+}
+
+/**
+ * Smoke drifting over the city from the fires of the earlier assault.
+ * Soft geometry rather than a texture: overlapping low-opacity spheres,
+ * turning slowly and rising.
+ */
+export function Smoke({ plumes = [] }) {
+  const group = useRef()
+
+  useFrame((state) => {
+    if (!group.current) return
+    const t = state.clock.elapsedTime
+    group.current.children.forEach((child, i) => {
+      child.rotation.y = t * 0.06 + i
+      child.position.y = child.userData.baseY + Math.sin(t * 0.25 + i) * 0.5
+    })
+  })
+
+  return (
+    <group ref={group}>
+      {plumes.map((p, i) => (
+        <group key={i} position={[p.x, p.y, p.z]} userData={{ baseY: p.y }}>
+          {[0, 1, 2, 3].map((j) => (
+            <mesh
+              key={j}
+              position={[Math.sin(j * 2.1) * p.r * 0.5, j * p.r * 0.75, Math.cos(j * 1.7) * p.r * 0.5]}
+            >
+              <sphereGeometry args={[p.r * (1 - j * 0.13), 9, 7]} />
+              <meshBasicMaterial
+                color="#a9a49b"
+                transparent
+                opacity={0.16 - j * 0.028}
+                depthWrite={false}
+              />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  )
+}

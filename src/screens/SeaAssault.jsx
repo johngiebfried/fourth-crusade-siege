@@ -16,6 +16,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { SeaTerrain } from '../three/SeaScene.jsx'
+import { buildGarrison } from '../three/geometry/garrisonBuilder.js'
 import {
   SEA_LANE,
   SEA_HEIGHTS,
@@ -25,6 +26,7 @@ import {
   cameraFor,
 } from '../three/lane.js'
 import { Ship, SplashBurst } from '../three/geometry/Ship.jsx'
+import { SinkRing, Smoke } from '../three/geometry/Field.jsx'
 import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
 import { Die } from '../three/geometry/Die.jsx'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
@@ -189,12 +191,64 @@ function Lighting() {
 
 /* ------------------------------------------------------------------ scene */
 
-function SeaScene({ ships, crew, activeRoll, bursts, splashes, focus, onShipClick, onCrewClick }) {
+/**
+ * Defenders massing on the stretch of rampart the ships have come alongside.
+ *
+ * The standing garrison is evenly spaced along the whole wall, which is right
+ * while the fleet is still standing in and wrong the moment it arrives. This
+ * is a second, denser line over the threatened bays, and it appears only once
+ * there is something to defend against.
+ */
+function ContactGarrison({ zFrom, zTo, active }) {
+  const geometry = useMemo(
+    () => buildGarrison({
+      x: SEA_LANE.wallX,
+      y: SEA_HEIGHTS.wall,
+      zFrom,
+      zTo,
+      count: 22,
+      banners: 1,
+      seed: 77,
+    }),
+    [zFrom, zTo]
+  )
+  if (!active) return null
+  return (
+    <mesh geometry={geometry} castShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
+function SeaScene({
+  ships,
+  crew,
+  activeRoll,
+  bursts,
+  splashes,
+  focus,
+  contact,
+  onShipClick,
+  onCrewClick,
+}) {
   return (
     <>
       <CameraRig focus={focus} />
       <Lighting />
       <SeaTerrain />
+
+      {/* Smoke still standing over the city from the fires of the first
+          assault, the year before. */}
+      <ContactGarrison zFrom={contact.from} zTo={contact.to} active={contact.active} />
+
+      <Smoke
+        plumes={[
+          { x: 16, y: 6, z: -26, r: 2.6 },
+          { x: 24, y: 7, z: 14, r: 3.2 },
+          { x: 12, y: 5.5, z: 42, r: 2.2 },
+          { x: 30, y: 8, z: -60, r: 3.6 },
+        ]}
+      />
 
       {ships.map((s) => (
         <Ship
@@ -204,6 +258,8 @@ function SeaScene({ ships, crew, activeRoll, bursts, splashes, focus, onShipClic
           clickable={s.clickable}
           sinking={s.sinking}
           rampDown={s.rampDown}
+          moving={s.moving}
+          grappleReach={s.grappleReach}
           gangwayLength={GANGWAY.length}
           gangwayDrop={GANGWAY.drop}
           plateLift={s.plateLift}
@@ -229,7 +285,10 @@ function SeaScene({ ships, crew, activeRoll, bursts, splashes, focus, onShipClic
         <DissolveBurst key={b.key} position={b.position} />
       ))}
       {splashes.map((s) => (
-        <SplashBurst key={s.key} position={s.position} />
+        <group key={s.key}>
+          <SplashBurst position={s.position} />
+          <SinkRing position={[s.position[0], 0.12, s.position[2]]} />
+        </group>
       ))}
 
       {activeRoll && (
@@ -306,6 +365,9 @@ export default function SeaAssault({ sea, stages, onComplete }) {
             !resolvedIds.has(s.id),
           sinking: sinkingShips.has(s.id),
           rampDown: arrived,
+          // Under way until it has settled at the wall or in the line.
+          moving: sailedIn === 'done' ? (arrived ? 0.25 : 0.55) : 1,
+          grappleReach: arrived ? Math.max(0, SEA_LANE.wallX - SEA_LANE.wallWidth / 2 - (SEA_LANE.atWallX + 2.4)) : 0,
           plateLift: (slot % 3) * 0.75,
         }
       })
@@ -531,6 +593,15 @@ export default function SeaAssault({ sea, stages, onComplete }) {
   const remaining = stageIds.filter((id) => !resolvedIds.has(id)).length
   const focus = sailedIn === 'done' ? stage?.key : 'approach'
 
+  // The stretch of wall the ships have actually come alongside.
+  const contact = useMemo(() => {
+    const zs = shipViews.filter((s) => s.rampDown).map((s) => s.position[2])
+    const active = zs.length > 0 && (stage?.key === 'boarding' || stage?.key === 'breaking')
+    const from = zs.length ? Math.min(...zs) - 5 : -8
+    const to = zs.length ? Math.max(...zs) + 7 : 8
+    return { active, from, to }
+  }, [shipViews, stage])
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-slate-800">
       <Canvas shadows gl={RENDERER_PROPS} onCreated={configureRenderer}>
@@ -541,6 +612,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
           bursts={bursts}
           splashes={splashes}
           focus={focus}
+          contact={contact}
           onShipClick={resolvePiloting}
           onCrewClick={resolveCrew}
         />

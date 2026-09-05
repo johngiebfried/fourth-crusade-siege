@@ -25,7 +25,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { PALETTE } from './palette.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
-import { GrassField, MoatWater } from './geometry/Field.jsx'
+import { GrassField, MoatWater, Smoke } from './geometry/Field.jsx'
+import { buildSiegeCamp } from './geometry/siegeCamp.js'
 
 import {
   LANE,
@@ -257,6 +258,19 @@ function CityBackdrop() {
   )
 }
 
+/** The camp the army came from, and the engines drawn up in front of it. */
+function SiegeCamp() {
+  const geometry = useMemo(
+    () => buildSiegeCamp({ campX: LANE.campX - 11, engineX: LANE.campX - 5, seed: 5 }),
+    []
+  )
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
 /** Defenders on all three lines, merged into one geometry each. */
 function Garrisons() {
   const outer = useMemo(
@@ -337,11 +351,21 @@ export function LandTerrain() {
         colour="#7a7d4c"
       />
 
+      <SiegeCamp />
       <Walls />
       <Gate />
       <CityBackdrop />
 
       <Garrisons />
+
+      {/* Smoke standing over the city from the fires of the first assault. */}
+      <Smoke
+        plumes={[
+          { x: LANE.cityX + 6, y: 6, z: -34, r: 2.8 },
+          { x: LANE.cityX + 14, y: 7, z: 10, r: 3.4 },
+          { x: LANE.cityX + 4, y: 5.5, z: 46, r: 2.4 },
+        ]}
+      />
     </group>
   )
 }

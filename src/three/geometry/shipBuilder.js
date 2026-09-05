@@ -116,6 +116,23 @@ export function buildHull({ length = 5.2, beam = 1.9, depth = 1.5 } = {}) {
     }
   }
 
+  // Oars out along both sides. These ships are being rowed into position, not
+  // sailed, so the oars are the reason they are moving at all.
+  for (let i = 0; i < 6; i++) {
+    const x = -length * 0.22 + (i / 5) * length * 0.44
+    for (const side of [-1, 1]) {
+      const oar = new THREE.CylinderGeometry(0.035, 0.045, 2.5, 5)
+      oar.rotateX(side * 1.16)
+      oar.rotateZ(0.12)
+      oar.translate(x, depth * 0.98, side * (beam / 2) * 0.9)
+      parts.push(paint(oar, PALETTE.hullTimber))
+      const blade = new THREE.BoxGeometry(0.2, 0.5, 0.05)
+      blade.rotateX(side * 1.16)
+      blade.translate(x, depth * 0.32, side * (beam / 2 + 1.05))
+      parts.push(paint(blade, PALETTE.hullTimberDark))
+    }
+  }
+
   const merged = mergeGeometries(parts, false)
   parts.forEach((p) => p.dispose())
   merged.computeVertexNormals()

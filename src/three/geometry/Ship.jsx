@@ -17,6 +17,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { PALETTE } from '../palette.js'
 import { nameLabelTexture } from '../textures.js'
 import { buildHull, buildMast, buildFlyingBridge, buildGangway } from './shipBuilder.js'
+import { ShipWash } from './Field.jsx'
 
 const BEAM = 1.9
 const PAIR_GAP = 2.35
@@ -107,6 +108,8 @@ export function Ship({
   clickable = false,
   sinking = false,
   rampDown = false,
+  moving = 0,
+  grappleReach = 0,
   showName = true,
   onClick,
   plateLift = 0,
@@ -226,6 +229,31 @@ export function Ship({
             </mesh>
           </group>
         )}
+
+        {/* Grapples thrown up to the rampart ahead of the boarding party. */}
+        {rampDown && grappleReach > 0 && (
+          <group position={[2.4, 3.2, PAIR_GAP / 2]}>
+            {[-0.9, 0, 0.9].map((dz, i) => {
+              const drop = 2.4 + i * 0.15
+              const len = Math.hypot(grappleReach, drop)
+              return (
+                <mesh
+                  key={i}
+                  position={[grappleReach / 2, drop / 2, dz]}
+                  rotation={[0, 0, Math.atan2(drop, grappleReach)]}
+                >
+                  <cylinderGeometry args={[0.028, 0.028, len, 4]} />
+                  <meshLambertMaterial color={PALETTE.rigging} />
+                </mesh>
+              )
+            })}
+          </group>
+        )}
+
+        {/* Foam collar and wake. */}
+        <group position={[0, 0, PAIR_GAP / 2]}>
+          <ShipWash length={5.2} beam={PAIR_GAP + BEAM} moving={moving} />
+        </group>
 
         {/* Water-line marker ring, for the click target. */}
         <mesh

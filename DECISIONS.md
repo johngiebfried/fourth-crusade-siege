@@ -446,3 +446,66 @@ units per wave — two waves across the entire frame, which read as flat grey
 blobs rather than as sea. Open water wants many small waves, not a few
 enormous ones, and the crest highlight has to be a narrow band or it lights
 whole swathes of the surface instead of the tops of the waves.
+
+---
+
+## Revision: scene checks, screen consistency, and the rest of the polish list
+
+### Scene invariants
+
+`scripts/check-rules.mjs` proved the dice were right; nothing proved the world
+was. The gate camera sat buried in masonry for two commits and no one noticed.
+
+`scripts/check-scene.mjs` now asserts the things that actually broke: that no
+camera framing puts the camera inside a wall at any aspect ratio, that ladders
+reach the wall face and clear the parapet, that both walls run past the edge of
+the frame, that the gate camera stands on cleared ground aimed at the gate,
+that a ship stops short of the sea wall with a gangway that reaches, and that
+every city landmark sits on land.
+
+For those checks to mean anything they have to test what ships, so the world's
+dimensions and every camera framing moved out of the `.jsx` components into
+`three/lane.js` — a plain module Node can import, which the scenes now read
+from. The suite found a real defect on its first run: the gate camera's start
+point stood outside the street cleared for it, so it could begin inside a
+building.
+
+### One environment quirk worth recording
+
+The browser preview used for checking this work fires a stray click shortly
+after page load, which lands on whatever button is under it — usually "Begin
+the Siege", so the title screen appears to skip itself. This is not an app
+bug: with an event probe installed no click events fire and the title screen
+stays put. If the title screen ever *does* appear to skip in a real browser,
+that finding is worth revisiting rather than assuming the same cause.
+
+### Screens
+
+Results, First to Enter and Bribery were still flat Tailwind cards on a pale
+gradient — the seams where the redesign stopped. They now sit over the city
+like everything else, sharing one set of panel, heading and button components
+in `screens/ui.jsx`.
+
+### The rest of the polish list
+
+**Sea:** foam collars and wakes, an expanding ring where a ship goes down,
+oars, grapples thrown alongside the gangway, defenders massing on the bays the
+ships have come alongside, and smoke over the city.
+
+**Land:** a wall-walk with real depth, with the parapet standing on its outer
+edge and embrasure sills between the merlons, so the walk reads as a surface
+men stand on. The crusader camp with its tents and pennons, and the engines
+drawn up in front of it — a mangonel, the beam-and-sling stone-thrower of the
+period, and a ram slung under a hide-covered penthouse. Deliberately no
+counterweight trebuchet: that is a later machine than 1204 for a western army
+in the field.
+
+Ordering the camp took a correction. First placed, the tents stood on top of
+the army and the engines were standing in the moat. Reading back from the wall
+it now goes: wall, ditch, army, engines, tents.
+
+**The crusader-cam inset** pointed inland at a bare green ridge, which told the
+class nothing. It now looks south across the Horn, so the camp is in the
+foreground, the fleet is on the water, and Constantinople's sea wall and domes
+close the far bank — the inset says where the crusaders are *and* what they are
+looking at.
