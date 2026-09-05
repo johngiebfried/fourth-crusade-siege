@@ -36,18 +36,35 @@ const BEAT = {
 
 const PAIR_MID = 1.175 // half the gap between lashed hulls
 const DECK_Y = 1.78 // deck level; crew stand here, not in mid-air
+const MAST_TOP_Y = 1.7 + 6.2 * 0.86 // the flying bridge, at the mast-heads
+
+/**
+ * The gangway is run out from the bridge at the mast-heads and dropped onto
+ * the rampart, so its length and slope are set by the gap to the wall face and
+ * the drop from the mast-heads down to the parapet.
+ */
+const GANGWAY = (() => {
+  const mastX = SEA_LANE.atWallX + 0.2
+  const wallFaceX = SEA_LANE.wallX - 1.9 / 2
+  const run = wallFaceX - mastX
+  const drop = MAST_TOP_Y - (SEA_HEIGHTS.wall + 0.35)
+  return {
+    length: Math.hypot(run, drop) + 0.5,
+    drop: Math.atan2(drop, run),
+  }
+})()
 const SHIP_DAMP = 0.9 // crew must travel at the ship's rate or slide off it
 
 /** Ships lie abreast across the Horn, spaced in depth. */
 function shipPosition(index, count, arrived) {
-  const spread = Math.min(13, Math.max(5, count * 4.6))
+  const spread = Math.min(34, Math.max(9, count * 11))
   const z = count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
   const x = arrived ? SEA_LANE.atWallX : SEA_LANE.approachX
   return [x, 0, z]
 }
 
 function stagingPosition(index, count) {
-  const spread = Math.min(13, Math.max(5, count * 4.6))
+  const spread = Math.min(34, Math.max(9, count * 11))
   const z = count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
   return [SEA_LANE.stagingX, 0, z]
 }
@@ -56,7 +73,7 @@ function stagingPosition(index, count) {
 function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overallCount) {
   switch (level) {
     case 'wall': {
-      const spread = Math.min(11, Math.max(4, overallCount * 2.2))
+      const spread = Math.min(26, Math.max(6, overallCount * 3.4))
       const z =
         overallCount === 1
           ? 0
@@ -64,7 +81,7 @@ function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overal
       return [SEA_LANE.wallX, SEA_HEIGHTS.wall + 0.65, z]
     }
     case 'inside': {
-      const spread = Math.min(9, Math.max(3, overallCount * 2))
+      const spread = Math.min(20, Math.max(5, overallCount * 3))
       const z =
         overallCount === 1
           ? 0
@@ -82,14 +99,37 @@ function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overal
 
 /* ---------------------------------------------------------------- camera */
 
-const FOV = 20
-const YAW = 0.26
+const FOV = 32
 
+/**
+ * As on the land lane: the camera stands off to one side and looks back along
+ * the line of the wall, so it runs as a diagonal across the frame with the
+ * ships in front of it. Square-on, a wall is a slab seen end-first and reads
+ * as a cross-section.
+ */
+const OFFSET = (() => {
+  // Lower than the land lane, and deliberately so. At the land lane's thirty
+  // degrees the horizon sits outside the top of the frame, which is fine over
+  // a field but wrong here: it hides the far shore, and the whole point of
+  // this lane is that the fleet is inside the Golden Horn with Galata and its
+  // chain tower opposite. A shallower pitch with a wider lens keeps the far
+  // bank and a strip of sky in shot, and water reads far better at a grazing
+  // angle than from above.
+  const v = new THREE.Vector3(-0.7, 0.242, 0.67)
+  return v.normalize()
+})()
+
+/**
+ * Framing is solved from *vertical* extent, not width. The composition stacks
+ * up the screen — water, ships, wall, city — so height is the binding
+ * constraint, and solving from width crops it on exactly the wide displays a
+ * projector uses.
+ */
 const FRAMINGS = {
-  approach: { x: -13, y: 3.4, span: 40 },
-  piloting: { x: -9.5, y: 3.4, span: 34 },
-  boarding: { x: -2.6, y: 4.4, span: 26 },
-  breaking: { x: 2.4, y: 4.0, span: 26 },
+  approach: { at: [-18, 4.0, 0], height: 34 },
+  piloting: { at: [-13, 4.0, 0], height: 30 },
+  boarding: { at: [-4.5, 5.2, 0], height: 26 },
+  breaking: { at: [2.5, 5.2, 0], height: 27 },
 }
 
 function CameraRig({ focus }) {
@@ -101,28 +141,31 @@ function CameraRig({ focus }) {
   const frame = useMemo(() => {
     const f = FRAMINGS[focus] || FRAMINGS.approach
     const halfFov = (FOV * Math.PI) / 360
-    const dist = THREE.MathUtils.clamp(f.span / 2 / (Math.tan(halfFov) * aspect), 24, 90)
-    return {
-      pos: [f.x + dist * Math.tan(YAW), f.y + dist * 0.28, dist],
-      look: [f.x, f.y, 0],
-    }
+    // On a narrow window there is not enough width for the wall to run off
+    // both edges, so pull back further there.
+    const widthRelief = aspect < 1.2 ? 1.2 / Math.max(0.6, aspect) : 1
+    const dist = THREE.MathUtils.clamp(
+      (f.height / 2 / Math.tan(halfFov)) * widthRelief,
+      30,
+      200
+    )
+    const look = new THREE.Vector3(...f.at)
+    const pos = look.clone().addScaledVector(OFFSET, dist)
+    return { pos, look }
   }, [focus, aspect])
-
-  const targetPos = useMemo(() => new THREE.Vector3(...frame.pos), [frame])
-  const lookAt = useMemo(() => new THREE.Vector3(...frame.look), [frame])
 
   useFrame((_, delta) => {
     const cam = camRef.current
     if (!cam) return
-    cam.position.x = THREE.MathUtils.damp(cam.position.x, targetPos.x, 1.1, delta)
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, targetPos.y, 1.1, delta)
-    cam.position.z = THREE.MathUtils.damp(cam.position.z, targetPos.z, 1.1, delta)
-    cam.lookAt(lookAt)
+    cam.position.x = THREE.MathUtils.damp(cam.position.x, frame.pos.x, 1.1, delta)
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, frame.pos.y, 1.1, delta)
+    cam.position.z = THREE.MathUtils.damp(cam.position.z, frame.pos.z, 1.1, delta)
+    cam.lookAt(frame.look)
 
     if (scene.fog) {
-      const d = cam.position.distanceTo(lookAt)
-      scene.fog.near = d * 0.85
-      scene.fog.far = d * 2.6
+      const d = cam.position.distanceTo(frame.look)
+      scene.fog.near = d * 0.95
+      scene.fog.far = d * 2.8
     }
   })
 
@@ -132,8 +175,8 @@ function CameraRig({ focus }) {
       makeDefault
       fov={FOV}
       near={0.1}
-      far={340}
-      position={[10, 12, 52]}
+      far={520}
+      position={[-70, 26, 66]}
     />
   )
 }
@@ -142,13 +185,19 @@ function Lighting() {
   return (
     <>
       <directionalLight
-        position={[-20, 28, 24]}
-        intensity={1.45}
+        position={[-34, 30, 18]}
+        intensity={1.6}
         color="#fff1d6"
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-52}
+        shadow-camera-right={52}
+        shadow-camera-top={52}
+        shadow-camera-bottom={-52}
+        shadow-camera-near={1}
+        shadow-camera-far={180}
       />
-      <hemisphereLight args={['#cddceb', '#4a5a5e', 0.9]} />
+      <hemisphereLight args={['#cddceb', '#4a5a5e', 0.62]} />
       <ambientLight intensity={0.3} />
       <fog attach="fog" args={['#c4ccd2', 50, 130]} />
       <color attach="background" args={['#b3c4d2']} />
@@ -173,6 +222,8 @@ function SeaScene({ ships, crew, activeRoll, bursts, splashes, focus, onShipClic
           clickable={s.clickable}
           sinking={s.sinking}
           rampDown={s.rampDown}
+          gangwayLength={GANGWAY.length}
+          gangwayDrop={GANGWAY.drop}
           plateLift={s.plateLift}
           onClick={() => onShipClick(s.id)}
         />

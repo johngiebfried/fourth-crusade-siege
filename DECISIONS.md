@@ -395,3 +395,54 @@ Real embrasures and a walkable parapet with depth; siege engines (mangonels,
 a ram under its penthouse) on the field; banners and tents in the crusader
 camp; smoke and fires; per-figure variation in the crusader pawns to match the
 defenders.
+
+---
+
+## Revision: the sea lane brought up to the land lane, with a new boarding mechanic
+
+### Boarding comes down from the mast-heads
+
+**Changed on instruction, and it is the more correct mechanic anyway.** The
+gangway is run out from the flying bridge at the lashed mast-heads and dropped
+onto the rampart — not from the bow, as it was.
+
+That is the whole point of lashing two ships together and rigging a bridge
+between their mast-tops: to put men onto the wall *from above it*. A ramp off
+the forecastle is reaching up at the wall from deck level, which is precisely
+the problem the bridges were built to solve. Its length and slope are computed
+from the gap to the wall face and the drop from the mast-heads to the parapet,
+so it lands on the wall instead of swinging to a fixed angle.
+
+### A lower camera than the land lane, deliberately
+
+The land lane looks down at about thirty degrees, which puts the horizon
+outside the top of the frame. Over a field that is fine. Here it hid the far
+shore completely — and the point of this lane is that the fleet is *inside* the
+Golden Horn, with Galata and its chain tower opposite. A shallower pitch with a
+wider lens keeps the far bank and a strip of sky in shot, and water reads far
+better at a grazing angle than from above.
+
+### Everything else is parity work
+
+The sea lane had received none of the land lane's rework, so it carried every
+problem the land lane used to have: a fifteen-unit wall whose cut ends sat in
+frame, framing solved from width rather than height, a side-on camera, flush
+towers, unmerged geometry and flat water. All now match the land lane.
+
+Added beyond parity: planked hulls with shields hung on the gunwale and
+standing rigging, Galata with its chain tower and the crusader camp opposite,
+the rest of the fleet at anchor, and the city rising behind the wall.
+
+### Failed boarders keep dissolving
+
+Decided rather than deferred. The universal dissolve stays, on the grounds that
+it is clean and that its ambiguity is a feature: the module does not claim the
+crusader died, only that they are out of the assault.
+
+### One calibration note
+
+The Horn was first given a swell scaled up for open water, at nearly twenty
+units per wave — two waves across the entire frame, which read as flat grey
+blobs rather than as sea. Open water wants many small waves, not a few
+enormous ones, and the crest highlight has to be a narrow band or it lights
+whole swathes of the surface instead of the tops of the waves.

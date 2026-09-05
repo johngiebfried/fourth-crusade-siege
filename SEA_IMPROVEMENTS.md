@@ -14,30 +14,30 @@ no external assets**, and a frame budget that assumes an older school laptop.
 These are the ones that matter most, because they are known problems with
 known fixes.
 
-- [ ] **A1. The sea wall is 15 units long; the land walls are 150.** At this
+- [x] **A1. The sea wall is 15 units long; the land walls are 150.** At this
       length both ends of the wall sit inside the frame, which is exactly the
       cutaway look you objected to. Extend it well past the camera's view.
       *Small change, large effect. Do this first.*
 
-- [ ] **A2. Camera solves distance from width, not height.** This is the old
+- [x] **A2. Camera solves distance from width, not height.** This is the old
       broken approach — it crops the composition on wide displays, which is
       the shape a projector is. Port the height-based framing from the land
       lane.
 
-- [ ] **A3. The camera is side-on with a shallow yaw.** Same view that made
+- [x] **A3. The camera is side-on with a shallow yaw.** Same view that made
       the land walls read as cut slabs. Move it out along the wall so the sea
       wall runs as a diagonal, with the ships in the foreground and the city
       rising behind. *This is the single biggest visual change available.*
 
-- [ ] **A4. Towers sit flush with the wall face.** Setting them proud is what
+- [x] **A4. Towers sit flush with the wall face.** Setting them proud is what
       most made the land wall read as a wall — it breaks the face into bays
       and casts the shadows that separate one from the next.
 
-- [ ] **A5. Wall and towers are separate meshes.** Merge into one geometry per
+- [x] **A5. Wall and towers are separate meshes.** Merge into one geometry per
       line with `buildWallLine`, which also brings the baked ambient occlusion,
       weathering and per-block jitter across for free.
 
-- [ ] **A6. No rubble or detail where the wall meets the water.** A mole,
+- [x] **A6. No rubble or detail where the wall meets the water.** A mole,
       landing steps, and fallen masonry at the foot, so the wall does not meet
       the sea on a dead straight line.
 
@@ -47,7 +47,7 @@ known fixes.
 
 The Horn is most of the frame here, and it is currently a flat coloured slab.
 
-- [ ] **B1. Give the Horn the moat's wave treatment.** Already written:
+- [x] **B1. Give the Horn the moat's wave treatment.** Already written:
       a lit material with wave displacement injected into its shader, no
       textures. Scale the swell up — this is open water, not a ditch.
 
@@ -56,7 +56,7 @@ The Horn is most of the frame here, and it is currently a flat coloured slab.
 
 - [ ] **B3. Foam where hull meets water**, and a wash against the wall foot.
 
-- [ ] **B4. Ships should ride the water they are actually on** — tie the
+- [x] **B4. Ships should ride the water they are actually on** — tie the
       existing bob to the same wave function so hulls sit in the swell rather
       than on top of it.
 
@@ -67,23 +67,23 @@ The Horn is most of the frame here, and it is currently a flat coloured slab.
 
 ## C. Ships — the centrepiece, and currently the least detailed thing
 
-- [ ] **C1. Merge each ship into one geometry.** Fifteen meshes per ship, and
+- [x] **C1. Merge each ship into one geometry.** Fifteen meshes per ship, and
       a ship is drawn twice because they are lashed in pairs. Same treatment as
       the walls and garrison.
 
-- [ ] **C2. Hull planking as vertex colour** — strakes running the length of
+- [x] **C2. Hull planking as vertex colour** — strakes running the length of
       the hull, darker at the waterline, so the hull is not one flat brown.
 
-- [ ] **C3. Shields hung along the gunwale.** Period-correct, instantly
+- [x] **C3. Shields hung along the gunwale.** Period-correct, instantly
       readable, and cheap.
 
-- [ ] **C4. Rigging.** Shrouds from the mast-head to the rail, a forestay and
+- [x] **C4. Rigging.** Shrouds from the mast-head to the rail, a forestay and
       backstay. Lines do more for a ship's silhouette than almost anything.
 
 - [ ] **C5. Oars** on the lower hull, since these are being rowed into
       position rather than sailed.
 
-- [ ] **C6. Waterline detail** — a painted band, and the hull sitting at a
+- [x] **C6. Waterline detail** — a painted band, and the hull sitting at a
       believable draught rather than resting on the surface.
 
 ---
@@ -93,19 +93,18 @@ The Horn is most of the frame here, and it is currently a flat coloured slab.
 The ladders now rise, stay on success and topple on failure. The sea lane's
 equivalents are all still static.
 
-- [ ] **D1. The flying bridge should be run out during boarding**, not stand
+- [x] **D1. The flying bridge should be run out during boarding**, not stand
       rigged from the start — the direct parallel to the ladders, and the
       thing Clari actually describes.
 
-- [ ] **D2. The boarding ramp should land on the parapet.** It currently drops
+- [x] **D2. The boarding ramp should land on the parapet.** It currently drops
       to a fixed angle rather than to wherever the wall is, which is the same
       bug the ladders had.
 
 - [ ] **D3. Grapples and lines** thrown to the rampart before boarding.
 
-- [ ] **D4. A failed boarder should fall back to the deck**, not dissolve
-      mid-air. Worth revisiting: the rules say they simply do not advance,
-      and the dissolve reads as death. *This is a design call, not just art.*
+- [x] **D4. Decided: failed boarders keep dissolving.** Clean, and the
+      ambiguity is the point — the module does not claim they died.
 
 - [ ] **D5. Defenders should react at the point of contact** — crowding to
       the threatened stretch of rampart rather than standing evenly spaced.
@@ -114,25 +113,53 @@ equivalents are all still static.
 
 ## E. Setting — currently missing entirely
 
-- [ ] **E1. Galata and the chain tower across the Horn.** It is the landmark
+- [x] **E1. Galata and the chain tower across the Horn.** It is the landmark
       from the title screen, it is where the camp is, and it would tie the two
       screens together. Its absence is why this lane feels placeless.
 
-- [ ] **E2. The rest of the fleet** at anchor in the background, so three
+- [x] **E2. The rest of the fleet** at anchor in the background, so three
       ships do not look like the whole Fourth Crusade.
 
-- [ ] **E3. The city rising behind the sea wall** — domes and roofs, as the
+- [x] **E3. The city rising behind the sea wall** — domes and roofs, as the
       land lane has.
 
 - [ ] **E4. Smoke** over the city from the earlier fires.
 
 ---
 
-## Suggested order
+---
 
-**A1, A3, A2** together — the framing fix, and the reason the lane looks worse
-than the land lane. Then **B1** and **E1**, which between them turn a slab of
-blue into the Golden Horn. Then **C** for the ships, **D1/D2** for the assault
-animation, and the rest as polish.
+## Done
 
-**D4 needs a decision from you**, not just implementation.
+Everything ticked above. The lane now has: a hundred-and-fifty-unit merged wall
+with towers standing proud and rubble at its foot, height-solved framing on a
+camera that looks along the wall, moving water, planked hulls with shields on
+the gunwale and rigging, Galata with its chain tower and the camp opposite, the
+rest of the fleet at anchor, and the city rising behind the wall.
+
+**The boarding mechanic changed on instruction.** The gangway is run out from
+the flying bridge at the lashed mast-heads and dropped onto the rampart — not
+from the bow. That is the whole point of lashing two ships together and rigging
+a bridge between their mast-tops: to put men onto the wall from *above* it. A
+ramp off the forecastle would be reaching up at the wall from deck level, which
+is the problem the bridges were built to solve. Its length and slope are
+computed from the gap to the wall face and the drop from the mast-heads to the
+parapet, so it lands on the wall rather than at a fixed angle.
+
+**One camera decision specific to this lane.** It sits lower than the land
+lane's. At the land lane's thirty degrees the horizon falls outside the top of
+the frame, which is fine over a field but wrong here — it hid the far shore
+entirely, and the point of this lane is that the fleet is *inside* the Horn
+with Galata opposite. A shallower pitch and a wider lens keep the far bank and
+a strip of sky in shot, and water reads far better at a grazing angle than
+from above.
+
+## Still open
+
+- [ ] **B2.** Wakes behind moving ships.
+- [ ] **B3.** Foam at the hull and against the wall foot.
+- [ ] **B5.** The surface reacting where a ship goes down.
+- [ ] **C5.** Oars.
+- [ ] **D3.** Grapples and lines thrown before boarding.
+- [ ] **D5.** Defenders crowding to the threatened stretch of rampart.
+- [ ] **E4.** Smoke over the city from the earlier fires.

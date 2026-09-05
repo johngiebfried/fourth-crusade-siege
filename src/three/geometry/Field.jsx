@@ -93,31 +93,44 @@ export function GrassField({
 /* ------------------------------------------------------------------ water */
 
 /**
- * The moat.
+ * Moving water.
  *
  * Written as a normal lit material with the wave motion injected into its
  * shader, rather than as a raw ShaderMaterial. A raw shader gets no lighting
- * and no fog, which made the ditch read as a black trench cut through the
- * field instead of as water sitting in the landscape.
+ * and no fog, which made the moat read as a black trench cut through the field
+ * instead of as water sitting in the landscape.
  *
  * Still no textures: the ripples and the glint on the crests are arithmetic.
+ * `swell` scales the whole wave system, so the same water serves a ditch a few
+ * units across and the open Golden Horn.
  */
-export function MoatWater({ x, width, depth = 320, y = -0.1 }) {
+export function RippleWater({
+  width,
+  depth = 320,
+  x = 0,
+  z = 0,
+  y = -0.1,
+  colour = '#4e7a72',
+  swell = 1,
+  segmentsX = 6,
+  segmentsZ = 340,
+}) {
   const material = useMemo(() => {
-    const m = new THREE.MeshLambertMaterial({ color: '#4e7a72' })
+    const m = new THREE.MeshLambertMaterial({ color: colour })
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = { value: 0 }
+      shader.uniforms.uSwell = { value: swell }
       shader.vertexShader =
-        'uniform float uTime;\nvarying float vWave;\n' +
+        'uniform float uTime;\nuniform float uSwell;\nvarying float vWave;\n' +
         shader.vertexShader.replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
            float w =
-             sin(position.y * 0.85 + uTime * 1.05) * 0.05 +
-             sin(position.x * 2.30 - uTime * 0.70) * 0.03 +
-             sin((position.x + position.y) * 4.10 + uTime * 1.90) * 0.015;
+             sin(position.y * 0.85 / uSwell + uTime * 1.05) * 0.05 * uSwell +
+             sin(position.x * 2.30 / uSwell - uTime * 0.70) * 0.03 * uSwell +
+             sin((position.x + position.y) * 4.10 / uSwell + uTime * 1.90) * 0.015 * uSwell;
            transformed.z += w;
-           vWave = w;`
+           vWave = w / uSwell;`
         )
       shader.fragmentShader =
         'varying float vWave;\n' +
@@ -125,13 +138,13 @@ export function MoatWater({ x, width, depth = 320, y = -0.1 }) {
           '#include <dithering_fragment>',
           `#include <dithering_fragment>
            // Crests catch the morning light; troughs sit darker and greener.
-           gl_FragColor.rgb += smoothstep(0.015, 0.055, vWave) * 0.20;
-           gl_FragColor.rgb -= smoothstep(-0.015, -0.055, -vWave) * 0.06;`
+           gl_FragColor.rgb += smoothstep(0.028, 0.062, vWave) * 0.14;
+           gl_FragColor.rgb -= smoothstep(-0.020, -0.060, -vWave) * 0.09;`
         )
       m.userData.shader = shader
     }
     return m
-  }, [])
+  }, [colour, swell])
 
   useFrame((state) => {
     const shader = material.userData.shader
@@ -141,11 +154,16 @@ export function MoatWater({ x, width, depth = 320, y = -0.1 }) {
   return (
     <mesh
       rotation={[-Math.PI / 2, 0, 0]}
-      position={[x, y, 0]}
+      position={[x, y, z]}
       material={material}
       receiveShadow
     >
-      <planeGeometry args={[width, depth, 6, 340]} />
+      <planeGeometry args={[width, depth, segmentsX, segmentsZ]} />
     </mesh>
   )
+}
+
+/** The moat: a narrow ditch of the same water. */
+export function MoatWater({ x, width, depth = 320, y = -0.1 }) {
+  return <RippleWater x={x} width={width} depth={depth} y={y} swell={1} />
 }

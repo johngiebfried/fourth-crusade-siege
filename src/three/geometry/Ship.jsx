@@ -13,9 +13,10 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PALETTE } from '../palette.js'
 import { nameLabelTexture } from '../textures.js'
-import { buildHull, buildMast, buildFlyingBridge, buildRamp } from './shipBuilder.js'
+import { buildHull, buildMast, buildFlyingBridge, buildGangway } from './shipBuilder.js'
 
 const BEAM = 1.9
 const PAIR_GAP = 2.35
@@ -38,27 +39,59 @@ function ShipPlate({ name, y }) {
   )
 }
 
-/** One nave: hull, mast, sail. */
-function Nave({ z }) {
-  const hull = useMemo(() => buildHull({ length: 5.2, beam: BEAM, depth: 1.5 }), [])
-  const mast = useMemo(() => buildMast({ height: MAST_HEIGHT, beam: BEAM }), [])
+const MAST_BASE_Y = 1.7
+const MAST_TOP_Y = MAST_BASE_Y + MAST_HEIGHT * 0.86
 
-  return (
-    <group position={[0, 0, z]}>
-      <mesh geometry={hull} castShadow receiveShadow>
-        <meshLambertMaterial vertexColors flatShading />
-      </mesh>
-      <mesh geometry={mast} position={[0.2, 1.7, 0]} castShadow>
-        <meshLambertMaterial vertexColors flatShading />
-      </mesh>
-      {/* Sail furled along the yard — ships went to an assault with canvas in,
-          and a set sail would blank out the whole fleet at this angle. */}
-      <mesh position={[0.2, 6.54, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.26, 0.26, BEAM * 1.9, 8]} />
-        <meshLambertMaterial color={PALETTE.sailCanvas} flatShading />
-      </mesh>
-    </group>
-  )
+/**
+ * The whole ship — both lashed hulls, both masts, the flying bridge between
+ * their tops and the lashings holding the pair together — merged into one
+ * geometry. Fifteen separate meshes per ship, drawn twice because they sail in
+ * pairs, was a lot of draw calls for something that never changes shape.
+ */
+function buildShipGeometry() {
+  const parts = []
+  const hull = buildHull({ length: 5.2, beam: BEAM, depth: 1.5 })
+  const mast = buildMast({ height: MAST_HEIGHT, beam: BEAM })
+
+  for (const z of [0, PAIR_GAP]) {
+    const h = hull.clone()
+    h.translate(0, 0, z)
+    parts.push(h)
+    const m = mast.clone()
+    m.translate(0.2, MAST_BASE_Y, z)
+    parts.push(m)
+  }
+  hull.dispose()
+  mast.dispose()
+
+  const bridge = buildFlyingBridge({
+    span: PAIR_GAP + BEAM * 0.4,
+    height: MAST_HEIGHT * 0.86,
+  })
+  bridge.translate(0.2, MAST_BASE_Y, PAIR_GAP / 2)
+  parts.push(bridge)
+
+  // Lashings holding the pair together.
+  const lash = new THREE.Color(PALETTE.rigging)
+  for (const x of [-1.4, 0.4, 2.0]) {
+    const g = new THREE.CylinderGeometry(0.05, 0.05, PAIR_GAP, 5)
+    g.rotateX(Math.PI / 2)
+    g.translate(x, 2.5, PAIR_GAP / 2)
+    const n = g.attributes.position.count
+    const arr = new Float32Array(n * 3)
+    for (let i = 0; i < n; i++) {
+      arr[i * 3] = lash.r
+      arr[i * 3 + 1] = lash.g
+      arr[i * 3 + 2] = lash.b
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
+    parts.push(g)
+  }
+
+  const merged = mergeGeometries(parts, false)
+  parts.forEach((p) => p.dispose())
+  merged.computeVertexNormals()
+  return merged
 }
 
 /**
@@ -77,6 +110,8 @@ export function Ship({
   showName = true,
   onClick,
   plateLift = 0,
+  gangwayLength = 5.2,
+  gangwayDrop = 0.26,
 }) {
   const group = useRef()
   const listRef = useRef()
@@ -86,11 +121,8 @@ export function Ship({
   const sinkClock = useRef(0)
   const placed = useRef(false)
 
-  const bridge = useMemo(
-    () => buildFlyingBridge({ span: PAIR_GAP + BEAM * 0.4, height: MAST_HEIGHT * 0.86 }),
-    []
-  )
-  const ramp = useMemo(() => buildRamp({ length: 3.6, width: 1.15 }), [])
+  const shipGeometry = useMemo(() => buildShipGeometry(), [])
+  const gangway = useMemo(() => buildGangway({ length: gangwayLength, width: 1.15 }), [gangwayLength])
 
   const target = useMemo(
     () => new THREE.Vector3(position[0], position[1], position[2]),
@@ -131,11 +163,12 @@ export function Ship({
     }
 
     if (rampRef.current) {
-      const want = rampDown ? -0.12 : -1.0
+      // Swings down from the bridge onto the parapet.
+      const want = rampDown ? -gangwayDrop : 1.0
       rampRef.current.rotation.z = THREE.MathUtils.damp(
         rampRef.current.rotation.z,
         want,
-        2.2,
+        1.6,
         delta
       )
     }
@@ -175,27 +208,20 @@ export function Ship({
       )}
 
       <group ref={listRef}>
-        {/* The ship of record, and its lashed partner. */}
-        <Nave z={0} />
-        <Nave z={PAIR_GAP} />
-
-        {/* Flying bridge rigged between the two mast-tops. */}
-        <mesh geometry={bridge} position={[0.2, 1.7, PAIR_GAP / 2]} castShadow>
+        <mesh geometry={shipGeometry} castShadow receiveShadow>
           <meshLambertMaterial vertexColors flatShading />
         </mesh>
 
-        {/* Lashings holding the pair together. */}
-        {[-1.4, 0.4, 2.0].map((x, i) => (
-          <mesh key={i} position={[x, 2.5, PAIR_GAP / 2]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.05, 0.05, PAIR_GAP, 5]} />
-            <meshLambertMaterial color={PALETTE.rigging} />
-          </mesh>
-        ))}
-
-        {/* Boarding ramp, hinged at the forecastle. Only present once dropped. */}
+        {/* The boarding gangway, run out from the flying bridge at the
+            mast-heads and dropped onto the rampart. Only present once it is
+            actually run out. */}
         {rampDown && (
-          <group ref={rampRef} position={[2.5, 3.0, PAIR_GAP / 2]} rotation={[0, 0, -1.0]}>
-            <mesh geometry={ramp} castShadow>
+          <group
+            ref={rampRef}
+            position={[0.2, MAST_TOP_Y, PAIR_GAP / 2]}
+            rotation={[0, 0, 1.0]}
+          >
+            <mesh geometry={gangway} castShadow>
               <meshLambertMaterial vertexColors flatShading />
             </mesh>
           </group>

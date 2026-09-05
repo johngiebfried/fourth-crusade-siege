@@ -46,10 +46,27 @@ function hullProfile() {
  */
 export function buildHull({ length = 5.2, beam = 1.9, depth = 1.5 } = {}) {
   const parts = []
+  const rand = (n) => Math.abs((Math.sin(n * 71.9) * 43758.5453) % 1)
 
   const tub = new THREE.LatheGeometry(hullProfile(), 16)
   tub.scale(length / 2, depth, beam / 2)
-  paint(tub, PALETTE.hullTimber)
+  // Plank the hull: strakes running its length, darker down at the waterline
+  // where the timber sits wet. Vertex colour only — no texture map.
+  {
+    const base = new THREE.Color(PALETTE.hullTimber)
+    const pos = tub.attributes.position
+    const cols = new Float32Array(pos.count * 3)
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      const strake = 0.9 + 0.1 * Math.sign(Math.sin(y * 9.5))
+      const wet = 0.62 + 0.38 * Math.min(1, Math.max(0, y - 0.25) / (depth * 0.9))
+      const f = strake * wet
+      cols[i * 3] = base.r * f
+      cols[i * 3 + 1] = base.g * f
+      cols[i * 3 + 2] = base.b * f
+    }
+    tub.setAttribute('color', new THREE.BufferAttribute(cols, 3))
+  }
   parts.push(tub)
 
   // Wale: a darker rubbing strake around the sheer.
@@ -74,10 +91,9 @@ export function buildHull({ length = 5.2, beam = 1.9, depth = 1.5 } = {}) {
     g.translate(x, depth * 1.12 + h / 2, 0)
     return g
   }
-  parts.push(castle(length * 0.36, length * 0.2, 0.9)) // forecastle
-  parts.push(castle(-length * 0.36, length * 0.22, 1.05)) // sterncastle
+  parts.push(castle(length * 0.36, length * 0.2, 0.9))
+  parts.push(castle(-length * 0.36, length * 0.22, 1.05))
 
-  // Castle parapets, so they read as fighting platforms rather than crates.
   const rail = (x, w, h) => {
     const g = new THREE.BoxGeometry(w, 0.16, beam * 0.78)
     paint(g, '#8a6642')
@@ -86,6 +102,19 @@ export function buildHull({ length = 5.2, beam = 1.9, depth = 1.5 } = {}) {
   }
   parts.push(rail(length * 0.36, length * 0.22, 0.9))
   parts.push(rail(-length * 0.36, length * 0.24, 1.05))
+
+  // Shields hung along the gunwale — period-correct and instantly readable.
+  const shieldColours = ['#8c3b2c', '#3f5a7a', '#c9a24a', '#e8e2d2', '#4d6b45']
+  for (let i = 0; i < 7; i++) {
+    const x = -length * 0.24 + (i / 6) * length * 0.48
+    for (const side of [-1, 1]) {
+      const sh = new THREE.CylinderGeometry(0.24, 0.24, 0.05, 10)
+      sh.rotateX(Math.PI / 2)
+      sh.translate(x, depth * 1.2, side * (beam / 2) * 0.98)
+      paint(sh, shieldColours[Math.floor(rand(i * 2 + (side > 0 ? 1 : 0)) * shieldColours.length)])
+      parts.push(sh)
+    }
+  }
 
   const merged = mergeGeometries(parts, false)
   parts.forEach((p) => p.dispose())
@@ -114,6 +143,25 @@ export function buildMast({ height = 6.2, beam = 1.9 } = {}) {
   top.translate(0, height * 0.88, 0)
   paint(top, PALETTE.hullTimberDark)
   parts.push(top)
+
+  // Shrouds from the mast-head down to the rail. Lines do more for a ship's
+  // silhouette than almost anything else.
+  for (const side of [-1, 1]) {
+    for (const lean of [0.26, 0.4]) {
+      const len = Math.hypot(height * 0.72, beam * 0.55)
+      const shroud = new THREE.CylinderGeometry(0.022, 0.022, len, 4)
+      shroud.rotateX(side * lean)
+      shroud.translate(0, height * 0.5, side * beam * 0.3)
+      parts.push(paint(shroud, PALETTE.rigging))
+    }
+  }
+  // Forestay and backstay.
+  for (const dir of [-1, 1]) {
+    const stay = new THREE.CylinderGeometry(0.022, 0.022, height * 1.05, 4)
+    stay.rotateZ(dir * 0.42)
+    stay.translate(dir * height * 0.22, height * 0.5, 0)
+    parts.push(paint(stay, PALETTE.rigging))
+  }
 
   const merged = mergeGeometries(parts, false)
   parts.forEach((p) => p.dispose())
@@ -161,11 +209,48 @@ export function buildFlyingBridge({ span = 4.2, height = 5.4 } = {}) {
   return merged
 }
 
-/** Boarding ramp dropped from the forecastle onto the rampart. */
-export function buildRamp({ length = 3.4, width = 1.1 } = {}) {
-  const g = new THREE.BoxGeometry(length, 0.14, width)
-  paint(g, '#b09055')
-  g.translate(length / 2, 0, 0)
-  g.computeVertexNormals()
-  return g
+/**
+ * The boarding gangway.
+ *
+ * This is run out from the flying bridge at the mast-heads and dropped onto
+ * the rampart — not from the bow. The whole point of lashing two ships
+ * together and rigging a bridge between their mast-tops was to get men out
+ * onto the wall from *above* it; a ramp off the forecastle would be reaching
+ * up at the wall from the deck, which is the problem the bridges were built
+ * to solve.
+ *
+ * Hinged at its inboard end, so it swings down onto the parapet.
+ */
+export function buildGangway({ length = 5.0, width = 1.15 } = {}) {
+  const parts = []
+
+  const plank = new THREE.BoxGeometry(length, 0.13, width)
+  plank.translate(length / 2, 0, 0)
+  parts.push(paint(plank, '#b09055'))
+
+  // Cleats across it, for footing.
+  const count = Math.max(3, Math.round(length / 0.55))
+  for (let i = 1; i < count; i++) {
+    const cleat = new THREE.BoxGeometry(0.08, 0.06, width * 0.92)
+    cleat.translate((length * i) / count, 0.09, 0)
+    parts.push(paint(cleat, '#8a6642'))
+  }
+
+  // Rope rails either side.
+  for (const off of [-1, 1]) {
+    const rail = new THREE.CylinderGeometry(0.025, 0.025, length, 4)
+    rail.rotateZ(Math.PI / 2)
+    rail.translate(length / 2, 0.34, (off * width) / 2)
+    parts.push(paint(rail, PALETTE.rigging))
+    for (let i = 0; i <= 3; i++) {
+      const post = new THREE.CylinderGeometry(0.022, 0.022, 0.34, 4)
+      post.translate((length * i) / 3, 0.17, (off * width) / 2)
+      parts.push(paint(post, PALETTE.rigging))
+    }
+  }
+
+  const merged = mergeGeometries(parts, false)
+  parts.forEach((p) => p.dispose())
+  merged.computeVertexNormals()
+  return merged
 }
