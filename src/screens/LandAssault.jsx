@@ -187,7 +187,7 @@ function Lighting() {
       {/* A low April sun coming over the Golden Horn. */}
       <directionalLight
         position={[-34, 30, 16]}
-        intensity={2.0}
+        intensity={1.65}
         color="#fff2d8"
         castShadow
         shadow-mapSize={[2048, 2048]}

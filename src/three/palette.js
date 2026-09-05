@@ -11,8 +11,8 @@ export const PALETTE = {
   // Theodosian banded masonry: pale limestone courses with red brick levelling bands.
   wallStone: '#d8cdb4',
   wallStoneAlt: '#c9bda2',
-  wallBrick: '#a9705c',
-  wallBrickAlt: '#9d6753',
+  wallBrick: '#a3604a',
+  wallBrickAlt: '#96583f',
   wallShadow: '#8f8673', // deep recess tone
   towerStone: '#cfc3a8',
 

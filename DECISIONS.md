@@ -337,3 +337,61 @@ ShaderMaterial. A raw shader receives no lighting and no fog, which made the
 ditch read as a black trench cut through the field rather than as water sitting
 in the landscape. Still no textures anywhere — the ripples and the glint on the
 crests are arithmetic.
+
+
+## Visual fidelity: the decision, and what it bought
+
+Asked how far to push realism, the answer was **stay flat-shaded and push that
+hard** — no physically-based materials, no post-processing, no texture maps,
+procedural or otherwise. Target machine is an older or unknown school laptop,
+so the frame budget stays low.
+
+That constraint turns out to be freeing rather than limiting, because the two
+techniques that buy the most realism per unit of cost are both free at runtime:
+**baking light into vertex colours**, and **merging geometry**.
+
+### Depth painted into vertex colours
+
+Every piece of masonry is now shaded per vertex by where it sits:
+
+- **Ambient occlusion** darkens courses near the ground and under the parapet
+  oversail, so the wall sits in the landscape instead of floating on it.
+- **Weathering** stains the lower wall and streaks down the face.
+- **Per-course and per-block jitter** stops the masonry reading as a flat wash.
+
+None of this costs anything at render time — it is all in the colour attribute.
+
+Two calibration notes. Vertex colours near 1.0 under a strong sun blow out to
+near-white and the banding vanishes entirely, so the whole range sits lower
+now. And the brick had at one point been muted so far that it stopped reading
+at all; it needs to be quiet at distance but still present up close.
+
+### Towers stand proud of the wall
+
+Towers were flush with the wall face, which gave the line no rhythm. Set
+forward, they break the face into bays and cast the shadows that let you read
+one bay from the next. This is what most made the wall look like a wall.
+
+### Merging, which is where the performance came from
+
+The scene had roughly six hundred draw calls for defenders alone — a hundred
+figures at six meshes each — plus a hundred and fifty city buildings and
+fifty-two towers, all separate. That is exactly the shape of thing that turns
+an integrated-graphics laptop into a slideshow.
+
+Now: a whole wall line — courses, merlons, every tower, arrow slits and the
+rubble heaped at its foot — merges into **one geometry**. So does each
+garrison, and the city backdrop. Grass is a single instanced mesh of fourteen
+thousand tufts. The land lane measured 112 fps and the sea lane 120.
+
+Note for later: `mergeGeometries` refuses a mix of indexed and non-indexed
+geometry. Box and cylinder primitives are indexed; the polyhedra
+(Dodecahedron, Icosahedron) are not. The rubble uses rotated boxes for that
+reason.
+
+### Still available, same rule, not yet done
+
+Real embrasures and a walkable parapet with depth; siege engines (mangonels,
+a ram under its penthouse) on the field; banners and tents in the crusader
+camp; smoke and fires; per-figure variation in the crusader pawns to match the
+defenders.

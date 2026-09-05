@@ -20,9 +20,11 @@
  */
 
 import { useMemo } from 'react'
+import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PALETTE } from './palette.js'
-import { buildBandedWall, buildTower, buildGround } from './geometry/wallBuilder.js'
-import { RampartGarrison } from './geometry/Defender.jsx'
+import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
+import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater } from './geometry/Field.jsx'
 
 /** Lane landmarks, in world X. Everything else positions off these. */
@@ -52,91 +54,86 @@ export const HEIGHTS = {
 const INNER_TOWERS = 26
 const OUTER_TOWERS = 26
 
+/**
+ * The two wall lines. Each is a single merged geometry — courses, merlons,
+ * every tower along it, arrow slits and the rubble at its foot — so a
+ * hundred-and-fifty-unit wall with twenty-six towers costs one draw call.
+ */
 function Walls() {
-  const outer = useMemo(
-    () =>
-      buildBandedWall({
+  const outer = useMemo(() => {
+    const towers = []
+    const spacing = LANE.laneDepth / OUTER_TOWERS
+    for (let i = 0; i < OUTER_TOWERS; i++) {
+      towers.push({
+        radius: 0.95,
+        height: HEIGHTS.outerTower,
+        x: LANE.outerWallX - 0.55,
+        z: -LANE.laneDepth / 2 + spacing * i,
+        polygonal: i % 2 === 0,
+      })
+    }
+    return buildWallLine({
+      wall: {
         width: 1.4,
         depth: LANE.laneDepth,
         height: HEIGHTS.outerWall,
+        x: LANE.outerWallX,
         merlonWidth: 0.5,
         merlonGap: 0.42,
         merlonHeight: 0.45,
-      }),
-    []
-  )
+      },
+      towers,
+      rubble: {
+        from: -LANE.laneDepth / 2,
+        to: LANE.laneDepth / 2,
+        x: LANE.outerWallX - 1.0,
+        count: 150,
+      },
+      seed: 7,
+    })
+  }, [])
 
-  const inner = useMemo(
-    () =>
-      buildBandedWall({
+  const inner = useMemo(() => {
+    const towers = []
+    const spacing = LANE.laneDepth / INNER_TOWERS
+    for (let i = 0; i < INNER_TOWERS; i++) {
+      towers.push({
+        radius: 1.5,
+        height: HEIGHTS.tower,
+        x: LANE.innerWallX - 0.9,
+        z: -LANE.laneDepth / 2 + spacing * (i + 0.5),
+        polygonal: i % 2 === 1,
+      })
+    }
+    return buildWallLine({
+      wall: {
         width: 2.2,
         depth: LANE.laneDepth,
         height: HEIGHTS.innerWall,
+        x: LANE.innerWallX,
         merlonWidth: 0.62,
         merlonGap: 0.5,
         merlonHeight: 0.6,
-      }),
-    []
-  )
-
-  const innerTowers = useMemo(() => {
-    const out = []
-    const spacing = LANE.laneDepth / INNER_TOWERS
-    for (let i = 0; i < INNER_TOWERS; i++) {
-      const z = -LANE.laneDepth / 2 + spacing * (i + 0.5)
-      out.push({
-        z,
-        geometry: buildTower({ radius: 1.5, height: HEIGHTS.tower, polygonal: i % 2 === 1 }),
-      })
-    }
-    return out
-  }, [])
-
-  // Offset half a bay from the inner towers, as on the real circuit.
-  const outerTowers = useMemo(() => {
-    const out = []
-    const spacing = LANE.laneDepth / OUTER_TOWERS
-    for (let i = 0; i < OUTER_TOWERS; i++) {
-      const z = -LANE.laneDepth / 2 + spacing * i
-      out.push({
-        z,
-        geometry: buildTower({ radius: 0.95, height: HEIGHTS.outerTower, polygonal: i % 2 === 0 }),
-      })
-    }
-    return out
+      },
+      towers,
+      rubble: {
+        from: -LANE.laneDepth / 2,
+        to: LANE.laneDepth / 2,
+        x: LANE.innerWallX - 1.5,
+        count: 170,
+      },
+      seed: 13,
+    })
   }, [])
 
   return (
     <group>
-      <mesh geometry={outer} position={[LANE.outerWallX, 0, 0]} castShadow receiveShadow>
+      <mesh geometry={outer} castShadow receiveShadow>
         <meshLambertMaterial vertexColors flatShading />
       </mesh>
-      {outerTowers.map((t, i) => (
-        <mesh
-          key={`o${i}`}
-          geometry={t.geometry}
-          position={[LANE.outerWallX, 0, t.z]}
-          castShadow
-          receiveShadow
-        >
-          <meshLambertMaterial vertexColors flatShading />
-        </mesh>
-      ))}
-
-      <mesh geometry={inner} position={[LANE.innerWallX, 0, 0]} castShadow receiveShadow>
+      <mesh geometry={inner} castShadow receiveShadow>
         <meshLambertMaterial vertexColors flatShading />
       </mesh>
-      {innerTowers.map((t, i) => (
-        <mesh
-          key={`i${i}`}
-          geometry={t.geometry}
-          position={[LANE.innerWallX, 0, t.z]}
-          castShadow
-          receiveShadow
-        >
-          <meshLambertMaterial vertexColors flatShading />
-        </mesh>
-      ))}
     </group>
   )
 }
@@ -144,13 +141,16 @@ function Walls() {
 function Gate() {
   const gate = useMemo(
     () =>
-      buildBandedWall({
-        width: 2.4,
-        depth: LANE.laneDepth,
-        height: HEIGHTS.gate,
-        merlonWidth: 0.55,
-        merlonGap: 0.45,
-        merlonHeight: 0.5,
+      buildWallLine({
+        wall: {
+          width: 2.4,
+          depth: LANE.laneDepth,
+          height: HEIGHTS.gate,
+          merlonWidth: 0.55,
+          merlonGap: 0.45,
+          merlonHeight: 0.5,
+        },
+        seed: 21,
       }),
     []
   )
@@ -209,54 +209,121 @@ function Ground() {
   )
 }
 
-/** Domed skyline behind the walls — the city the assault is trying to reach. */
+/**
+ * Domed skyline behind the walls — the city the assault is trying to reach.
+ * Merged, because a hundred and fifty buildings as separate meshes is a
+ * hundred and fifty draw calls for scenery nobody interacts with.
+ */
 function CityBackdrop() {
-  const buildings = useMemo(() => {
-    const out = []
+  const geometry = useMemo(() => {
     const rand = (n) => Math.abs((Math.sin(n * 127.1) * 43758.5453) % 1)
+    const parts = []
+    const paint = (g, hex, tone = 1) => {
+      const c = new THREE.Color(hex)
+      const n = g.attributes.position.count
+      const arr = new Float32Array(n * 3)
+      for (let i = 0; i < n; i++) {
+        arr[i * 3] = c.r * tone
+        arr[i * 3 + 1] = c.g * tone
+        arr[i * 3 + 2] = c.b * tone
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
+      return g
+    }
+
     for (let i = 0; i < 150; i++) {
       const r = rand(i)
       const r2 = rand(i + 40)
-      out.push({
-        x: LANE.cityX + 1 + r * 24,
-        z: -95 + r2 * 190,
-        w: 1.6 + r * 2.4,
-        h: 1.6 + r2 * 2.8,
-        domed: i % 3 !== 2,
-        domeR: 0.7 + r * 0.7,
-      })
+      const x = LANE.cityX + 1 + r * 24
+      const z = -95 + r2 * 190
+      const w = 1.6 + r * 2.4
+      const h = 1.6 + r2 * 2.8
+      const tone = 0.88 + rand(i + 91) * 0.24
+
+      const body = new THREE.BoxGeometry(w, h, w)
+      body.translate(x, h / 2, z)
+      parts.push(paint(body, PALETTE.cityWall, tone))
+
+      if (i % 3 !== 2) {
+        // Drum ringed with windows, then a shallow dome — the Byzantine
+        // church silhouette. Emphatically not a spire.
+        const domeR = 0.7 + r * 0.7
+        const drum = new THREE.CylinderGeometry(domeR, domeR, 0.56, 12)
+        drum.translate(x, h + 0.28, z)
+        parts.push(paint(drum, PALETTE.cityWall, tone))
+
+        const dome = new THREE.SphereGeometry(domeR * 1.06, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2)
+        dome.scale(1, 0.52, 1)
+        dome.translate(x, h + 0.56, z)
+        parts.push(paint(dome, PALETTE.domeLead, tone))
+      } else {
+        const roof = new THREE.BoxGeometry(w * 1.05, 0.6, w * 1.05)
+        roof.translate(x, h + 0.3, z)
+        parts.push(paint(roof, PALETTE.cityRoof, tone))
+      }
     }
-    return out
+
+    const merged = mergeGeometries(parts, false)
+    parts.forEach((p) => p.dispose())
+    merged.computeVertexNormals()
+    return merged
   }, [])
 
   return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
+/** Defenders on all three lines, merged into one geometry each. */
+function Garrisons() {
+  const outer = useMemo(
+    () =>
+      buildGarrison({
+        x: LANE.outerWallX,
+        y: HEIGHTS.outerWall,
+        zFrom: -70,
+        zTo: 70,
+        count: 34,
+        banners: 0,
+        seed: 2,
+      }),
+    []
+  )
+  const inner = useMemo(
+    () =>
+      buildGarrison({
+        x: LANE.innerWallX,
+        y: HEIGHTS.innerWall,
+        zFrom: -72,
+        zTo: 72,
+        count: 44,
+        banners: 3,
+        seed: 5,
+      }),
+    []
+  )
+  const gate = useMemo(
+    () =>
+      buildGarrison({
+        x: LANE.gateX,
+        y: HEIGHTS.gate,
+        zFrom: -60,
+        zTo: 60,
+        count: 22,
+        banners: 2,
+        seed: 9,
+      }),
+    []
+  )
+
+  return (
     <group>
-      {buildings.map((b, i) => (
-        <group key={i} position={[b.x, 0, b.z]}>
-          <mesh position={[0, b.h / 2, 0]} castShadow>
-            <boxGeometry args={[b.w, b.h, b.w]} />
-            <meshLambertMaterial color={PALETTE.cityWall} flatShading />
-          </mesh>
-          {b.domed ? (
-            <>
-              {/* Drum ringed with windows, then a shallow dome — the Byzantine
-                  church silhouette. Emphatically not a spire. */}
-              <mesh position={[0, b.h + 0.28, 0]}>
-                <cylinderGeometry args={[b.domeR, b.domeR, 0.56, 12]} />
-                <meshLambertMaterial color={PALETTE.cityWall} flatShading />
-              </mesh>
-              <mesh position={[0, b.h + 0.56, 0]} scale={[1, 0.52, 1]}>
-                <sphereGeometry args={[b.domeR * 1.06, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-                <meshLambertMaterial color={PALETTE.domeLead} flatShading />
-              </mesh>
-            </>
-          ) : (
-            <mesh position={[0, b.h + 0.3, 0]}>
-              <boxGeometry args={[b.w * 1.05, 0.6, b.w * 1.05]} />
-              <meshLambertMaterial color={PALETTE.cityRoof} flatShading />
-            </mesh>
-          )}
-        </group>
+      {[outer, inner, gate].map((g, i) => (
+        <mesh key={i} geometry={g} castShadow>
+          <meshLambertMaterial vertexColors flatShading />
+        </mesh>
       ))}
     </group>
   )
@@ -293,34 +360,7 @@ export function LandTerrain() {
       <Gate />
       <CityBackdrop />
 
-      {/* Defenders hold both wall lines and the gate. */}
-      <RampartGarrison
-        x={LANE.outerWallX}
-        y={HEIGHTS.outerWall}
-        zFrom={-70}
-        zTo={70}
-        count={34}
-        seed={2}
-        banners={0}
-      />
-      <RampartGarrison
-        x={LANE.innerWallX}
-        y={HEIGHTS.innerWall}
-        zFrom={-72}
-        zTo={72}
-        count={44}
-        seed={5}
-        banners={3}
-      />
-      <RampartGarrison
-        x={LANE.gateX}
-        y={HEIGHTS.gate}
-        zFrom={-60}
-        zTo={60}
-        count={22}
-        seed={9}
-        banners={2}
-      />
+      <Garrisons />
     </group>
   )
 }

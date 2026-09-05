@@ -14,7 +14,7 @@ import { useMemo } from 'react'
 import * as THREE from 'three'
 import { PALETTE } from './palette.js'
 import { buildBandedWall, buildTower, buildGround } from './geometry/wallBuilder.js'
-import { RampartGarrison } from './geometry/Defender.jsx'
+import { buildGarrison } from './geometry/garrisonBuilder.js'
 
 export const SEA_LANE = {
   stagingX: -26,
@@ -212,6 +212,28 @@ function GalataShore() {
   )
 }
 
+/** Defenders on the sea wall, merged into one geometry. */
+function SeaGarrison() {
+  const geometry = useMemo(
+    () =>
+      buildGarrison({
+        x: SEA_LANE.wallX,
+        y: SEA_HEIGHTS.wall,
+        zFrom: -22,
+        zTo: 22,
+        count: 18,
+        banners: 3,
+        seed: 4,
+      }),
+    []
+  )
+  return (
+    <mesh geometry={geometry} castShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
 /** Static scenery for the sea lane. Contains no game state. */
 export function SeaTerrain() {
   return (
@@ -221,15 +243,7 @@ export function SeaTerrain() {
       <CityShore />
       <SeaWall />
 
-      <RampartGarrison
-        x={SEA_LANE.wallX}
-        y={SEA_HEIGHTS.wall}
-        zFrom={-6}
-        zTo={6}
-        count={6}
-        seed={4}
-        banners={2}
-      />
+      <SeaGarrison />
     </group>
   )
 }
