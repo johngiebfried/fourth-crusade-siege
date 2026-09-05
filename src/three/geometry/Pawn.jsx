@@ -96,9 +96,12 @@ export function Pawn({
   const placed = useRef(false)
 
   const body = useMemo(() => pawnGeometry(faction), [faction])
+  // Only the bearer carries cloth. Every man having a pennon on his spear made
+  // a thicket of small flags that added nothing the cape colour did not already
+  // say; the standard means more when one man in the contingent holds it.
   const flag = useMemo(
-    () => (showFlag ? factionFlagTexture(faction) : null),
-    [faction, showFlag]
+    () => (showFlag && bearer ? factionFlagTexture(faction) : null),
+    [faction, showFlag, bearer]
   )
 
   const target = useMemo(
@@ -206,18 +209,14 @@ export function Pawn({
           <meshLambertMaterial vertexColors flatShading side={THREE.DoubleSide} />
         </mesh>
 
-        {/* The contingent's flag. A pennon on the spear for most; the man
-            with the highest standing in each following carries a full
-            standard on a taller staff, which is how a contingent was actually
+        {/* The contingent's standard, carried by the man with the highest
+            standing in each following — which is how a contingent was actually
             picked out on a field. Turned to face the lane camera, because a
             flag edge-on says nothing. */}
         {flag && (
-          <group
-            position={bearer ? [0.44, 2.42, -0.04] : [0.44, 1.86, -0.04]}
-            rotation={[0, -0.5, 0.05]}
-          >
-            <mesh position={[bearer ? 0.4 : 0.26, 0, 0]}>
-              <planeGeometry args={bearer ? [0.78, 0.56] : [0.5, 0.34]} />
+          <group position={[0.44, 2.42, -0.04]} rotation={[0, -0.5, 0.05]}>
+            <mesh position={[0.4, 0, 0]}>
+              <planeGeometry args={[0.78, 0.56]} />
               <meshBasicMaterial map={flag} side={THREE.DoubleSide} toneMapped={false} />
             </mesh>
           </group>

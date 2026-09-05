@@ -192,42 +192,60 @@ function mangonelParts({ x, z, facing = 1 }) {
 export function buildMoatBridge({ x, z, span, seed = 3 }) {
   const rand = rng(seed)
   const parts = []
-  const deckY = 0.55
+  const deckY = 0.5
+  const halfW = 0.52
 
-  // Trestles standing in the ditch.
-  const bents = 4
+  // A footbridge, not a causeway. The first version was two units wide with a
+  // handrail — wider than a man is tall, and tidier than anything an army
+  // throws across a ditch under shot. This one is barely two abreast, and it
+  // is meant to look like it was knocked together in a night.
+  const bents = 3
+  const legTop = (i) => deckY - 0.03 - Math.sin((i / bents) * Math.PI) * 0.06
+
   for (let i = 0; i <= bents; i++) {
     const bx = x - span / 2 + (span * i) / bents
-    for (const dz of [-0.85, 0.85]) {
-      const leg = new THREE.BoxGeometry(0.18, deckY + 0.7, 0.18)
-      leg.rotateZ((rand() - 0.5) * 0.08)
-      leg.translate(bx, (deckY + 0.7) / 2 - 0.7, z + dz)
-      parts.push(paint(leg, PALETTE.hullTimberDark, 0.9 + rand() * 0.18))
+    for (const dz of [-halfW, halfW]) {
+      const h = legTop(i) + 0.62
+      const leg = new THREE.BoxGeometry(0.1, h, 0.1)
+      // Every trestle leans its own way. Nothing here is plumb.
+      leg.rotateZ((rand() - 0.5) * 0.2)
+      leg.rotateX((rand() - 0.5) * 0.14)
+      leg.translate(bx + (rand() - 0.5) * 0.1, h / 2 - 0.62, z + dz)
+      parts.push(paint(leg, PALETTE.hullTimberDark, 0.82 + rand() * 0.3))
     }
-    const brace = new THREE.BoxGeometry(0.14, 0.14, 1.9)
-    brace.translate(bx, deckY - 0.28, z)
-    parts.push(paint(brace, PALETTE.hullTimberDark))
+    // A cross-brace, skewed, and not on every bent.
+    if (i < bents && rand() > 0.25) {
+      const brace = new THREE.BoxGeometry(0.075, 0.075, halfW * 2.1)
+      brace.rotateX((rand() - 0.5) * 0.3)
+      brace.translate(bx + span / bents / 2, deckY - 0.3 - rand() * 0.1, z)
+      parts.push(paint(brace, PALETTE.hullTimberDark, 0.8 + rand() * 0.25))
+    }
   }
 
-  // Plank deck, laid across in rough boards.
-  const boards = Math.round(span / 0.55)
+  // Two stringers carrying the boards, sagging a little at midspan.
+  for (const dz of [-halfW * 0.72, halfW * 0.72]) {
+    const s1 = new THREE.BoxGeometry(span, 0.09, 0.1)
+    s1.translate(x, deckY - 0.09, z + dz)
+    parts.push(paint(s1, PALETTE.hullTimberDark, 0.9))
+  }
+
+  // Salvaged boards: uneven widths, uneven lengths, laid crooked, with gaps
+  // where there was nothing left to lay.
+  const boards = Math.round(span / 0.34)
   for (let i = 0; i < boards; i++) {
+    if (rand() < 0.12) continue // a plank that never got laid
     const bx = x - span / 2 + (span * (i + 0.5)) / boards
-    const board = new THREE.BoxGeometry(span / boards - 0.04, 0.12, 2.1)
-    board.translate(bx, deckY, z + (rand() - 0.5) * 0.06)
-    parts.push(paint(board, PALETTE.hullTimber, 0.86 + rand() * 0.26))
+    const len = halfW * 2 * (0.82 + rand() * 0.3)
+    const board = new THREE.BoxGeometry(span / boards - 0.05 - rand() * 0.05, 0.06, len)
+    board.rotateY((rand() - 0.5) * 0.16)
+    board.rotateX((rand() - 0.5) * 0.09)
+    board.translate(
+      bx + (rand() - 0.5) * 0.05,
+      deckY - Math.sin(((i + 0.5) / boards) * Math.PI) * 0.05,
+      z + (rand() - 0.5) * 0.16
+    )
+    parts.push(paint(board, PALETTE.hullTimber, 0.78 + rand() * 0.36))
   }
-
-  // Handrail down one side.
-  for (let i = 0; i <= bents; i++) {
-    const bx = x - span / 2 + (span * i) / bents
-    const post = new THREE.BoxGeometry(0.12, 0.75, 0.12)
-    post.translate(bx, deckY + 0.38, z - 0.95)
-    parts.push(paint(post, PALETTE.hullTimberDark))
-  }
-  const rail = new THREE.BoxGeometry(span, 0.1, 0.12)
-  rail.translate(x, deckY + 0.72, z - 0.95)
-  parts.push(paint(rail, PALETTE.hullTimber))
 
   const merged = mergeGeometries(parts, false)
   parts.forEach((p) => p.dispose())

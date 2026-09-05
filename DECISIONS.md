@@ -652,11 +652,14 @@ spear; the shield was geometry paying no rent.
 | N. French | Blue | Fleur-de-lis |
 | Imperial | Yellow, black device | Eagle |
 | Clerical | White, red cross | Crossed keys of St Peter |
-| Indeterminate | Undyed buff wool | *(blank flag)* |
+| Indeterminate | Green | *(blank flag)* |
 
-Indeterminate was left to me, so it is undyed wool — the colour of a man who
-has not been given one. It reads as neutral beside four saturated contingents
-without looking like a fifth faction, and its flag is deliberately blank.
+Indeterminate was left to me and I chose undyed wool, which was wrong: buff sat
+too close to the clerical white at forty pixels, which is the one contrast that
+had to hold. It is green, your call, and green is in fact the only hue left
+that separates cleanly from all four declared contingents. It is darker and
+more saturated than the olive of the field, so it does not sink into the grass.
+Its flag stays deliberately blank.
 
 Two deliberate anachronisms, both yours and both defensible as game
 conventions: the Lion in its early-modern red form, and the fleur-de-lis, which
@@ -668,9 +671,12 @@ wrong here, and wrong in the specific way this project is trying not to be.
 Devices are drawn to a 128×96 canvas at runtime and cached per faction. A
 `CanvasTexture` is generated, never fetched — the no-asset rule holds.
 
-**Banner-bearers.** The senior man of each contingent — highest fama, ties
-broken on id so it never changes between loads — carries a standard on a taller
-staff instead of a pennon. This is the strongest available answer to "how do
+**Banner-bearers, and nobody else.** The senior man of each contingent —
+highest fama, ties broken on id so it never changes between loads — carries a
+standard on a taller staff. Every *other* man was first given a small pennon on
+his spear; they came out as a thicket of little flags saying nothing the cape
+colour had not already said, and they are gone. The spear is just a spear. The
+standard means more when one man in the following holds it. This is the strongest available answer to "how do
 these people come together": it groups them without uniforming them, and it is
 the one part of the livery scheme that is straightforwardly historical.
 
@@ -697,6 +703,26 @@ from the queue would have left them undyed — standing out from their own
 contingent at the exact moment they go down with the ship. Two new scene
 invariants now hold the wiring in place, one per lane, plus one that every
 passenger carries the fama a bearer is picked on.
+
+## Revision: legibility passes on the devices and the bridge
+
+**The keys of St Peter, twice.** First drawn in the gold and silver of the
+papal arms, at the weight the other devices use: correct tincture, and
+completely illegible — two pale keys on a pale ground. Redrawn near-black and
+much heavier. That still was not right: laid out nearly upright the two shafts
+ran almost parallel and read as *one* key with a doubled ring. They are now a
+true saltire — bows low and together, wards high and splayed outward, crossing
+below centre, with the upper key laid over a halo of the field colour so the
+two stay two where they meet. Weight and layout beat tincture on a flag forty
+pixels wide.
+
+**The moat bridge was out of scale.** It was two units across with a handrail —
+wider than a man is tall, and far too finished for something an army throws
+over a ditch under shot. It is now barely two abreast, on thin leaning
+trestles, with no rail at all: salvaged boards of uneven width and length, laid
+crooked, sagging at midspan, with gaps where there was nothing left to lay and
+braces missing from some bents. It answers the "how do they get across the
+moat" question without pretending anyone had time to build well.
 
 ## Still open, and the caveat that goes with them
 

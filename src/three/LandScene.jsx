@@ -280,7 +280,7 @@ function SiegeCamp() {
  */
 function MoatBridge() {
   const geometry = useMemo(
-    () => buildMoatBridge({ x: LANE.moatX, z: -4, span: LANE.moatWidth + 3.0, seed: 3 }),
+    () => buildMoatBridge({ x: LANE.moatX, z: -4, span: LANE.moatWidth + 1.5, seed: 3 }),
     []
   )
   return (

@@ -49,16 +49,19 @@ export const FACTIONS = {
     cape: '#ece4d4',
     cross: '#a32b25',
     field: '#ece4d4',
-    device: '#c9a24a',
+    // Near-black, not the gold of the papal arms — see drawCrossedKeys.
+    device: '#141210',
     draw: drawCrossedKeys,
   },
   Indeterminate: {
     label: 'Indeterminate',
-    // Undyed cloth: no allegiance declared, and a plain flag to match.
-    cape: '#a99c85',
-    cross: '#3a352c',
-    field: '#a99c85',
-    device: '#a99c85',
+    // Green, and a blank flag. Undyed wool was tried first and sat too close
+    // to the clerical white at forty pixels; green is the only hue left that
+    // separates cleanly from all four declared contingents.
+    cape: '#3f6b3a',
+    cross: '#f2e8d4',
+    field: '#3f6b3a',
+    device: '#3f6b3a',
     draw: null,
   },
 }
@@ -172,31 +175,51 @@ function drawEagle(ctx, w, h, colour) {
 
 /** The keys of Saint Peter, crossed in saltire. */
 function drawCrossedKeys(ctx, w, h, colour) {
-  const key = (angle, tint) => {
+  // Heavy and near-black on the white field. The first version used the
+  // gold-and-silver of the papal arms, which is correct and completely
+  // illegible at this size — two pale keys on a pale ground. Weight beats
+  // tincture on a flag forty pixels wide.
+  //
+  // Laid out as a true saltire: bows low and together, wards high and splayed
+  // outward, crossing below centre. Drawn nearer to upright the two shafts ran
+  // almost parallel and read as one key with a doubled ring.
+  const key = (angle, dir, tint, halo) => {
     ctx.save()
-    ctx.translate(w * 0.5, h * 0.52)
+    ctx.translate(w * 0.5, h * 0.6)
     ctx.rotate(angle)
     ctx.strokeStyle = tint
     ctx.fillStyle = tint
-    ctx.lineWidth = h * 0.075
     ctx.lineCap = 'round'
-    // Shaft.
+    ctx.lineJoin = 'round'
+    const pad = halo ? h * 0.055 : 0
+
+    // Shaft: ward end up, bow end down.
+    ctx.lineWidth = h * 0.1 + pad * 2
     ctx.beginPath()
-    ctx.moveTo(0, -h * 0.26)
-    ctx.lineTo(0, h * 0.3)
+    ctx.moveTo(0, -h * 0.46)
+    ctx.lineTo(0, h * 0.24)
     ctx.stroke()
-    // Bow.
+
+    // Bow, at the foot.
+    ctx.lineWidth = h * 0.08 + pad * 2
     ctx.beginPath()
-    ctx.arc(0, -h * 0.31, h * 0.1, 0, Math.PI * 2)
-    ctx.lineWidth = h * 0.055
+    ctx.arc(0, h * 0.31, h * 0.115, 0, Math.PI * 2)
     ctx.stroke()
-    // Wards.
-    ctx.fillRect(0, h * 0.14, w * 0.13, h * 0.055)
-    ctx.fillRect(0, h * 0.25, w * 0.09, h * 0.055)
+
+    // Wards, at the head, stepping outward away from the crossing.
+    const wx = dir > 0 ? 0 : -w * 0.17
+    ctx.fillRect(wx - pad, -h * 0.44 - pad, w * 0.17 + pad * 2, h * 0.09 + pad * 2)
+    const wx2 = dir > 0 ? 0 : -w * 0.12
+    ctx.fillRect(wx2 - pad, -h * 0.29 - pad, w * 0.12 + pad * 2, h * 0.09 + pad * 2)
     ctx.restore()
   }
-  key(-0.42, colour)
-  key(0.42, '#e8e4dc')
+
+  const tilt = 0.62
+  key(-tilt, -1, colour)
+  // The upper key is laid over a halo of the field colour, so the two read as
+  // two where they cross instead of merging into one black mass.
+  key(tilt, 1, factionOf('Clerical').field, true)
+  key(tilt, 1, colour)
 }
 
 /* ----------------------------------------------------------------- flags */
