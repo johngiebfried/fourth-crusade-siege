@@ -792,6 +792,84 @@ onto the wall**, and runs up its staff as it is raised. First arrival takes the
 tower; once the flag is up it stays up, even after that man has pushed on into
 the city. It is the clearest read in the sequence of who is actually winning.
 
+## Revision: the manuscript treatment, better devices, and the textbook
+
+### Three manuscript treatments, not one
+
+"Medieval manuscript" covers everything from a plain ruled working copy to a
+presentation leaf with gold on it, and which one a screen wants depends on what
+the screen is for. So there are three, used side by side in the game so they
+can be judged in place:
+
+| Treatment | Where | What it is |
+| --- | --- | --- |
+| **Leaf** | First to enter | Gold-ground initial, rubricated incipit, double bounding rule, painted parchment mottle. The most decorated and the slowest to read, so it goes on the one moment worth stopping at. |
+| **Ruled** | Bribery | Visible ruling, a rubric out in the left margin, a plain red versal. Holds a price table without looking crowded. |
+| **Bordered** | Results | Vine-scroll down both edges with leaves growing off the stem, centred heading. The most ornamental and the most expensive in width, so it is kept for the closing page. |
+
+The illuminated initial is drawn to a canvas at runtime — gold panel with a lit
+and a deep edge, a lapis or vermilion field, vine-work in the corners, and the
+letter reserved in parchment white with a dark contour. Generated, not fetched,
+exactly like the flags and the name plates. On the first-to-enter screen the
+initial is the crusader's own, which is a small thing that pays for itself.
+
+### The lettering, and why there is no blackletter
+
+The brief forbids fetched assets, which rules out a webfont, and no blackletter
+face can be relied on across a room of unknown school laptops — macOS ships
+none, and Windows only has Old English Text MT if Office put it there. The
+canvas initial names those faces and falls back gracefully; the body text stays
+in the old-style serif the rest of the game uses.
+
+This is the right trade rather than a concession. The manuscript signal at a
+glance is the *initial, the rubrication, the ruling and the margins*, not the
+letterforms — and those are the parts that can be guaranteed to render. A
+blackletter body would also be markedly harder to read on a projector, which is
+the opposite of what a classroom text wants.
+
+### The devices, rebuilt
+
+The flags fly on staffs now, close enough to the camera that the old
+hundred-pixel drawings were showing their seams. The canvas went from 128×96 to
+320×240 and all four devices were redrawn.
+
+The lesson worth recording is about **wings**. Drawn as feathers radiating from
+a shoulder they make a starburst: the first eagle came out as a crow, and the
+first lion had no visible wing at all. A wing reads as a *mass* with a stepped
+trailing edge. Both are now built by filling a swept shape and cutting its
+trailing edge into scallops, which is one path instead of a dozen and reads
+correctly at any size.
+
+The rest was iteration against the thing on screen: the eagle needed a short
+thick neck and a deep hooked beak (a long neck and a shallow hook make a dove,
+then a duck), and its legs had to be thick and short and thrown clear of the
+tail. The fleur-de-lis needed side petals fat where they leave the band — drawn
+thin they read as horns — and only a shallow notch under the foot, because a
+deep one forks it into a tail.
+
+### The textbook of the day
+
+Six sets of passages, in `game/lore.js`, offered to the screens as marginal
+gloss:
+
+`chronicle` (13) · `siegecraft` (10) · `walls` (8) · `city` (6) ·
+`aftermath` (6) · `fleet` (5)
+
+Every passage attributed to a chronicler is **my own plain-English rendering**
+of what that writer says at that point, not a transcription of a published
+translation — modern translations are somebody's copyrighted work. The general
+sets carry no attribution at all, and a check enforces that, so nothing
+uncited can drift into looking like a quotation.
+
+The picker exhausts a set before it repeats anything. A class plays this more
+than once, and a random pick shows the same passage twice in a sitting while
+never showing a third of them.
+
+`scripts/check-lore.mjs` holds the whole thing together: sets long enough not
+to repeat, nothing empty, nothing long enough to stop the game, every chronicle
+entry sourced, no general entry sourced, no passage in two sets, and the picker
+exhausting before repeating. `npm run check` now runs all three suites.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

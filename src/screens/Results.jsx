@@ -5,37 +5,47 @@
  * city behind it like everything else rather than reverting to a form.
  */
 
+import { useMemo } from 'react'
 import { CityBackdrop } from './CityBackdrop.jsx'
-import { DarkPanel, Eyebrow, GhostButton } from './ui.jsx'
+import { GhostButton } from './ui.jsx'
+import { ManuscriptBordered, Marginalia } from './manuscript.jsx'
+import { pickLore } from '../game/lore.js'
 
 const STATUS = {
-  inside: { label: 'Entered the city', tone: 'text-emerald-300' },
-  shipwrecked: { label: 'Shipwrecked', tone: 'text-sky-300' },
-  ready: { label: 'Outside the walls', tone: 'text-stone-400' },
+  inside: { label: 'Entered the city', tone: 'text-emerald-800' },
+  shipwrecked: { label: 'Shipwrecked', tone: 'text-sky-800' },
+  ready: { label: 'Outside the walls', tone: 'text-stone-500' },
 }
 
 export default function Results({ cityFallen, firstToEnter, finalSummary, sackOrder, onReset }) {
+  // The last screen the class sees, so it looks past the siege: what the sack
+  // cost if the city fell, and what the crusade came to if it did not.
+  const gloss = useMemo(() => pickLore(cityFallen ? 'aftermath' : 'walls'), [cityFallen])
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#1c1512]">
       <CityBackdrop />
 
       <div className="pointer-events-none absolute inset-0 flex items-start justify-center overflow-y-auto px-2 py-8">
-        <DarkPanel wide>
-          <Eyebrow dark>{cityFallen ? 'The city has fallen' : 'The assault is over'}</Eyebrow>
-          <h1 className="mt-3 text-4xl font-bold leading-tight text-amber-100 md:text-5xl">
-            {cityFallen ? 'Constantinople Has Fallen' : 'The Walls Have Held'}
-          </h1>
-
+        {/* Treatment three: the decorated leaf, vine-scroll down both edges.
+            The most ornamental and the most expensive in width, which is why
+            it is kept for the closing page. */}
+        <ManuscriptBordered
+          wide
+          eyebrow={cityFallen ? 'The city has fallen' : 'The assault is over'}
+          heading={cityFallen ? 'Constantinople Has Fallen' : 'The Walls Have Held'}
+          palette={cityFallen ? 'vermilion' : 'lapis'}
+        >
           {firstToEnter && (
-            <div className="mt-5 rounded-lg border border-amber-800/50 bg-amber-950/40 px-5 py-3">
-              <span className="text-sm uppercase tracking-[0.2em] text-amber-500">
+            <div className="mb-5 border border-red-900/30 bg-[#eadcbc]/70 px-5 py-3 text-center">
+              <span className="text-xs uppercase tracking-[0.24em] text-red-900/70">
                 First to enter
               </span>
-              <div className="mt-1 text-2xl font-bold text-amber-100">{firstToEnter}</div>
+              <div className="mt-1 text-2xl font-bold text-red-900">{firstToEnter}</div>
             </div>
           )}
 
-          <div className="mt-6 space-y-2 text-lg leading-relaxed text-stone-300">
+          <div className="space-y-2 text-lg leading-relaxed text-stone-800">
             {finalSummary.map((line, idx) => (
               <p key={idx}>{line}</p>
             ))}
@@ -43,24 +53,26 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
 
           {cityFallen && sackOrder.length > 0 && (
             <div className="mt-8">
-              <Eyebrow dark>Sack order</Eyebrow>
-              <p className="mt-2 text-base text-stone-400">
+              <div className="text-xs uppercase tracking-[0.28em] text-red-900/70">
+                Sack order
+              </div>
+              <p className="mt-2 text-base text-stone-600">
                 Order of priority for choosing a region to plunder. Those who entered the city
                 come first, then the rest by fama, then the shipwrecked.
               </p>
-              <ol className="mt-4 divide-y divide-stone-700/70 rounded-lg border border-stone-700/70 bg-black/25">
+              <ol className="mt-4 divide-y divide-red-900/15 border border-red-900/25 bg-[#eadcbc]/60">
                 {sackOrder.map((entry) => {
                   const status = STATUS[entry.status] ?? STATUS.ready
                   return (
                     <li key={entry.position} className="flex items-center gap-4 px-4 py-2.5">
-                      <span className="w-9 shrink-0 text-right text-xl font-bold text-amber-500">
+                      <span className="w-9 shrink-0 text-right text-xl font-bold text-red-900">
                         {entry.position}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-lg font-medium text-amber-50">
+                        <span className="block truncate text-lg font-medium text-stone-900">
                           {entry.name}
                         </span>
-                        <span className="text-sm text-stone-500">{entry.faction}</span>
+                        <span className="text-sm text-stone-600">{entry.faction}</span>
                       </span>
                       <span className={`shrink-0 text-sm ${status.tone}`}>{status.label}</span>
                     </li>
@@ -70,12 +82,12 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
             </div>
           )}
 
-          <div className="mt-8">
-            <GhostButton dark onClick={onReset}>
-              Begin a new siege
-            </GhostButton>
+          <Marginalia entry={gloss} />
+
+          <div className="mt-8 text-center">
+            <GhostButton onClick={onReset}>Begin a new siege</GhostButton>
           </div>
-        </DarkPanel>
+        </ManuscriptBordered>
       </div>
     </div>
   )
