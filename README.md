@@ -56,11 +56,15 @@ node scripts/check-rules.mjs
 ## State of the build
 
 **Working:** character select, attack declaration, the full land wall sequence
-(staging → outer wall → inner wall → city gates) with per-stage camera framing,
-click-to-resolve tokens, a tumbling die that settles on the decided face, the
-universal dissolve on failure, the first-to-enter callout, round two, the
-round-three bribery screen, the gate-opening sequence, and the results and sack
-order hand-off.
+(staging → outer wall → inner wall → city gates), the full sea wall sequence
+(fleet stands in → piloting → boarding over the flying bridge → breaking
+through), per-stage camera framing on both, click-to-resolve tokens in any
+order, a tumbling die that settles on the decided face, the universal dissolve
+on failure, the distinct ship-sinking with its crew going down with it, the
+first-to-enter callout, round two, the round-three bribery screen, the
+gate-opening sequence, and the results and sack order hand-off.
 
-**Not yet built:** the sea wall visuals and the title screen. See "What's next"
-in `DECISIONS.md`.
+When a round has both land and sea attackers, the two sequences play in order
+and the round resolves once both are done.
+
+**Not yet built:** the title screen. See "What's next" in `DECISIONS.md`.

@@ -153,27 +153,28 @@ export const addLandAttackRolls = (queue, attackers) => {
   })
 }
 
-export const addSeaAttackRolls = (queue, attackers) => {
-  // Venetians AND Oberto can captain ships
+/**
+ * Form ships from the sea attackers.
+ *
+ * Extracted verbatim out of addSeaAttackRolls so the visual layer can read the
+ * crew manifest directly. This matters for a ship that founders: its
+ * passengers produce no boarding rolls at all, so without the manifest they
+ * would never appear on screen and could not go down with the ship.
+ *
+ * Purely deterministic — captains in roster order, passengers filling each
+ * ship in turn up to capacity. No dice, and no change to who sails with whom.
+ */
+export const formShips = (attackers) => {
   const potentialCaptains = attackers.filter(canCaptain)
   const passengers = attackers.filter((p) => !canCaptain(p))
 
-  if (potentialCaptains.length === 0) {
-    queue.push({
-      type: 'announcement',
-      message: '⚠️ No Ship Captains Available',
-      subtitle:
-        'Sea wall attack cancelled - need Venetians or Oberto of Biandrate to pilot ships!',
-    })
-    return
-  }
-
-  // Form ships
   const ships = potentialCaptains.map((captain, idx) => ({
     id: `ship-${idx}`,
     captain: captain,
     passengers: [],
   }))
+
+  const stranded = []
 
   // Assign passengers to ships (max 3 per ship)
   let currentShipIndex = 0
@@ -188,12 +189,35 @@ export const addSeaAttackRolls = (queue, attackers) => {
     if (currentShipIndex < ships.length) {
       ships[currentShipIndex].passengers.push(passenger)
     } else {
-      queue.push({
-        type: 'announcement',
-        message: `⚠️ ${passenger.name} has no ship`,
-        subtitle: `All ships are full (max ${MAX_PASSENGERS_PER_SHIP} passengers each)`,
-      })
+      stranded.push(passenger)
     }
+  }
+
+  return { ships, stranded }
+}
+
+export const addSeaAttackRolls = (queue, attackers) => {
+  // Venetians AND Oberto can captain ships
+  const potentialCaptains = attackers.filter(canCaptain)
+
+  if (potentialCaptains.length === 0) {
+    queue.push({
+      type: 'announcement',
+      message: '⚠️ No Ship Captains Available',
+      subtitle:
+        'Sea wall attack cancelled - need Venetians or Oberto of Biandrate to pilot ships!',
+    })
+    return
+  }
+
+  const { ships, stranded } = formShips(attackers)
+
+  for (const passenger of stranded) {
+    queue.push({
+      type: 'announcement',
+      message: `⚠️ ${passenger.name} has no ship`,
+      subtitle: `All ships are full (max ${MAX_PASSENGERS_PER_SHIP} passengers each)`,
+    })
   }
 
   queue.push({

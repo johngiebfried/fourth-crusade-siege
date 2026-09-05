@@ -51,3 +51,27 @@ for (let i = 0; i < 4000; i++) {
 console.log('land runs', landRuns, '| sea runs', seaRuns, '| errors', err)
 console.log('stages-reached distribution', stageCounts)
 console.log('entrants across 4000 land rounds:', entrants)
+
+// Sea assault with no Venetian and no Oberto must cancel outright.
+{
+  const { buildSeaAssault, buildSeaStages } = await import(base + 'src/game/stages.js')
+  const noCaptains = chars.filter(c => c.faction !== 'Venetian' && c.name !== 'Oberto II of Biandrate').slice(0, 6)
+  const sea = buildSeaAssault(noCaptains)
+  const stages = buildSeaStages(sea)
+  console.log('no-captain sea assault → cancelled:', sea.cancelled, '| ships:', sea.ships.length, '| stages:', stages.length)
+
+  // Every passenger on the manifest must be accounted for, sunk ships included.
+  let manifestOk = true
+  for (let i = 0; i < 500; i++) {
+    const pick = [...chars].sort(() => Math.random() - 0.5).slice(0, 10)
+    const s = buildSeaAssault(pick)
+    for (const ship of s.ships) {
+      const boarded = new Set(ship.boarding.map(e => e.playerId))
+      const manifest = new Set(ship.manifest.passengers.map(p => p.id))
+      for (const id of boarded) if (!manifest.has(id)) manifestOk = false
+      // A ship that survived piloting and carries passengers must roll for each
+      if (ship.piloting && ship.piloting.roll !== 1 && manifest.size !== boarded.size) manifestOk = false
+    }
+  }
+  console.log('manifest matches boarding rolls on every surviving ship:', manifestOk)
+}

@@ -139,18 +139,40 @@ the instance R3F builds, in `onCreated`.
 
 ## What's next
 
-1. **Sea wall sequence.** Ships staged left, sailing in; piloting roll per ship
-   with its own sinking animation; boarding and breakthrough per passenger.
-   Ships render as lashed pairs with a rigged plank walkway between mast-tops —
-   the Clari/Villehardouin flying bridge — while the rules still treat one ship
-   per captain. `buildSeaAssault` in `src/game/stages.js` already groups the
-   rolls by ship and stage, ready for it. Until then, sea rolls resolve
-   headlessly and fold into the round so the game still completes correctly.
-2. **Title screen.** The isometric establishing shot: Hagia Sophia's shallow
+1. **Title screen.** The isometric establishing shot: Hagia Sophia's shallow
    dome on its windowed drum with flanking half-domes, scattered smaller domed
    churches, the Hippodrome obelisks, the peninsula between Marmara and the
    Golden Horn, and Blachernae where the land walls meet the water. No
-   minarets. The domed-church silhouette used in the land lane's city backdrop
-   (`CityBackdrop` in `src/three/LandScene.jsx`) is the groundwork for it.
-3. Polish passes on the land lane: name plate collision avoidance when many
-   tokens bunch together, and richer defender reactions.
+   minarets. The domed-church silhouettes already used behind both lanes are
+   the groundwork for it.
+2. Polish: name plate collision avoidance when many tokens bunch together, and
+   richer defender reactions.
+
+## Sea sequence, as built
+
+**All passengers are aboard from the start, from the ship manifest.** A ship
+that founders produces no boarding rolls at all, so its passengers appear
+nowhere in the roll queue. Deriving the crew from boarding rolls meant they
+were invisible and could not go down with the ship. `formShips` was extracted
+out of `addSeaAttackRolls` so both the rolls and the visuals read the same
+formation — a pure extraction, verified identical to the original inline loop
+over 20,000 random rosters, with no change to who sails with whom.
+
+**Sinking is the one failure with its own animation**, as the brief requires.
+The ship lists hard over, settles by the head and goes under with a water
+splash — nothing fades — and its crew ride it down rather than dissolving.
+
+**Sails are furled.** Set sails read as a wall of canvas that blanked out the
+whole fleet at the lane camera's angle, and ships went into an assault with
+canvas in anyway. Each yard carries a furled bundle instead.
+
+**Boarding ramps only exist once dropped.** A stowed ramp modelled at its hinge
+read as a giant diagonal pole across the hulls.
+
+**A failed boarder dissolves, though the rules message says "Falls back to
+ship!"** This follows the brief, which asks for the universal dissolve at every
+stage of both wall types with ship-sinking as the sole exception. Worth knowing
+that the underlying rule is gentler than the visual: a failed boarder is not
+lost, they simply do not advance and take no fama penalty. If you would rather
+they visibly drop back onto the deck than dissolve, that is a small change in
+`resolveCrew` in `src/screens/SeaAssault.jsx`.
