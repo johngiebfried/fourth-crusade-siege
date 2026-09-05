@@ -236,6 +236,9 @@ function CityBackdrop() {
       const r2 = rand(i + 40)
       const x = LANE.cityX + 1 + r * 24
       const z = -95 + r2 * 190
+      // Keep a street clear in front of the gate. A gate needs a road, and it
+      // is also the only ground the bribery camera has to stand on.
+      if (Math.abs(z) < 8 && x < 30) continue
       const w = 1.6 + r * 2.4
       const h = 1.6 + r2 * 2.8
       const tone = 0.88 + rand(i + 91) * 0.24

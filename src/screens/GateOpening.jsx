@@ -4,23 +4,55 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { LandTerrain, LANE, HEIGHTS } from '../three/LandScene.jsx'
 import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
 
+/**
+ * Stands in front of the gate and pushes slowly in on it.
+ *
+ * This camera used to sit a unit and a half west of the gate at z = 26. That
+ * was fine when the gate wall was fifteen units long; once it ran a hundred
+ * and fifty, the camera was pressed against the masonry twenty units to the
+ * side of the arch, with the wall itself between it and the gate. It has to be
+ * square in front of the opening, in the ground between the inner wall and the
+ * gate.
+ */
+// Standing inside the city, looking back at the gate as it is opened and the
+// first crusader walks through toward us. The ground between the inner wall
+// and the gate is under seven units deep — nowhere near enough to frame the
+// gate from outside — and this is the better shot anyway: the city is what is
+// being entered, so the city is where the camera should be.
+const GATE_START = new THREE.Vector3(LANE.gateX + 15, 5.2, 8.5)
+const GATE_END = new THREE.Vector3(LANE.gateX + 9.5, 4.0, 5.0)
+const GATE_LOOK = new THREE.Vector3(LANE.gateX, 2.6, 0)
+
 function GateCamera() {
-  const { camera } = useThree()
-  const look = useRef(new THREE.Vector3(LANE.gateX, 2.6, 0))
+  const camRef = useRef()
   useFrame((state, delta) => {
+    const cam = camRef.current
+    if (!cam) return
     // Slow push toward the opening gate.
-    const t = state.clock.elapsedTime
-    const z = THREE.MathUtils.damp(camera.position.z, 26 - Math.min(6, t * 0.7), 0.8, delta)
-    camera.position.set(LANE.gateX - 1.5, 4.2, z)
-    camera.lookAt(look.current)
+    const t = Math.min(1, state.clock.elapsedTime / 9)
+    const target = GATE_START.clone().lerp(GATE_END, t * t)
+    cam.position.x = THREE.MathUtils.damp(cam.position.x, target.x, 1.4, delta)
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, target.y, 1.4, delta)
+    cam.position.z = THREE.MathUtils.damp(cam.position.z, target.z, 1.4, delta)
+    cam.lookAt(GATE_LOOK)
   })
-  return null
+  return (
+    <PerspectiveCamera
+      ref={camRef}
+      makeDefault
+      fov={38}
+      near={0.1}
+      far={320}
+      position={GATE_START.toArray()}
+    />
+  )
 }
 
 /** Two leaves swinging inward. */
@@ -75,13 +107,24 @@ export default function GateOpening({ onDone }) {
         shadows
         gl={RENDERER_PROPS}
         onCreated={configureRenderer}
-        camera={{ fov: 28, near: 0.1, far: 200, position: [LANE.gateX - 1.5, 4.2, 26] }}
       >
         <GateCamera />
-        <directionalLight position={[-18, 26, 22]} intensity={1.4} color="#ffe9c4" castShadow />
-        <hemisphereLight args={['#bcd0e6', '#6b6247', 0.8]} />
-        <ambientLight intensity={0.3} />
-        <fog attach="fog" args={['#c9c1ac', 40, 90]} />
+        <directionalLight
+          position={[26, 30, 18]}
+          intensity={1.55}
+          color="#ffe9c4"
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-camera-left={-30}
+          shadow-camera-right={30}
+          shadow-camera-top={30}
+          shadow-camera-bottom={-30}
+          shadow-camera-near={1}
+          shadow-camera-far={120}
+        />
+        <hemisphereLight args={['#cfe0f0', '#7b7256', 0.85]} />
+        <ambientLight intensity={0.36} />
+        <fog attach="fog" args={['#c9c1ac', 30, 120]} />
         <color attach="background" args={['#b9c6d4']} />
 
         <LandTerrain />
@@ -91,12 +134,12 @@ export default function GateOpening({ onDone }) {
         <Pawn
           name=""
           showName={false}
-          position={walked ? [LANE.gateX + 5.5, 0, 0] : [LANE.gateX - 3.5, 0, 0]}
-          travelSpeed={0.55}
+          position={walked ? [LANE.gateX + 3.4, 0, 0.4] : [LANE.gateX - 3.2, 0, 0.4]}
+          travelSpeed={0.42}
         />
       </Canvas>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-14">
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center pt-8">
         <div className="rounded-lg bg-black/70 px-10 py-5 text-center">
           <div className="text-3xl font-bold text-amber-100">The gate is opened from within.</div>
           <div className="mt-2 text-lg text-stone-300">
