@@ -14,11 +14,11 @@
 export function StageBanner({ stage, remaining, total }) {
   if (!stage) return null
   return (
-    <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-6">
-      <div className="mx-4 max-w-3xl rounded-lg border border-amber-900/30 bg-[#f4ead6]/95 px-8 py-4 text-center shadow-xl">
-        <div className="text-3xl font-bold tracking-tight text-red-900">{stage.heading}</div>
-        <div className="mt-1 text-lg text-stone-700">{stage.blurb}</div>
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-6 text-base">
+    <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-3">
+      <div className="mx-4 max-w-2xl rounded-lg border border-amber-900/30 bg-[#f4ead6]/92 px-6 py-2.5 text-center shadow-xl">
+        <div className="text-2xl font-bold tracking-tight text-red-900">{stage.heading}</div>
+        <div className="mt-0.5 text-base text-stone-700">{stage.blurb}</div>
+        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-5 text-sm">
           <span className="rounded bg-red-900 px-3 py-1 font-bold text-amber-50">
             {stage.thresholdLabel
               ? stage.thresholdLabel

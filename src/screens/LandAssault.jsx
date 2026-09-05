@@ -37,9 +37,9 @@ const LEVELS = {
 
 /** Where a pawn stands, given how far it has got and its slot in the line. */
 function positionFor(level, index, count) {
-  // Tokens on a rampart can only be separated in depth, so keep that spread
-  // generous and let the yawed camera turn it into screen separation.
-  const spread = Math.min(11, Math.max(4, count * 2.0))
+  // Spread along the wall line. Looking down the line, this reads as real
+  // separation across the frame rather than a stack of overlapping tokens.
+  const spread = Math.min(26, Math.max(6, count * 3.4))
   const z = count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
 
   switch (level) {
@@ -51,18 +51,18 @@ function positionFor(level, index, count) {
       return [LANE.gateX + 4.5, 0, z * 0.9]
     case LEVELS.camp:
     default: {
-      // Camp is a block, staggered across the lane as well as into depth, so
-      // the name plates of neighbouring tokens do not sit on top of each other.
+      // A loose block on the open ground, staggered across the approach.
       const row = index % 3
-      return [LANE.campX + row * 2.0 - index * 0.35, 0, z]
+      return [LANE.campX + row * 2.6, 0, z + (row - 1) * 1.4]
     }
   }
 }
 
 /** Where the die is thrown for a pawn resolving at a given level. */
 function diePositionFor(level, pawnPos) {
-  const lift = level === LEVELS.camp ? 1.6 : 1.8
-  return [pawnPos[0] + 1.7, pawnPos[1] + lift, pawnPos[2] + 2.6]
+  const lift = level === LEVELS.camp ? 1.7 : 2.0
+  // Toward the camera side of the token, clear of the wall behind it.
+  return [pawnPos[0] - 1.9, pawnPos[1] + lift, pawnPos[2] + 2.2]
 }
 
 /* ---------------------------------------------------------------- camera */
@@ -75,61 +75,82 @@ function diePositionFor(level, pawnPos) {
  * object on every render — R3F then re-applies it and snaps the camera back
  * to its starting position, so no amount of per-frame easing ever survives.
  */
-const FOV = 20
-const YAW = 0.26 // ~15 degrees: enough that rampart depth reads on screen
+const FOV = 22
 
 /**
- * Each stage is framed by the width of lane it must show, not by a fixed
- * camera distance. Distance is then solved from the viewport's aspect ratio,
- * so a narrow window or an unusual projector shape pulls the camera back
- * instead of cropping the lane and pushing name plates off screen.
+ * The camera stands out on the attackers' side and looks back along the line
+ * of the walls, rather than square-on to them.
+ *
+ * Square-on, a wall is a slab seen end-first and reads as a cross-section — the
+ * cutaway look. From here each wall runs as a diagonal across the frame, with
+ * the next line standing taller behind it, so the defences read as one
+ * continuous chain. `OFFSET` is the direction from the point being watched to
+ * the camera: back along -X, up, and round to +Z.
+ */
+const OFFSET = (() => {
+  // From the watched point back to the camera: out on the attackers' side,
+  // well up, and round toward +Z so the line of the walls runs across frame.
+  // Elevation is a balance: too low and the wall lines overlap into one mass,
+  // too high and you look down onto their tops and lose the faces entirely.
+  // Thirty degrees keeps the banded face readable while still lifting each
+  // line clear of the one in front.
+  const v = new THREE.Vector3(-0.62, 0.5, 0.6)
+  return v.normalize()
+})()
+
+/**
+ * Each stage names the point it watches and how much *vertical* world space
+ * must be in frame.
+ *
+ * Height rather than width is deliberate: the wall chain stacks up the screen,
+ * one line above the next, so the vertical extent is what has to fit. Solving
+ * from width instead would crop the chain on a wide display, which is exactly
+ * the shape a classroom projector is. A wider screen simply shows more of the
+ * wall running off both edges, which is what keeps the ends out of shot.
  */
 const FRAMINGS = {
-  'first-wall': { x: -9.6, y: 2.4, span: 23 },
-  'second-wall': { x: -3.0, y: 3.8, span: 25 },
-  'city-gates': { x: 2.5, y: 3.6, span: 25 },
-  wide: { x: -4, y: 3.2, span: 34 },
+  'first-wall': { at: [-10.5, 3.0, 0], height: 29 },
+  'second-wall': { at: [-3.5, 4.6, 0], height: 31 },
+  'city-gates': { at: [5.0, 4.4, 0], height: 33 },
+  wide: { at: [-4, 4.0, 0], height: 42 },
 }
 
 function CameraRig({ focus }) {
   const camRef = useRef()
   const size = useThree((state) => state.size)
   const scene = useThree((state) => state.scene)
-
   const aspect = Math.max(0.5, size.width / Math.max(1, size.height))
 
   const frame = useMemo(() => {
     const f = FRAMINGS[focus] || FRAMINGS.wide
     const halfFov = (FOV * Math.PI) / 360
-    // Distance that puts `span` world units across the frame at this aspect.
+    // On a very narrow window there is not enough width for the wall to run
+    // off both edges, so pull back a little further there.
+    const widthRelief = aspect < 1.2 ? 1.2 / Math.max(0.6, aspect) : 1
     const dist = THREE.MathUtils.clamp(
-      f.span / 2 / (Math.tan(halfFov) * aspect),
-      22,
-      80
+      (f.height / 2 / Math.tan(halfFov)) * widthRelief,
+      30,
+      190
     )
-    return {
-      pos: [f.x + dist * Math.tan(YAW), f.y + dist * 0.14, dist],
-      look: [f.x, f.y, 0],
-    }
+    const look = new THREE.Vector3(...f.at)
+    const pos = look.clone().addScaledVector(OFFSET, dist)
+    return { pos, look }
   }, [focus, aspect])
-
-  const targetPos = useMemo(() => new THREE.Vector3(...frame.pos), [frame])
-  const lookAt = useMemo(() => new THREE.Vector3(...frame.look), [frame])
 
   useFrame((_, delta) => {
     const cam = camRef.current
     if (!cam) return
-    cam.position.x = THREE.MathUtils.damp(cam.position.x, targetPos.x, 1.5, delta)
-    cam.position.y = THREE.MathUtils.damp(cam.position.y, targetPos.y, 1.5, delta)
-    cam.position.z = THREE.MathUtils.damp(cam.position.z, targetPos.z, 1.5, delta)
-    cam.lookAt(lookAt)
+    cam.position.x = THREE.MathUtils.damp(cam.position.x, frame.pos.x, 1.5, delta)
+    cam.position.y = THREE.MathUtils.damp(cam.position.y, frame.pos.y, 1.5, delta)
+    cam.position.z = THREE.MathUtils.damp(cam.position.z, frame.pos.z, 1.5, delta)
+    cam.lookAt(frame.look)
 
-    // Fog tracks the camera. Fixed fog distances wash the whole lane out as
-    // soon as a narrow viewport pushes the camera back.
+    // Fog tracks the camera; fixed planes wash the lane out as soon as a
+    // narrow viewport pushes the camera back.
     if (scene.fog) {
-      const d = cam.position.distanceTo(lookAt)
-      scene.fog.near = d * 0.85
-      scene.fog.far = d * 2.4
+      const d = cam.position.distanceTo(frame.look)
+      scene.fog.near = d * 0.95
+      scene.fog.far = d * 2.6
     }
   })
 
@@ -139,8 +160,8 @@ function CameraRig({ focus }) {
       makeDefault
       fov={FOV}
       near={0.1}
-      far={320}
-      position={[0, 8, 44]}
+      far={400}
+      position={[-58, 48, 52]}
     />
   )
 }
@@ -150,15 +171,21 @@ function Lighting() {
     <>
       {/* A low April sun coming over the Golden Horn. */}
       <directionalLight
-        position={[-18, 26, 22]}
-        intensity={1.5}
+        position={[-34, 30, 16]}
+        intensity={2.0}
         color="#fff2d8"
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-left={-46}
+        shadow-camera-right={46}
+        shadow-camera-top={46}
+        shadow-camera-bottom={-46}
+        shadow-camera-near={1}
+        shadow-camera-far={160}
       />
-      <hemisphereLight args={['#bcd0e6', '#6b6247', 0.85]} />
-      <ambientLight intensity={0.28} />
-      <fog attach="fog" args={['#c9c1ac', 46, 96]} />
+      <hemisphereLight args={['#c4d6ea', '#7b7256', 0.68]} />
+      <ambientLight intensity={0.22} />
+      <fog attach="fog" args={['#c9c1ac', 60, 170]} />
       <color attach="background" args={['#b9c6d4']} />
     </>
   )
@@ -249,7 +276,7 @@ export default function LandAssault({ stages, onComplete }) {
           id,
           name: nameById.get(id) ?? '',
           position: positionFor(level, slots.get(id) ?? 0, count),
-          plateLift: ((slots.get(id) ?? 0) % 5) * 0.7,
+          plateLift: ((slots.get(id) ?? 0) % 3) * 0.55,
           clickable: !busy && !resolvedIds.has(id),
           dissolving: dissolvingIds.has(id),
         }

@@ -1,11 +1,21 @@
 /**
- * The land wall lane, viewed side-on.
+ * The land wall lane, viewed along the face of the walls.
  *
- * Reading left to right: the crusader staging camp, open field, the moat, the
- * low outer wall, the terrace, then the great inner wall with its towers, and
- * finally the gate into the city. That triple line — moat, outer wall,
- * terrace, inner wall — is the structure of the Theodosian defences, and the
- * height difference between the outer and inner walls is the part worth
+ * The earlier version looked at the defences end-on, which meant the walls
+ * read as cut slabs — a cross-section through a wall rather than a wall. This
+ * view sits out on the attackers' side and looks back along the line, so each
+ * wall runs as a diagonal across the frame with the next one standing taller
+ * behind it. You see the banded masonry face, the towers marching away into
+ * the distance, and the ladders going up — a wall chain, not a diagram.
+ *
+ * For that to work the walls must run off both edges of the frame, so their
+ * ends are never visible. Hence a lane depth far longer than the camera sees.
+ *
+ * Reading from the attackers outward: the staging camp, open ground, the moat,
+ * the low outer wall, the terrace, then the great inner wall with its towers,
+ * and finally the gate into the city. That sequence — moat, outer wall,
+ * terrace, inner wall — is the real structure of the Theodosian defences, and
+ * the height difference between the outer and inner walls is the part worth
  * getting right even when the detail is coarse.
  */
 
@@ -16,28 +26,35 @@ import { RampartGarrison } from './geometry/Defender.jsx'
 
 /** Lane landmarks, in world X. Everything else positions off these. */
 export const LANE = {
-  campX: -13.5,
-  moatX: -9.4,
-  outerWallX: -6.2,
-  terraceX: -3.4,
+  campX: -20,
+  moatX: -13,
+  moatWidth: 3.4,
+  outerWallX: -8,
+  terraceX: -4,
   innerWallX: 0,
-  gateX: 5.4,
-  cityX: 10,
-  laneDepth: 13,
+  gateX: 9,
+  cityX: 14,
+  /** Wall length along Z. Deliberately longer than the camera can see. */
+  laneDepth: 46,
 }
 
 export const HEIGHTS = {
   outerWall: 3.4,
-  innerWall: 7.2,
-  tower: 9.6,
-  gate: 6.0,
+  innerWall: 7.4,
+  outerTower: 5.0,
+  tower: 9.8,
+  gate: 6.2,
 }
+
+/** Towers march along the wall; the outer line's are smaller and interleaved. */
+const INNER_TOWERS = 8
+const OUTER_TOWERS = 8
 
 function Walls() {
   const outer = useMemo(
     () =>
       buildBandedWall({
-        width: 1.3,
+        width: 1.4,
         depth: LANE.laneDepth,
         height: HEIGHTS.outerWall,
         merlonWidth: 0.5,
@@ -50,30 +67,38 @@ function Walls() {
   const inner = useMemo(
     () =>
       buildBandedWall({
-        width: 2.1,
+        width: 2.2,
         depth: LANE.laneDepth,
         height: HEIGHTS.innerWall,
-        merlonWidth: 0.6,
+        merlonWidth: 0.62,
         merlonGap: 0.5,
         merlonHeight: 0.6,
       }),
     []
   )
 
-  // Towers alternate square and polygonal along the inner circuit, as in reality.
-  const towers = useMemo(() => {
+  const innerTowers = useMemo(() => {
     const out = []
-    const spacing = LANE.laneDepth / 3
-    for (let i = 0; i < 3; i++) {
+    const spacing = LANE.laneDepth / INNER_TOWERS
+    for (let i = 0; i < INNER_TOWERS; i++) {
       const z = -LANE.laneDepth / 2 + spacing * (i + 0.5)
       out.push({
         z,
-        polygonal: i % 2 === 1,
-        geometry: buildTower({
-          radius: 1.45,
-          height: HEIGHTS.tower,
-          polygonal: i % 2 === 1,
-        }),
+        geometry: buildTower({ radius: 1.5, height: HEIGHTS.tower, polygonal: i % 2 === 1 }),
+      })
+    }
+    return out
+  }, [])
+
+  // Offset half a bay from the inner towers, as on the real circuit.
+  const outerTowers = useMemo(() => {
+    const out = []
+    const spacing = LANE.laneDepth / OUTER_TOWERS
+    for (let i = 0; i < OUTER_TOWERS; i++) {
+      const z = -LANE.laneDepth / 2 + spacing * i
+      out.push({
+        z,
+        geometry: buildTower({ radius: 0.95, height: HEIGHTS.outerTower, polygonal: i % 2 === 0 }),
       })
     }
     return out
@@ -84,14 +109,24 @@ function Walls() {
       <mesh geometry={outer} position={[LANE.outerWallX, 0, 0]} castShadow receiveShadow>
         <meshLambertMaterial vertexColors flatShading />
       </mesh>
+      {outerTowers.map((t, i) => (
+        <mesh
+          key={`o${i}`}
+          geometry={t.geometry}
+          position={[LANE.outerWallX, 0, t.z]}
+          castShadow
+          receiveShadow
+        >
+          <meshLambertMaterial vertexColors flatShading />
+        </mesh>
+      ))}
 
       <mesh geometry={inner} position={[LANE.innerWallX, 0, 0]} castShadow receiveShadow>
         <meshLambertMaterial vertexColors flatShading />
       </mesh>
-
-      {towers.map((t, i) => (
+      {innerTowers.map((t, i) => (
         <mesh
-          key={i}
+          key={`i${i}`}
           geometry={t.geometry}
           position={[LANE.innerWallX, 0, t.z]}
           castShadow
@@ -123,13 +158,20 @@ function Gate() {
       <mesh geometry={gate} castShadow receiveShadow>
         <meshLambertMaterial vertexColors flatShading />
       </mesh>
+      {/* Gate towers flanking the opening */}
+      {[-2.6, 2.6].map((z, i) => (
+        <mesh key={i} position={[0, HEIGHTS.gate / 2 + 0.6, z]} castShadow>
+          <boxGeometry args={[3.0, HEIGHTS.gate + 1.2, 2.0]} />
+          <meshLambertMaterial color={PALETTE.towerStone} flatShading />
+        </mesh>
+      ))}
       {/* Arched opening, cut visually with a dark recess rather than CSG. */}
       <mesh position={[0, 1.5, 0]}>
-        <boxGeometry args={[2.6, 3.0, 2.6]} />
+        <boxGeometry args={[2.7, 3.0, 2.6]} />
         <meshBasicMaterial color="#241a15" />
       </mesh>
       <mesh position={[0, 3.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[1.3, 1.3, 2.6, 16, 1, false, 0, Math.PI]} />
+        <cylinderGeometry args={[1.3, 1.3, 2.7, 16, 1, false, 0, Math.PI]} />
         <meshBasicMaterial color="#241a15" />
       </mesh>
     </group>
@@ -137,35 +179,30 @@ function Gate() {
 }
 
 function Ground() {
-  // Explicit spans, so no slab is drawn over the one next to it.
+  // Explicit spans, so no slab is drawn over the one next to it, and all of
+  // them run well past the frame.
   const span = (from, to, hex, y = 0) =>
-    buildGround({ width: to - from, depth: 110, hex, x: (from + to) / 2, y })
+    buildGround({ width: to - from, depth: 150, hex, x: (from + to) / 2, y })
 
-  const moatFrom = LANE.moatX - 1.5
-  const moatTo = LANE.moatX + 1.5
+  const moatFrom = LANE.moatX - LANE.moatWidth / 2
+  const moatTo = LANE.moatX + LANE.moatWidth / 2
 
-  const field = useMemo(() => span(-34, moatFrom, PALETTE.fieldGrass), [])
-  const moat = useMemo(() => span(moatFrom, moatTo, PALETTE.moatWater, -0.5), [])
+  const field = useMemo(() => span(-70, moatFrom, PALETTE.fieldGrass), [])
+  const moat = useMemo(() => span(moatFrom, moatTo, PALETTE.moatWater, -0.6), [])
+  const berm = useMemo(() => span(moatTo, LANE.outerWallX - 0.7, PALETTE.fieldDirt), [])
   const terrace = useMemo(
-    () => span(moatTo, LANE.innerWallX - 1.05, PALETTE.fieldDirt),
+    () => span(LANE.outerWallX + 0.7, LANE.innerWallX - 1.1, PALETTE.fieldDirt),
     []
   )
-  const inside = useMemo(() => span(LANE.innerWallX + 1.05, 34, PALETTE.fieldDirt), [])
+  const inside = useMemo(() => span(LANE.innerWallX + 1.1, 80, PALETTE.fieldDirt), [])
 
   return (
     <group>
-      <mesh geometry={field} receiveShadow>
-        <meshLambertMaterial vertexColors />
-      </mesh>
-      <mesh geometry={moat} receiveShadow>
-        <meshLambertMaterial vertexColors />
-      </mesh>
-      <mesh geometry={terrace} receiveShadow>
-        <meshLambertMaterial vertexColors />
-      </mesh>
-      <mesh geometry={inside} receiveShadow>
-        <meshLambertMaterial vertexColors />
-      </mesh>
+      {[field, moat, berm, terrace, inside].map((g, i) => (
+        <mesh key={i} geometry={g} receiveShadow>
+          <meshLambertMaterial vertexColors />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -174,15 +211,15 @@ function Ground() {
 function CityBackdrop() {
   const buildings = useMemo(() => {
     const out = []
-    const rand = (n) => (Math.sin(n * 127.1) * 43758.5453) % 1
-    for (let i = 0; i < 14; i++) {
-      const r = Math.abs(rand(i))
-      const r2 = Math.abs(rand(i + 40))
+    const rand = (n) => Math.abs((Math.sin(n * 127.1) * 43758.5453) % 1)
+    for (let i = 0; i < 40; i++) {
+      const r = rand(i)
+      const r2 = rand(i + 40)
       out.push({
-        x: LANE.cityX + r * 14,
-        z: -14 + r2 * 26,
+        x: LANE.cityX + 1 + r * 24,
+        z: -30 + r2 * 60,
         w: 1.6 + r * 2.4,
-        h: 1.6 + r2 * 2.6,
+        h: 1.6 + r2 * 2.8,
         domed: i % 3 !== 2,
         domeR: 0.7 + r * 0.7,
       })
@@ -194,7 +231,7 @@ function CityBackdrop() {
     <group>
       {buildings.map((b, i) => (
         <group key={i} position={[b.x, 0, b.z]}>
-          <mesh position={[0, b.h / 2, 0]}>
+          <mesh position={[0, b.h / 2, 0]} castShadow>
             <boxGeometry args={[b.w, b.h, b.w]} />
             <meshLambertMaterial color={PALETTE.cityWall} flatShading />
           </mesh>
@@ -233,7 +270,7 @@ function Ladder({ x, z, height, lean }) {
   return (
     <group position={[x, 0, z]} rotation={[0, 0, lean]}>
       {[-0.22, 0.22].map((off, i) => (
-        <mesh key={i} position={[off, height / 2, 0]}>
+        <mesh key={i} position={[off, height / 2, 0]} castShadow>
           <cylinderGeometry args={[0.05, 0.05, height, 6]} />
           <meshLambertMaterial color={PALETTE.hullTimber} />
         </mesh>
@@ -248,14 +285,30 @@ function Ladder({ x, z, height, lean }) {
   )
 }
 
-/** Siege ladders leaning on each wall, so the climb has something to climb. */
+/** Ladders along both walls, so the climb has something to climb. */
 function Ladders() {
+  const outerZs = [-16, -8, -1, 6, 14]
+  const innerZs = [-13, -5, 3, 11, 18]
   return (
     <group>
-      <Ladder x={LANE.outerWallX - 1.0} z={-3.2} height={HEIGHTS.outerWall + 0.9} lean={0.2} />
-      <Ladder x={LANE.outerWallX - 1.0} z={3.0} height={HEIGHTS.outerWall + 0.9} lean={0.2} />
-      <Ladder x={LANE.innerWallX - 1.5} z={-2.0} height={HEIGHTS.innerWall + 1.1} lean={0.17} />
-      <Ladder x={LANE.innerWallX - 1.5} z={4.0} height={HEIGHTS.innerWall + 1.1} lean={0.17} />
+      {outerZs.map((z, i) => (
+        <Ladder
+          key={`o${i}`}
+          x={LANE.outerWallX - 1.05}
+          z={z}
+          height={HEIGHTS.outerWall + 1.0}
+          lean={0.2}
+        />
+      ))}
+      {innerZs.map((z, i) => (
+        <Ladder
+          key={`i${i}`}
+          x={LANE.innerWallX - 1.6}
+          z={z}
+          height={HEIGHTS.innerWall + 1.2}
+          lean={0.17}
+        />
+      ))}
     </group>
   )
 }
@@ -274,29 +327,29 @@ export function LandTerrain() {
       <RampartGarrison
         x={LANE.outerWallX}
         y={HEIGHTS.outerWall}
-        zFrom={-5}
-        zTo={5}
-        count={4}
+        zFrom={-20}
+        zTo={20}
+        count={11}
         seed={2}
         banners={0}
       />
       <RampartGarrison
         x={LANE.innerWallX}
         y={HEIGHTS.innerWall}
-        zFrom={-5.5}
-        zTo={5.5}
-        count={6}
+        zFrom={-21}
+        zTo={21}
+        count={14}
         seed={5}
-        banners={2}
+        banners={3}
       />
       <RampartGarrison
         x={LANE.gateX}
         y={HEIGHTS.gate}
-        zFrom={-4}
-        zTo={4}
-        count={3}
+        zFrom={-14}
+        zTo={14}
+        count={7}
         seed={9}
-        banners={1}
+        banners={2}
       />
     </group>
   )

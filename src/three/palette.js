@@ -11,8 +11,8 @@ export const PALETTE = {
   // Theodosian banded masonry: pale limestone courses with red brick levelling bands.
   wallStone: '#d8cdb4',
   wallStoneAlt: '#c9bda2',
-  wallBrick: '#a8543c',
-  wallBrickAlt: '#964a35',
+  wallBrick: '#a9705c',
+  wallBrickAlt: '#9d6753',
   wallShadow: '#8f8673', // deep recess tone
   towerStone: '#cfc3a8',
 
@@ -53,14 +53,20 @@ export const PALETTE = {
   uiFailure: '#8c3b2c',
 }
 
-/** Alternating course plan for a banded wall, bottom to top. */
+/**
+ * Course plan for a banded wall, bottom to top.
+ *
+ * The Theodosian walls are stone with brick levelling courses through them.
+ * The temptation is to make the brick bands frequent and strong, but at any
+ * distance that stops reading as masonry and starts reading as stripes — the
+ * whole wall turns into a texture. One brick band every seventh course, in a
+ * muted red, reads as banded stone up close and as stone from far away.
+ */
 export function courseColours(courseCount) {
   const out = []
   for (let i = 0; i < courseCount; i++) {
-    // Roughly four stone courses to every two brick levelling courses.
-    const inBrickBand = i % 6 === 4 || i % 6 === 5
-    if (inBrickBand) {
-      out.push(i % 2 === 0 ? PALETTE.wallBrick : PALETTE.wallBrickAlt)
+    if (i % 7 === 6) {
+      out.push(PALETTE.wallBrick)
     } else {
       out.push(i % 2 === 0 ? PALETTE.wallStone : PALETTE.wallStoneAlt)
     }

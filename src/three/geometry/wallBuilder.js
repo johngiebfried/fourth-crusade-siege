@@ -62,7 +62,9 @@ export function buildBandedWall({
     const y = i * COURSE_HEIGHT + COURSE_HEIGHT / 2
     // Brick levelling courses sit very slightly proud of the stone.
     const isBrick = colours[i] === PALETTE.wallBrick || colours[i] === PALETTE.wallBrickAlt
-    parts.push(courseBox(isBrick ? w * 1.02 : w, depth, COURSE_HEIGHT, colours[i], x, y, z))
+    // Brick courses sit barely proud of the stone — enough to catch light,
+    // not enough to turn the wall into corduroy.
+    parts.push(courseBox(isBrick ? w * 1.012 : w, depth, COURSE_HEIGHT, colours[i], x, y, z))
   }
 
   if (merlons) {

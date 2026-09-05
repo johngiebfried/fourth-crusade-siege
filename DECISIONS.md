@@ -268,3 +268,42 @@ Round two re-runs the same flow from step 2, since the roster is already fixed.
 `CharacterSelect.jsx`, `AttackDeclaration.jsx` and `TitleScreen.jsx` are
 superseded and removed; the city shot now lives in `CityBackdrop.jsx` and the
 whole opening in `Opening.jsx`.
+
+
+---
+
+## Revision: the land lane, seen along the wall
+
+The side-on lane looked at the defences **end-on**, so each wall was a slab
+seen edge-first — a cross-section through a wall rather than a wall. That is
+where the cutaway look came from, and no amount of tuning the yaw fixed it,
+because the problem was which face of the wall you were looking at.
+
+The camera now stands out on the attackers' side and looks back **along** the
+line. Each wall runs as a diagonal across the frame, the next line stands
+taller behind it, and the city closes the top of the shot — a continuous wall
+chain instead of a diagram. Three things had to change together:
+
+**The walls run off both edges of the frame.** A lane depth of forty-six units
+against a camera that sees roughly thirty means the ends are never in shot,
+which is what kills the cutaway. The old lane was thirteen deep and its cut
+ends were always visible.
+
+**Framing is solved from vertical extent, not width.** This composition stacks
+up the screen — outer wall, inner wall, gate, city — so height is the binding
+constraint. Solving from width, as the old lane did, crops the chain on a wide
+display, which is exactly the shape a classroom projector is. A wider screen
+now simply shows more wall running off the edges.
+
+**The banding had to be calmed right down.** Two brick courses in every six,
+each standing proud, read as masonry from a few metres and as corduroy from
+any distance — the whole wall turned into a texture. It is now one muted brick
+band every seventh course, barely proud of the stone. Lighting does the rest:
+the sun rakes across the wall faces so the three lines model separately, with
+low fill so shadowed sides read as shadow.
+
+Elevation is the live trade-off, and worth knowing if this wants further
+tuning. Around thirty degrees is the current setting. Lower and the wall lines
+overlap into one mass; higher and you look down onto their tops and lose the
+faces, and the horizon leaves the frame entirely. A steeper on-screen diagonal
+costs wall face, one for one.
