@@ -217,6 +217,62 @@ console.log('\nCity landmarks stand on land')
   check('the chain tower stands on Galata', city.wellInside(city.GALATA, 27, -23.5, 1.2))
 }
 
+console.log('\nA boarder walks the plank in, and lands clear of the towers')
+{
+  const g = L.gangwayGeometry()
+  const keep = L.SEA_TOWER_RADIUS + 0.55
+
+  for (const count of [1, 3, 5, 7, 9, 12]) {
+    const zs = L.seaFleetZs(count)
+
+    // The whole point of the mast-top bridge: the boarder's path is the
+    // plank. Landing by a slot spread along the whole wall was the bug that
+    // made him drift across open water at a diagonal, so what has to hold is
+    // that his line and the plank's line are the same line.
+    const onPlank = zs.every((z) => {
+      const bridge = L.bridgeSpot(L.SEA_LANE.atWallX, z, 0)
+      const land = L.boardingSpot(z, 0)
+      const walked = Math.atan2(land[2] - bridge[2], land[0] - bridge[0])
+      return land[0] > bridge[0] && Math.abs(walked - L.gangwaySkew(z)) < 0.06
+    })
+    check(`${count} ships: every boarder's path follows the plank`, onPlank)
+
+    check(
+      `${count} ships: the plank is never swung more than fifteen degrees`,
+      zs.every((z) => Math.abs(L.gangwaySkew(z)) < 0.26),
+      `max ${Math.max(...zs.map((z) => Math.abs(L.gangwaySkew(z)) * 57.3)).toFixed(1)}deg`
+    )
+
+    const insideTower = zs
+      .map((z) => L.boardingSpot(z, 0)[2])
+      .filter((lz) => Math.abs(lz - L.nearestSeaTower(lz)) < keep)
+    check(`${count} ships: nobody lands inside a tower`, insideTower.length === 0)
+
+    // Hulls must not interpenetrate — the reason the fleet is slid bodily
+    // rather than each ship being pushed clear on its own.
+    const gaps = zs.slice(1).map((z, i) => z - zs[i])
+    check(
+      `${count} ships: no two hulls overlap`,
+      count === 1 || Math.min(...gaps) >= L.HULL_PAIR_WIDTH - 0.01,
+      count === 1 ? '' : `min gap ${Math.min(...gaps).toFixed(2)}`
+    )
+  }
+
+  check(
+    'the boarder steps off level with the parapet, not above or below it',
+    Math.abs(L.boardingSpot(0)[1] - (L.SEA_HEIGHTS.wall + 0.65)) < 0.01
+  )
+  check(
+    'the head of the gangway is above the far end of it',
+    L.bridgeSpot(L.SEA_LANE.atWallX, 0)[1] > L.boardingSpot(0)[1],
+    `${L.bridgeSpot(L.SEA_LANE.atWallX, 0)[1].toFixed(2)} vs ${L.boardingSpot(0)[1].toFixed(2)}`
+  )
+  check(
+    'the gangway reaches from the mast-head to the wall face',
+    Math.abs(g.fromX - L.bridgeSpot(L.SEA_LANE.atWallX, 0)[0]) < 0.01
+  )
+}
+
 console.log('\nEvery figure on screen has a livery')
 {
   const factions = await import(base + 'src/three/factions.js')

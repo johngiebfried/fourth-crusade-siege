@@ -207,7 +207,137 @@ export function gangwayGeometry() {
   }
 }
 
-export const SEA_TOWERS = 18
+export const SEA_TOWERS = 12
+export const SEA_TOWER_RADIUS = 1.25
+
+/** Tower centres along the sea wall, in the order SeaScene builds them. */
+export function seaTowerZs() {
+  const spacing = SEA_LANE.laneDepth / SEA_TOWERS
+  const out = []
+  for (let i = 0; i < SEA_TOWERS; i++) {
+    out.push(-SEA_LANE.laneDepth / 2 + spacing * (i + 0.5))
+  }
+  return out
+}
+
+/** The tower whose centre is nearest a given depth. */
+export function nearestSeaTower(z) {
+  let best = null
+  for (const tz of seaTowerZs()) {
+    if (best === null || Math.abs(tz - z) < Math.abs(best - z)) best = tz
+  }
+  return best
+}
+
+/**
+ * Push a depth clear of the towers, which stand proud of the wall face.
+ *
+ * A gangway is dropped straight in along X, so wherever a ship lies is where
+ * its men land. Put a ship opposite a tower and the plank runs into masonry
+ * and the boarder ends up standing inside it — which is exactly what happened.
+ */
+export function clearOfSeaTowers(z, margin = 1.1) {
+  const keep = SEA_TOWER_RADIUS + margin
+  const tz = nearestSeaTower(z)
+  const d = z - tz
+  if (Math.abs(d) >= keep) return z
+  return tz + (d >= 0 ? keep : -keep)
+}
+
+/**
+ * Where each ship lies across the Horn.
+ *
+ * Narrower than it was: at the old spread the outermost ship of a five-ship
+ * fleet sat outside the frame on a laptop, because the camera looks along the
+ * lane rather than square across it and the near end of the line runs out of
+ * the bottom corner.
+ *
+ * The line is then slid bodily along the wall to the offset that keeps every
+ * berth as far from a tower as it can. Pushing ships *individually* clear of
+ * the towers was tried first and is worse: with a large fleet the pushes
+ * bunch neighbours together until hulls overlap. Sliding the whole line keeps
+ * the spacing exactly even and still lands most berths in a bay.
+ */
+export const HULL_PAIR_WIDTH = 2.6
+
+export function seaFleetZs(count) {
+  // Narrow for the frame, but never so narrow that hulls interpenetrate.
+  const spread = Math.max(Math.min(24, Math.max(8, count * 7)), (count - 1) * HULL_PAIR_WIDTH)
+  const raw = []
+  for (let i = 0; i < count; i++) {
+    raw.push(count === 1 ? 0 : -spread / 2 + (spread * i) / Math.max(1, count - 1))
+  }
+
+  const spacing = SEA_LANE.laneDepth / SEA_TOWERS
+  const worstFor = (bias) => {
+    let worst = Infinity
+    for (const z of raw) {
+      const gz = z + bias + SEA_SHIP.pairMid
+      worst = Math.min(worst, Math.abs(gz - nearestSeaTower(gz)))
+    }
+    return worst
+  }
+
+  // The least shift that gets every berth clear; failing that, the shift that
+  // gets closest. Keeping the bias small matters — a big slide takes the far
+  // end of the line out of frame, which is the other half of this problem.
+  const keep = SEA_TOWER_RADIUS + 1.1
+  let bias = 0
+  let best = -Infinity
+  // Half a bay either way is enough; beyond that the pattern repeats.
+  for (let b = -spacing / 2; b <= spacing / 2; b += 0.05) {
+    const w = worstFor(b)
+    const clears = w >= keep
+    const bestClears = best >= keep
+    if (clears && bestClears) {
+      if (Math.abs(b) < Math.abs(bias)) [best, bias] = [w, b]
+    } else if (clears || w > best) {
+      ;[best, bias] = [w, b]
+    }
+  }
+  return raw.map((z) => z + bias)
+}
+
+export function seaShipZ(index, count) {
+  return seaFleetZs(count)[index]
+}
+
+/** The depth the gangway is hinged at: the middle of the lashed pair. */
+export function gangwayHeadZ(shipZ, lane = 0) {
+  return shipZ + SEA_SHIP.pairMid + lane
+}
+
+/**
+ * Where the far end of the gangway is laid down.
+ *
+ * Straight across from its head, except where that would drop it on a tower —
+ * with a crowded fleet a berth can end up opposite one. There the plank is
+ * swung a few degrees to land beside the tower instead, which is what men
+ * would do with it, and which keeps the walk a walk: the boarder still goes
+ * from the head of the plank to its foot in a straight line, because the line
+ * he follows is the plank.
+ */
+export function gangwayFootZ(shipZ, lane = 0) {
+  return clearOfSeaTowers(gangwayHeadZ(shipZ, lane), 0.75)
+}
+
+/** How far the plank is swung off square, in radians. */
+export function gangwaySkew(shipZ) {
+  const g = gangwayGeometry()
+  const across = gangwayFootZ(shipZ) - gangwayHeadZ(shipZ)
+  return Math.atan2(across, g.toX - g.fromX)
+}
+
+/** Where a boarder steps off the gangway onto the parapet. */
+export function boardingSpot(shipZ, lane = 0) {
+  const g = gangwayGeometry()
+  return [g.toX + 0.35, SEA_HEIGHTS.wall + 0.65, gangwayFootZ(shipZ, lane)]
+}
+
+/** Where a boarder waits at the head of the gangway, up on the flying bridge. */
+export function bridgeSpot(shipX, shipZ, lane = 0) {
+  return [shipX + SEA_SHIP.mastLocalX, MAST_TOP_Y + 0.2, gangwayHeadZ(shipZ, lane)]
+}
 export const SEA_FOV = 32
 
 /**

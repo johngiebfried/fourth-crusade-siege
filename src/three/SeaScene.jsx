@@ -19,6 +19,7 @@ import { PALETTE } from './palette.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { RippleWater } from './geometry/Field.jsx'
+import { FACTIONS, factionFlagTexture } from './factions.js'
 
 import { SEA_LANE, SEA_HEIGHTS, SEA_TOWERS } from './lane.js'
 
@@ -182,6 +183,51 @@ function CityBehind() {
  * assault somewhere to start from: the ships are drawn up on this beach, and
  * they row from here to the wall.
  */
+/**
+ * The contingents' standards, planted on the Galata shore.
+ *
+ * The fleet is Venetian and flies Venice's colours from every mast-head; the
+ * other four followings left their banners on the beach they embarked from.
+ * It is a small thing that says who is aboard without dressing the ships in
+ * four sets of livery.
+ */
+function ShoreBanners() {
+  const banners = useMemo(
+    () =>
+      Object.keys(FACTIONS)
+        .filter((name) => name !== 'Venetian')
+        .map((name, i, all) => ({
+          name,
+          texture: factionFlagTexture(name),
+          z: -10.5 + (21 * i) / Math.max(1, all.length - 1),
+        })),
+    []
+  )
+
+  return (
+    <group>
+      {banners.map((b) => (
+        <group key={b.name} position={[SEA_LANE.shoreX - 2.6, 0.7, b.z]}>
+          <mesh position={[0, 1.9, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.09, 3.8, 6]} />
+            <meshLambertMaterial color={PALETTE.hullTimberDark} />
+          </mesh>
+          <group position={[0, 3.15, 0]} rotation={[0, -0.5, 0]}>
+            <mesh position={[0.62, 0, 0]}>
+              <planeGeometry args={[1.24, 0.9]} />
+              <meshBasicMaterial
+                map={b.texture}
+                side={THREE.DoubleSide}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
+        </group>
+      ))}
+    </group>
+  )
+}
+
 function GalataBank() {
   const geometry = useMemo(() => {
     const rand = (n) => Math.abs((Math.sin(n * 45.164) * 43758.5453) % 1)
@@ -347,6 +393,7 @@ export function SeaTerrain() {
       <Horn />
       <Shore />
       <GalataBank />
+      <ShoreBanners />
       <FleetAtAnchor />
       <SeaWall />
       <CityBehind />

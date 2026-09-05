@@ -17,6 +17,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { PALETTE } from '../palette.js'
 import { nameLabelTexture } from '../textures.js'
 import { buildHull, buildMast, buildFlyingBridge, buildGangway } from './shipBuilder.js'
+import { factionFlagTexture } from '../factions.js'
 import { ShipWash } from './Field.jsx'
 
 const BEAM = 1.9
@@ -115,6 +116,7 @@ export function Ship({
   plateLift = 0,
   gangwayLength = 5.2,
   gangwayDrop = 0.26,
+  gangwaySkew = 0,
 }) {
   const group = useRef()
   const listRef = useRef()
@@ -126,6 +128,7 @@ export function Ship({
 
   const shipGeometry = useMemo(() => buildShipGeometry(), [])
   const gangway = useMemo(() => buildGangway({ length: gangwayLength, width: 1.15 }), [gangwayLength])
+  const venetianFlag = useMemo(() => factionFlagTexture('Venetian'), [])
 
   const target = useMemo(
     () => new THREE.Vector3(position[0], position[1], position[2]),
@@ -215,6 +218,26 @@ export function Ship({
           <meshLambertMaterial vertexColors flatShading />
         </mesh>
 
+        {/* The fleet is Venetian whoever commands the ship — Venice built and
+            crewed it, and the contract that put the army aboard was hers. Both
+            mast-heads fly her colours. */}
+        {[0, PAIR_GAP].map((dz) => (
+          <group key={dz} position={[0.2, MAST_TOP_Y + 0.75, dz]} rotation={[0, -0.5, 0]}>
+            <mesh position={[0, -0.55, 0]}>
+              <cylinderGeometry args={[0.035, 0.035, 1.5, 5]} />
+              <meshLambertMaterial color={PALETTE.rigging} />
+            </mesh>
+            <mesh position={[0.42, 0, 0]}>
+              <planeGeometry args={[0.84, 0.6]} />
+              <meshBasicMaterial
+                map={venetianFlag}
+                side={THREE.DoubleSide}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
+        ))}
+
         {/* The boarding gangway, run out from the flying bridge at the
             mast-heads and dropped onto the rampart. Only present once it is
             actually run out. */}
@@ -222,7 +245,10 @@ export function Ship({
           <group
             ref={rampRef}
             position={[0.2, MAST_TOP_Y, PAIR_GAP / 2]}
-            rotation={[0, 0, 1.0]}
+            // Swung off square where laying it straight in would drop it on a
+            // tower. The boarder follows the plank, so the plank has to be
+            // where he is going.
+            rotation={[0, gangwaySkew, 1.0]}
           >
             <mesh geometry={gangway} castShadow>
               <meshLambertMaterial vertexColors flatShading />

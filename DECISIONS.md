@@ -724,6 +724,74 @@ crooked, sagging at midspan, with gaps where there was nothing left to lay and
 braces missing from some bents. It answers the "how do they get across the
 moat" question without pretending anyone had time to build well.
 
+## Revision: the sea lane's physics, and who flies what
+
+### The boarding walk was a diagonal, and here is why
+
+A man who got onto the wall was placed by *his slot in the whole boarding
+order*, spread evenly along the rampart — a leftover from before the gangway
+existed. His ship had nothing to do with where he landed. So he stepped off the
+flying bridge and drifted sideways across open water to a berth that might be
+twenty units from his own plank. It looked like a diagonal leap because it was
+one.
+
+He now lands at the far end of *his own ship's* gangway, at its depth, so the
+whole path from the head of the plank to the foot of it is a straight run along
+X. Men from the same ship keep a lane a third of a metre apart and hold it the
+whole way, so they walk in file down the plank instead of converging on a
+point.
+
+### Landing inside a tower
+
+The towers stand proud of the wall face. Drop a gangway straight in opposite
+one and its far end is inside masonry, and so is the man who walks down it —
+which is exactly what was reported.
+
+Three things fixed it, in order of how much they do:
+
+1. **Fewer towers.** Eighteen down to twelve, the same third the land wall was
+   thinned by. Bays are 12.5 units instead of 8.3, so most berths are clear
+   before anything else is tried.
+2. **The fleet slides bodily along the wall** to the smallest offset that puts
+   every berth in a bay. Pushing ships *individually* clear was tried first and
+   is worse: with a large fleet the pushes bunch neighbours together until
+   hulls overlap. Sliding the line keeps the spacing exactly even, and the
+   *smallest* sufficient slide is chosen because a big one takes the far end of
+   the line out of frame.
+3. **The plank swings.** Where a berth still ends up opposite a tower — only
+   with seven ships or more — the gangway is laid down a few degrees off square
+   so it lands beside the tower instead of on it. Never more than nine degrees
+   in practice. The boarder still walks a straight line, because the line he
+   walks is the plank.
+
+The scene checks now assert all of it for fleets of one through twelve: that
+the boarder's path and the plank's line are the same line, that nobody lands
+inside a tower, and that no two hulls overlap.
+
+### The fleet is narrower
+
+The outermost ship of a five-ship fleet sat outside the frame on a laptop. The
+spread is down from 34 units to 24, floored so hulls can never touch however
+many ships there are. The camera looks *along* the lane rather than square
+across it, so the near end of the line is what runs out of the corner — which
+is why the smallest tower-clearing slide is preferred over the best one.
+
+### Who flies what
+
+**Every mast-head flies Venice's colours.** The fleet was Venetian whoever
+commanded a given ship — Venice built it, crewed it, and the contract that put
+the army aboard was hers.
+
+**The other four contingents' banners stand on the Galata shore**, planted on
+the beach they embarked from. It says who is aboard without dressing the ships
+in four sets of livery, and it gives the far bank something to be besides
+scenery.
+
+**A contingent's flag goes up over the tower nearest where its first man got
+onto the wall**, and runs up its staff as it is raised. First arrival takes the
+tower; once the flag is up it stays up, even after that man has pushed on into
+the city. It is the clearest read in the sequence of who is actually winning.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

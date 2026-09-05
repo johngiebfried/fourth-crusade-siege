@@ -26,12 +26,19 @@ import {
   SEA_SHIP,
   MAST_TOP_Y,
   gangwayGeometry,
+  seaShipZ,
+  boardingSpot,
+  bridgeSpot,
+  gangwaySkew,
+  nearestSeaTower,
   cameraFor,
 } from '../three/lane.js'
 import { Ship, SplashBurst } from '../three/geometry/Ship.jsx'
 import { SinkRing, Smoke } from '../three/geometry/Field.jsx'
 import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
 import { Die } from '../three/geometry/Die.jsx'
+import { PALETTE } from '../three/palette.js'
+import { factionFlagTexture } from '../three/factions.js'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
 import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
 
@@ -53,12 +60,6 @@ const DECK_Y = SEA_SHIP.deckY // deck level; crew stand here, not in mid-air
 const SHIP_DAMP = 0.9 // crew must travel at the ship's rate or slide off it
 const GANGWAY = gangwayGeometry()
 
-/** Ships lie abreast across the Horn, spaced in depth. */
-/** Ships lie abreast across the Horn, spaced in depth. */
-function shipZ(index, count) {
-  const spread = Math.min(34, Math.max(9, count * 11))
-  return count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
-}
 
 /**
  * Three stations: drawn up on the Galata beach, mid-channel, and alongside
@@ -66,7 +67,7 @@ function shipZ(index, count) {
  * is both where it would and where it reads.
  */
 function shipStation(stage, index, count) {
-  const z = shipZ(index, count)
+  const z = seaShipZ(index, count)
   const x =
     stage === 'beach'
       ? SEA_LANE.stagingX
@@ -76,16 +77,57 @@ function shipStation(stage, index, count) {
   return [x, 0, z]
 }
 
+/**
+ * The lane a given man keeps along the plank: he holds it from the moment he
+ * reaches the flying bridge until he steps off on the rampart, so his whole
+ * path is a straight run in along X. Well inside the gangway's 1.15 width.
+ */
+function plankLane(slotOnShip, crewCount) {
+  if (crewCount <= 1) return 0
+  return -0.28 + (0.56 * slotOnShip) / (crewCount - 1)
+}
+
+/**
+ * A contingent's flag, run up over the tower nearest where its first man got
+ * onto the wall. Once it is up it stays up — the wall is taken there, and a
+ * standard on a tower is how that was announced.
+ */
+function TowerFlag({ z, faction }) {
+  const texture = useMemo(() => factionFlagTexture(faction), [faction])
+  const ref = useRef()
+  const raised = useRef(0)
+
+  useFrame((_, delta) => {
+    if (!ref.current) return
+    raised.current = THREE.MathUtils.damp(raised.current, 1, 2.4, delta)
+    ref.current.position.y = SEA_HEIGHTS.tower + 0.4 + raised.current * 2.5
+  })
+
+  return (
+    <group position={[SEA_LANE.wallX - 0.85, 0, z]}>
+      <mesh position={[0, SEA_HEIGHTS.tower + 1.9, 0]} castShadow>
+        <cylinderGeometry args={[0.07, 0.09, 3.8, 6]} />
+        <meshLambertMaterial color={PALETTE.hullTimberDark} />
+      </mesh>
+      <group ref={ref} rotation={[0, -0.5, 0]}>
+        <mesh position={[0.58, 0, 0]}>
+          <planeGeometry args={[1.16, 0.84]} />
+          <meshBasicMaterial map={texture} side={THREE.DoubleSide} toneMapped={false} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
 /** Where a person stands: on their ship's deck, on the wall, or in the city. */
 function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overallCount) {
   switch (level) {
     case 'wall': {
-      const spread = Math.min(26, Math.max(6, overallCount * 3.4))
-      const z =
-        overallCount === 1
-          ? 0
-          : -spread / 2 + (spread * slotOverall) / Math.max(1, overallCount - 1)
-      return [SEA_LANE.wallX - SEA_LANE.wallWidth / 2 + 0.35, SEA_HEIGHTS.wall + 0.65, z]
+      // At the far end of his own ship's gangway — not at some slot spread
+      // along the whole wall. Landing by overall slot was the bug behind the
+      // diagonal: a man walked off the plank sideways to a berth that had
+      // nothing to do with where his ship lay.
+      return boardingSpot(shipPos[2], plankLane(slotOnShip, crewCount))
     }
     case 'inside': {
       const spread = Math.min(20, Math.max(5, overallCount * 3))
@@ -100,7 +142,7 @@ function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overal
       // mast-heads. Boarders are lifted here rather than launched at the wall
       // from the deck, so that what follows is a walk along a plank instead of
       // a diagonal jump across open water.
-      return [shipPos[0] + 0.2, MAST_TOP_Y + 0.2, shipPos[2] + PAIR_MID]
+      return bridgeSpot(shipPos[0], shipPos[2], plankLane(slotOnShip, crewCount))
     }
     case 'deck':
     default: {
@@ -227,6 +269,7 @@ function ContactGarrison({ zFrom, zTo, active }) {
 function SeaScene({
   ships,
   crew,
+  towerFlags,
   activeRoll,
   bursts,
   splashes,
@@ -240,6 +283,11 @@ function SeaScene({
       <CameraRig focus={focus} />
       <Lighting />
       <SeaTerrain />
+
+      {/* A contingent's colours over the tower nearest where it got up. */}
+      {Object.entries(towerFlags ?? {}).map(([z, faction]) => (
+        <TowerFlag key={z} z={Number(z)} faction={faction} />
+      ))}
 
       {/* Smoke still standing over the city from the fires of the first
           assault, the year before. */}
@@ -266,6 +314,7 @@ function SeaScene({
           grappleReach={s.grappleReach}
           gangwayLength={GANGWAY.length}
           gangwayDrop={GANGWAY.drop}
+          gangwaySkew={s.gangwaySkew}
           plateLift={s.plateLift}
           onClick={() => onShipClick(s.id)}
         />
@@ -375,6 +424,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
             !resolvedIds.has(s.id),
           sinking: sinkingShips.has(s.id),
           rampDown: arrived,
+          gangwaySkew: gangwaySkew(position[2]),
           // Rowing hard while crossing; barely moving once alongside.
           moving: arrived ? 0.2 : underWay.has(s.id) ? 1 : 0.1,
           grappleReach: arrived ? Math.max(0, SEA_LANE.wallX - SEA_LANE.wallWidth / 2 - (SEA_LANE.atWallX + 2.4)) : 0,
@@ -435,6 +485,28 @@ export default function SeaAssault({ sea, stages, onComplete }) {
     }
     return new Set([...best.values()].map((b) => b.id))
   }, [roster])
+
+  // Where each contingent's flag flies. Keyed by the tower nearest the spot
+  // its first man stepped off the plank; first arrival holds it, and it stays
+  // up once raised even after he has pushed on into the city.
+  const [towerFlags, setTowerFlags] = useState({})
+  useEffect(() => {
+    setTowerFlags((held) => {
+      let next = held
+      for (const [id, level] of Object.entries(levels)) {
+        if (level !== 'wall' && level !== 'inside') continue
+        const r = roster.get(Number(id)) ?? roster.get(id)
+        if (!r) continue
+        const shipZ = shipPosById.get(r.shipId)?.[2]
+        if (shipZ === undefined) continue
+        const key = String(nearestSeaTower(boardingSpot(shipZ)[2]))
+        if (next[key]) continue
+        if (next === held) next = { ...held }
+        next[key] = r.faction
+      }
+      return next
+    })
+  }, [levels, roster, shipPosById])
 
   const crewViews = useMemo(() => {
     const live = [...roster.values()].filter((r) => !goneIds.has(r.id))
@@ -662,6 +734,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
         <SeaScene
           ships={shipViews}
           crew={crewViews}
+          towerFlags={towerFlags}
           activeRoll={activeRoll}
           bursts={bursts}
           splashes={splashes}
