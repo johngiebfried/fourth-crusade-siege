@@ -509,3 +509,64 @@ class nothing. It now looks south across the Horn, so the camp is in the
 foreground, the fleet is on the water, and Constantinople's sea wall and domes
 close the far bank — the inset says where the crusaders are *and* what they are
 looking at.
+
+---
+
+## Revision: the crossing, the water, and the way onto the wall
+
+### The moat bridge is back, deliberately this time
+
+An earlier version had a structure sitting at the moat's edge that read as a
+crusader-built bridge. It was actually a mis-placed battering ram, and removing
+it took the bridge with it. Bridges are now built on purpose, four of them
+spaced along the ditch. They answer the question the lane otherwise leaves
+open — how does an army on the near bank reach a wall on the far one — and
+they are what a besieger actually did: fill or bridge the ditch before you can
+put a ladder on anything.
+
+The ram is gone. At this scale it was a large box that read as neither ram nor
+penthouse. Two mangonels stand off to one side of the camp instead.
+
+### The sea lane reads across the Horn, not along it
+
+The fleet used to start already at sea, which left the crossing meaningless.
+Galata is now the near bank: the ships lie drawn up on its beach, and when a
+captain's attempt begins the ship pushes off and rows the whole way over. A
+ship that founders does so **in mid-channel**, which is both where it would and
+where it reads.
+
+The channel is narrower than it was. The Golden Horn is an inlet a few hundred
+metres across, not an open sea, and at the old width the ships spent the whole
+animation as specks in the middle of it.
+
+### Why the water looked wrong
+
+The first water displaced its surface but never touched its **normals**, so the
+light fell on it as if it were still flat. The geometry said "sea" and the
+shading said "painted floor" — which is exactly why it read as silly.
+
+It now sums four wave trains running in different directions and computes the
+surface normal analytically from their gradients, so the lighting *is* the
+wave. On a Phong material that also gives a real specular glint, which is most
+of what makes water look wet. Still no textures: it is all arithmetic.
+
+### Boarders go up first, then walk
+
+A boarder used to travel from the deck to the parapet in one move, which read
+as a diagonal leap across open water. They are now lifted to the inboard end of
+the gangway — up on the flying bridge between the mast-heads — and only then
+walk the plank across to the wall. Two steps, and the second one is a walk
+along something solid.
+
+The ship and gangway dimensions moved into `three/lane.js` so the scene checks
+can assert that route: that the bridge stop really is at the inboard end of the
+gangway, that it is well above the deck, and that a boarder steps off just
+inboard of the wall face. A screenshot of one lucky roll would not have proved
+any of that.
+
+### One bug worth recording
+
+Naming a local variable `station`, not `stage`. A local `const stage` inside
+the ship-view loop shadowed the assault stage the component was resolving, so
+`stage?.key === 'piloting'` was quietly testing a string, and every ship became
+unclickable with no error anywhere.

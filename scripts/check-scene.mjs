@@ -154,18 +154,48 @@ console.log('\nSea lane')
     check(`${key}: sea wall runs past the frame`, L.SEA_LANE.laneDepth / 2 > halfVisible)
   }
 
+  // The crossing must actually be a crossing: beach, then mid-channel, then
+  // the wall, each clear of the next.
+  check(
+    'ships start on the far bank, not in open water',
+    L.SEA_LANE.stagingX > L.SEA_LANE.shoreX,
+    `staging ${L.SEA_LANE.stagingX} vs shore ${L.SEA_LANE.shoreX}`
+  )
+  check(
+    'a foundering ship goes down in mid-channel',
+    L.SEA_LANE.approachX > L.SEA_LANE.stagingX && L.SEA_LANE.approachX < L.SEA_LANE.atWallX
+  )
+  const channel = L.SEA_LANE.wallX - L.SEA_LANE.shoreX
+  check('the Horn is a channel, not an ocean', channel > 18 && channel < 34, `${channel} units`)
+
   // A ship at the wall must be clear of it, and its gangway must reach.
   const shipBow = L.SEA_LANE.atWallX + 2.76
   const faceX = L.SEA_LANE.wallX - L.SEA_LANE.wallWidth / 2
   check('ship stops short of the wall', shipBow < faceX, `bow ${shipBow.toFixed(2)} vs face ${faceX.toFixed(2)}`)
 
-  const mastX = L.SEA_LANE.atWallX + 0.2
-  const mastTop = 1.7 + 6.2 * 0.86
-  const run = faceX - mastX
-  const drop = mastTop - (L.SEA_HEIGHTS.wall + 0.35)
-  const gangway = Math.hypot(run, drop) + 0.5
-  check('gangway reaches from the mast-heads to the parapet', gangway > Math.hypot(run, drop))
-  check('gangway comes down, not up', drop > 0, `drop ${drop.toFixed(2)}`)
+  const g = L.gangwayGeometry()
+  check('gangway reaches from the mast-heads to the parapet', g.length > Math.hypot(g.toX - g.fromX, g.fromY - g.toY))
+  check('gangway comes down, not up', g.fromY > g.toY, `${g.fromY.toFixed(2)} to ${g.toY.toFixed(2)}`)
+
+  // A boarder's route must be along the plank: lifted to the inboard end of
+  // the gangway, then walked across it — not launched at the wall from the
+  // deck, which read as a jump over open water.
+  const bridgeX = L.SEA_LANE.atWallX + L.SEA_SHIP.mastLocalX
+  check(
+    'the bridge stop sits at the inboard end of the gangway',
+    Math.abs(bridgeX - g.fromX) < 0.01
+  )
+  check(
+    'the bridge stop is above the deck, not on it',
+    L.MAST_TOP_Y > L.SEA_SHIP.deckY + 3,
+    `bridge ${L.MAST_TOP_Y.toFixed(2)} vs deck ${L.SEA_SHIP.deckY}`
+  )
+  const stepOffX = L.SEA_LANE.wallX - L.SEA_LANE.wallWidth / 2 + 0.35
+  check(
+    'a boarder steps off onto the parapet, just inboard of the wall face',
+    stepOffX > g.toX && stepOffX < g.toX + 0.6,
+    `step-off ${stepOffX.toFixed(2)} vs face ${g.toX.toFixed(2)}`
+  )
 }
 
 console.log('\nCity landmarks stand on land')

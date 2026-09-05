@@ -106,52 +106,63 @@ function mangonelParts({ x, z, facing = 1 }) {
   return parts
 }
 
-/** A ram slung under a penthouse, hides over the roof. */
-function ramParts({ x, z }) {
+/**
+ * A timber bridge thrown across the moat.
+ *
+ * This answers the question the lane otherwise leaves open — how does an army
+ * on the near bank get at a wall on the far one — and it is what a besieger
+ * actually did: fill or bridge the ditch before you can put a ladder on
+ * anything. Rough trestles standing in the water, a plank deck, and a handrail
+ * on one side only, because it was built in a hurry.
+ */
+export function buildMoatBridge({ x, z, span, seed = 3 }) {
+  const rand = rng(seed)
   const parts = []
-  const add = (g, hex, tone = 1) => {
-    g.translate(x, 0, z)
-    parts.push(paint(g, hex, tone))
-  }
+  const deckY = 0.55
 
-  // Penthouse frame and pitched roof.
-  for (const dz of [-1.0, 1.0]) {
-    for (const dx of [-1.6, 0, 1.6]) {
-      const post = new THREE.BoxGeometry(0.18, 1.6, 0.18)
-      post.translate(dx, 0.8, dz)
-      add(post, PALETTE.hullTimber)
+  // Trestles standing in the ditch.
+  const bents = 4
+  for (let i = 0; i <= bents; i++) {
+    const bx = x - span / 2 + (span * i) / bents
+    for (const dz of [-0.85, 0.85]) {
+      const leg = new THREE.BoxGeometry(0.18, deckY + 0.7, 0.18)
+      leg.rotateZ((rand() - 0.5) * 0.08)
+      leg.translate(bx, (deckY + 0.7) / 2 - 0.7, z + dz)
+      parts.push(paint(leg, PALETTE.hullTimberDark, 0.9 + rand() * 0.18))
     }
+    const brace = new THREE.BoxGeometry(0.14, 0.14, 1.9)
+    brace.translate(bx, deckY - 0.28, z)
+    parts.push(paint(brace, PALETTE.hullTimberDark))
   }
-  for (const side of [-1, 1]) {
-    const roof = new THREE.BoxGeometry(4.2, 0.16, 1.35)
-    roof.rotateX(side * 0.42)
-    roof.translate(0, 1.85, side * 0.6)
-    add(roof, '#6d5136')
-  }
-  // Wet hides draped over it, which is what kept it from being burned.
-  const hides = new THREE.BoxGeometry(4.0, 0.1, 2.5)
-  hides.translate(0, 2.05, 0)
-  add(hides, '#5f5346', 0.95)
 
-  // The ram itself, slung on ropes.
-  const beam = new THREE.CylinderGeometry(0.22, 0.26, 4.6, 8)
-  beam.rotateZ(Math.PI / 2)
-  beam.translate(0, 0.95, 0)
-  add(beam, PALETTE.hullTimber)
-  const head = new THREE.CylinderGeometry(0.3, 0.22, 0.5, 8)
-  head.rotateZ(Math.PI / 2)
-  head.translate(2.5, 0.95, 0)
-  add(head, '#6d7178')
-  for (const dx of [-1.2, 1.2]) {
-    const rope = new THREE.CylinderGeometry(0.035, 0.035, 0.75, 4)
-    rope.translate(dx, 1.35, 0)
-    add(rope, PALETTE.rigging)
+  // Plank deck, laid across in rough boards.
+  const boards = Math.round(span / 0.55)
+  for (let i = 0; i < boards; i++) {
+    const bx = x - span / 2 + (span * (i + 0.5)) / boards
+    const board = new THREE.BoxGeometry(span / boards - 0.04, 0.12, 2.1)
+    board.translate(bx, deckY, z + (rand() - 0.5) * 0.06)
+    parts.push(paint(board, PALETTE.hullTimber, 0.86 + rand() * 0.26))
   }
-  return parts
+
+  // Handrail down one side.
+  for (let i = 0; i <= bents; i++) {
+    const bx = x - span / 2 + (span * i) / bents
+    const post = new THREE.BoxGeometry(0.12, 0.75, 0.12)
+    post.translate(bx, deckY + 0.38, z - 0.95)
+    parts.push(paint(post, PALETTE.hullTimberDark))
+  }
+  const rail = new THREE.BoxGeometry(span, 0.1, 0.12)
+  rail.translate(x, deckY + 0.72, z - 0.95)
+  parts.push(paint(rail, PALETTE.hullTimber))
+
+  const merged = mergeGeometries(parts, false)
+  parts.forEach((p) => p.dispose())
+  merged.computeVertexNormals()
+  return merged
 }
 
 /**
- * The camp: tents in lines, with the engines drawn up in front of them.
+ * The camp: tents in lines, with the engines drawn off to one side of it.
  */
 export function buildSiegeCamp({
   campX,
@@ -179,13 +190,13 @@ export function buildSiegeCamp({
     )
   }
 
-  // Engines, spaced along the line and stood off from the tents.
+  // Two engines, drawn up to one side of the camp rather than strung along
+  // the whole line. A battering ram was tried here too and cut: at this scale
+  // it was a large box that read as neither ram nor penthouse.
   if (engines) {
-    const engineZs = [-30, -12, 6, 26]
-    engineZs.forEach((z, i) => {
-      if (i === 2) parts.push(...ramParts({ x: engineX + 1.5, z }))
-      else parts.push(...mangonelParts({ x: engineX, z, facing: 1 }))
-    })
+    for (const z of [-16, 4]) {
+      parts.push(...mangonelParts({ x: engineX, z, facing: 1 }))
+    }
   }
 
   const merged = mergeGeometries(parts, false)

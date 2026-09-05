@@ -137,9 +137,22 @@ export const GATE_STREET = { halfWidth: 11, untilX: 32 }
 
 /* -------------------------------------------------------------- sea lane */
 
+/**
+ * The sea lane reads across the Horn, not along it: the far bank at the near
+ * end, the water, then the city wall. The ships start drawn up on that bank
+ * and row the whole way over, which is what makes the crossing legible.
+ *
+ * The channel is deliberately narrower than it first was. The Golden Horn is
+ * an inlet a few hundred metres across, not an open sea, and at the old width
+ * the ships spent the whole animation as specks in the middle of it.
+ */
 export const SEA_LANE = {
-  stagingX: -34,
-  approachX: -17,
+  /** Where the Galata bank ends and the water begins. */
+  shoreX: -27,
+  /** Ships drawn up on the beach, before they push off. */
+  stagingX: -23.5,
+  /** Mid-channel — where a ship that founders goes down. */
+  approachX: -14,
   atWallX: -7.4,
   wallX: 0,
   wallWidth: 1.9,
@@ -151,6 +164,41 @@ export const SEA_HEIGHTS = {
   wall: 5.8,
   tower: 8.0,
   water: 0,
+}
+
+/**
+ * Ship dimensions the assault needs to reason about: where the deck is, where
+ * the flying bridge sits between the mast-heads, and the gangway run from
+ * there down onto the parapet.
+ *
+ * Here rather than in the screen so the scene checks can assert that a
+ * boarder's path really is along the plank — up to the bridge, then across —
+ * instead of a diagonal leap from the deck at the wall.
+ */
+export const SEA_SHIP = {
+  mastLocalX: 0.2,
+  mastBaseY: 1.7,
+  mastHeight: 6.2,
+  pairMid: 1.175,
+  deckY: 1.78,
+}
+
+export const MAST_TOP_Y = SEA_SHIP.mastBaseY + SEA_SHIP.mastHeight * 0.86
+
+/** The gangway, run out from the bridge and dropped on the parapet. */
+export function gangwayGeometry() {
+  const mastX = SEA_LANE.atWallX + SEA_SHIP.mastLocalX
+  const wallFaceX = SEA_LANE.wallX - SEA_LANE.wallWidth / 2
+  const run = wallFaceX - mastX
+  const drop = MAST_TOP_Y - (SEA_HEIGHTS.wall + 0.35)
+  return {
+    fromX: mastX,
+    fromY: MAST_TOP_Y,
+    toX: wallFaceX,
+    toY: SEA_HEIGHTS.wall + 0.35,
+    length: Math.hypot(run, drop) + 0.5,
+    drop: Math.atan2(drop, run),
+  }
 }
 
 export const SEA_TOWERS = 24
@@ -165,10 +213,10 @@ export const SEA_FOV = 32
 export const SEA_OFFSET = [-0.7, 0.242, 0.67]
 
 export const SEA_FRAMINGS = {
-  approach: { at: [-18, 4.0, 0], height: 34 },
-  piloting: { at: [-13, 4.0, 0], height: 30 },
-  boarding: { at: [-4.5, 5.2, 0], height: 26 },
-  breaking: { at: [2.5, 5.2, 0], height: 27 },
+  approach: { at: [-12, 4.5, 0], height: 38 },
+  piloting: { at: [-11, 4.5, 0], height: 36 },
+  boarding: { at: [-4.0, 5.6, 0], height: 28 },
+  breaking: { at: [2.5, 5.4, 0], height: 28 },
 }
 
 /* --------------------------------------------------------------- helpers */

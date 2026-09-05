@@ -27,15 +27,19 @@ export { SEA_LANE, SEA_HEIGHTS }
 /* ------------------------------------------------------------------ water */
 
 function Horn() {
+  // Only as wide as the channel actually is: from the far bank to the wall.
+  const from = SEA_LANE.shoreX
+  const to = SEA_LANE.wallX + 1
   return (
     <RippleWater
-      x={SEA_LANE.wallX - 90}
-      width={180}
+      x={(from + to) / 2}
+      width={to - from}
       depth={340}
       y={0.02}
       colour={PALETTE.hornWater}
-      swell={0.85}
-      segmentsX={150}
+      swell={1.05}
+      chop={1.15}
+      segmentsX={120}
       segmentsZ={300}
     />
   )
@@ -171,14 +175,14 @@ function CityBehind() {
 /* ----------------------------------------------------------------- Galata */
 
 /**
- * Galata on the far shore, with the tower that anchored the chain across the
- * mouth of the Horn. The chain itself is not shown — the crusaders broke it in
- * July 1203, which is exactly why the fleet is inside the Horn in this scene.
+ * Galata, the bank the crusaders launch from.
  *
- * This is also where the crusader camp stands, so it ties the assault to the
- * establishing shot on the title screen.
+ * It used to sit as a hazy band far off in depth, where the lane camera could
+ * barely see it. Putting it at the near end of the crossing instead gives the
+ * assault somewhere to start from: the ships are drawn up on this beach, and
+ * they row from here to the wall.
  */
-function GalataShore() {
+function GalataBank() {
   const geometry = useMemo(() => {
     const rand = (n) => Math.abs((Math.sin(n * 45.164) * 43758.5453) % 1)
     const parts = []
@@ -195,35 +199,40 @@ function GalataShore() {
       return g
     }
 
-    const shoreZ = -86
+    const edge = SEA_LANE.shoreX
 
-    // The far bank itself.
-    const bank = new THREE.BoxGeometry(240, 2.6, 46)
-    bank.translate(-40, 1.3, shoreZ - 20)
+    // The bank itself, running off both ends of the frame.
+    const bank = new THREE.BoxGeometry(70, 0.8, 340)
+    bank.translate(edge - 35, 0.4, 0)
     parts.push(paint(bank, '#6f7350'))
 
-    // Houses of Pera.
+    // A shingle beach where the ships are drawn up.
+    const beach = new THREE.BoxGeometry(3.6, 0.7, 340)
+    beach.translate(edge - 1.4, 0.35, 0)
+    parts.push(paint(beach, '#8e8a6c'))
+
+    // Houses of Pera, set back from the water.
     for (let i = 0; i < 70; i++) {
-      const x = -80 + rand(i) * 150
-      const z = shoreZ - 4 - rand(i + 11) * 30
-      const w = 0.9 + rand(i + 3) * 1.5
-      const h = 0.9 + rand(i + 7) * 2.0
+      const x = edge - 9 - rand(i) * 24
+      const z = -105 + rand(i + 11) * 210
+      const w = 0.7 + rand(i + 3) * 1.1
+      const h = 0.7 + rand(i + 7) * 1.3
       const body = new THREE.BoxGeometry(w, h, w)
-      body.translate(x, 2.6 + h / 2, z)
+      body.translate(x, 0.8 + h / 2, z)
       parts.push(paint(body, '#c3b79c', 0.9 + rand(i + 19) * 0.2))
-      const roof = new THREE.BoxGeometry(w * 1.15, 0.2, w * 1.15)
-      roof.translate(x, 2.6 + h + 0.1, z)
+      const roof = new THREE.BoxGeometry(w * 1.15, 0.22, w * 1.15)
+      roof.translate(x, 0.8 + h + 0.09, z)
       parts.push(paint(roof, '#9d6a4c'))
     }
 
-    // Crusader camp tents, pitched along the shore.
-    for (let i = 0; i < 34; i++) {
-      const x = -34 + rand(i + 41) * 78
-      const z = shoreZ - 1 - rand(i + 53) * 12
-      const r = 0.5 + rand(i + 61) * 0.4
-      const h = 0.8 + rand(i + 67) * 0.5
+    // The crusader camp, pitched along the shore.
+    for (let i = 0; i < 40; i++) {
+      const x = edge - 4 - rand(i + 41) * 9
+      const z = -95 + rand(i + 53) * 190
+      const r = 0.4 + rand(i + 61) * 0.3
+      const h = 0.62 + rand(i + 67) * 0.4
       const tent = new THREE.ConeGeometry(r, h, 7)
-      tent.translate(x, 2.6 + h / 2, z)
+      tent.translate(x, 0.8 + h / 2, z)
       parts.push(paint(tent, '#e0d6bf', 0.9 + rand(i + 71) * 0.18))
     }
 
@@ -244,9 +253,9 @@ function GalataShore() {
 }
 
 /** Galata's great tower, where the chain was made fast. */
-function ChainTower({ position = [10, -92] }) {
+function ChainTower({ position = [SEA_LANE.shoreX - 13, -34] }) {
   const [px, pz] = position
-  const base = 2.6
+  const base = 0.8
   return (
     <group position={[px, base, pz]}>
       <mesh position={[0, 1.1, 0]} castShadow receiveShadow>
@@ -282,8 +291,8 @@ function FleetAtAnchor() {
     const out = []
     for (let i = 0; i < 18; i++) {
       out.push({
-        x: -60 + rand(i) * 44,
-        z: -84 + rand(i + 13) * 58,
+        x: SEA_LANE.shoreX - 2 - rand(i) * 3,
+        z: -100 + rand(i + 13) * 60,
         r: rand(i + 29) * 0.7 - 0.35,
         s: 0.7 + rand(i + 31) * 0.5,
       })
@@ -337,7 +346,7 @@ export function SeaTerrain() {
     <group>
       <Horn />
       <Shore />
-      <GalataShore />
+      <GalataBank />
       <FleetAtAnchor />
       <SeaWall />
       <CityBehind />

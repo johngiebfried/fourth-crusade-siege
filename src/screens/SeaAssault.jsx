@@ -23,6 +23,9 @@ import {
   SEA_FRAMINGS,
   SEA_OFFSET,
   SEA_FOV,
+  SEA_SHIP,
+  MAST_TOP_Y,
+  gangwayGeometry,
   cameraFor,
 } from '../three/lane.js'
 import { Ship, SplashBurst } from '../three/geometry/Ship.jsx'
@@ -35,48 +38,42 @@ import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
 /* ---------------------------------------------------------------- timing */
 
 const BEAT = {
-  sailIn: 3400, // ships row in before anything is resolved
+  sailIn: 2200, // a beat on the beach before anything is resolved
   tumble: 1250,
   hold: 1300,
   resolve: 1500,
-  sink: 3000, // a foundering ship gets longer than a dissolve
+  sink: 3200, // a foundering ship gets longer than a dissolve
+  climb: 700, // up the rigging to the flying bridge
 }
 
 /* -------------------------------------------------------------- geometry */
 
-const PAIR_MID = 1.175 // half the gap between lashed hulls
-const DECK_Y = 1.78 // deck level; crew stand here, not in mid-air
-const MAST_TOP_Y = 1.7 + 6.2 * 0.86 // the flying bridge, at the mast-heads
-
-/**
- * The gangway is run out from the bridge at the mast-heads and dropped onto
- * the rampart, so its length and slope are set by the gap to the wall face and
- * the drop from the mast-heads down to the parapet.
- */
-const GANGWAY = (() => {
-  const mastX = SEA_LANE.atWallX + 0.2
-  const wallFaceX = SEA_LANE.wallX - 1.9 / 2
-  const run = wallFaceX - mastX
-  const drop = MAST_TOP_Y - (SEA_HEIGHTS.wall + 0.35)
-  return {
-    length: Math.hypot(run, drop) + 0.5,
-    drop: Math.atan2(drop, run),
-  }
-})()
+const PAIR_MID = SEA_SHIP.pairMid
+const DECK_Y = SEA_SHIP.deckY // deck level; crew stand here, not in mid-air
 const SHIP_DAMP = 0.9 // crew must travel at the ship's rate or slide off it
+const GANGWAY = gangwayGeometry()
 
 /** Ships lie abreast across the Horn, spaced in depth. */
-function shipPosition(index, count, arrived) {
+/** Ships lie abreast across the Horn, spaced in depth. */
+function shipZ(index, count) {
   const spread = Math.min(34, Math.max(9, count * 11))
-  const z = count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
-  const x = arrived ? SEA_LANE.atWallX : SEA_LANE.approachX
-  return [x, 0, z]
+  return count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
 }
 
-function stagingPosition(index, count) {
-  const spread = Math.min(34, Math.max(9, count * 11))
-  const z = count === 1 ? 0 : -spread / 2 + (spread * index) / Math.max(1, count - 1)
-  return [SEA_LANE.stagingX, 0, z]
+/**
+ * Three stations: drawn up on the Galata beach, mid-channel, and alongside
+ * the wall. A ship that founders does so in the middle of the crossing, which
+ * is both where it would and where it reads.
+ */
+function shipStation(stage, index, count) {
+  const z = shipZ(index, count)
+  const x =
+    stage === 'beach'
+      ? SEA_LANE.stagingX
+      : stage === 'mid'
+        ? SEA_LANE.approachX
+        : SEA_LANE.atWallX
+  return [x, 0, z]
 }
 
 /** Where a person stands: on their ship's deck, on the wall, or in the city. */
@@ -88,7 +85,7 @@ function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overal
         overallCount === 1
           ? 0
           : -spread / 2 + (spread * slotOverall) / Math.max(1, overallCount - 1)
-      return [SEA_LANE.wallX, SEA_HEIGHTS.wall + 0.65, z]
+      return [SEA_LANE.wallX - SEA_LANE.wallWidth / 2 + 0.35, SEA_HEIGHTS.wall + 0.65, z]
     }
     case 'inside': {
       const spread = Math.min(20, Math.max(5, overallCount * 3))
@@ -97,6 +94,13 @@ function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overal
           ? 0
           : -spread / 2 + (spread * slotOverall) / Math.max(1, overallCount - 1)
       return [SEA_LANE.insideX + 1.5, 0, z * 0.9]
+    }
+    case 'bridge': {
+      // At the inboard end of the gangway, up on the flying bridge between the
+      // mast-heads. Boarders are lifted here rather than launched at the wall
+      // from the deck, so that what follows is a walk along a plank instead of
+      // a diagonal jump across open water.
+      return [shipPos[0] + 0.2, MAST_TOP_Y + 0.2, shipPos[2] + PAIR_MID]
     }
     case 'deck':
     default: {
@@ -276,7 +280,7 @@ function SeaScene({
           dissolving={c.dissolving}
           showName={c.showName !== false}
           plateLift={c.plateLift}
-          travelSpeed={SHIP_DAMP}
+          travelSpeed={c.onBridge ? 1.5 : SHIP_DAMP}
           onClick={() => onCrewClick(c.id)}
         />
       ))}
@@ -310,6 +314,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
   const [stageIndex, setStageIndex] = useState(0)
   const [resolvedIds, setResolvedIds] = useState(() => new Set())
   const [arrivedShips, setArrivedShips] = useState(() => new Set())
+  const [underWay, setUnderWay] = useState(() => new Set())
   const [sinkingShips, setSinkingShips] = useState(() => new Set())
   const [sunkShips, setSunkShips] = useState(() => new Set())
   const [levels, setLevels] = useState({}) // playerId -> 'deck' | 'wall' | 'inside'
@@ -351,9 +356,12 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       .map((s) => {
         const slot = shipSlot(s.id)
         const arrived = arrivedShips.has(s.id)
-        const position = !sailedIn
-          ? stagingPosition(slot, sea.ships.length)
-          : shipPosition(slot, sea.ships.length, arrived)
+        // Beached until its own attempt begins; then mid-channel; then either
+        // on to the wall or down where it stands. Named `station` rather than
+        // `stage`: the latter shadows the assault stage this component is
+        // resolving, which silently made every ship unclickable.
+        const station = arrived ? 'wall' : underWay.has(s.id) ? 'mid' : 'beach'
+        const position = shipStation(station, slot, sea.ships.length)
         return {
           id: s.id,
           name: s.captain ?? 'Ship',
@@ -365,8 +373,8 @@ export default function SeaAssault({ sea, stages, onComplete }) {
             !resolvedIds.has(s.id),
           sinking: sinkingShips.has(s.id),
           rampDown: arrived,
-          // Under way until it has settled at the wall or in the line.
-          moving: sailedIn === 'done' ? (arrived ? 0.25 : 0.55) : 1,
+          // Rowing hard while crossing; barely moving once alongside.
+          moving: arrived ? 0.2 : underWay.has(s.id) ? 1 : 0.1,
           grappleReach: arrived ? Math.max(0, SEA_LANE.wallX - SEA_LANE.wallWidth / 2 - (SEA_LANE.atWallX + 2.4)) : 0,
           plateLift: (slot % 3) * 0.75,
         }
@@ -381,6 +389,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
     busy,
     resolvedIds,
     shipSlot,
+    underWay,
   ])
 
   const shipPosById = useMemo(() => {
@@ -441,6 +450,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
             stageIds.includes(r.id) &&
             !resolvedIds.has(r.id),
           dissolving: dissolvingIds.has(r.id),
+          onBridge: level === 'bridge' || level === 'wall',
           showName: !going,
           plateLift: (Math.max(0, overall.indexOf(r.id)) % 4) * 0.62,
         }
@@ -491,11 +501,14 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       if (!entry) return
 
       setBusy(true)
+      // Push off the beach the moment the attempt begins, so the die is thrown
+      // while the ship is actually crossing.
+      setUnderWay((u) => new Set(u).add(shipId))
       const pos = shipPosById.get(shipId) ?? [SEA_LANE.approachX, 0, 0]
       setActiveRoll({
         entry,
         phase: 'tumbling',
-        diePosition: [pos[0] + 2.4, 7.2, pos[2] + PAIR_MID + 3.6],
+        diePosition: [SEA_LANE.approachX + 2.4, 7.2, pos[2] + PAIR_MID + 3.6],
       })
 
       setTimeout(() => setActiveRoll((r) => (r ? { ...r, phase: 'settled' } : r)), BEAT.tumble)
@@ -507,7 +520,11 @@ export default function SeaAssault({ sea, stages, onComplete }) {
           setSinkingShips((s) => new Set(s).add(shipId))
           setSplashes((s) => [
             ...s,
-            { key: `${shipId}-${Date.now()}`, position: [pos[0], 0.2, pos[2] + PAIR_MID] },
+            {
+              key: `${shipId}-${Date.now()}`,
+              // Down in mid-channel, where it had got to.
+              position: [SEA_LANE.approachX, 0.2, pos[2] + PAIR_MID],
+            },
           ])
         }
         setResolvedIds((r) => new Set(r).add(shipId))
@@ -552,7 +569,18 @@ export default function SeaAssault({ sea, stages, onComplete }) {
 
       setTimeout(() => {
         if (entry.success) {
-          setLevels((l) => ({ ...l, [playerId]: stage.key === 'boarding' ? 'wall' : 'inside' }))
+          if (stage.key === 'boarding') {
+            // Up the rigging to the flying bridge, then along the plank. The
+            // two steps matter: launching straight at the wall from the deck
+            // read as a jump across open water.
+            setLevels((l) => ({ ...l, [playerId]: 'bridge' }))
+            setTimeout(
+              () => setLevels((l) => ({ ...l, [playerId]: 'wall' })),
+              BEAT.climb
+            )
+          } else {
+            setLevels((l) => ({ ...l, [playerId]: 'inside' }))
+          }
         } else {
           setDissolvingIds((d) => new Set(d).add(playerId))
           setBursts((b) => [...b, { key: `${playerId}-${Date.now()}`, position: pos }])

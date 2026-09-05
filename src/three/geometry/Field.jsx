@@ -95,56 +95,97 @@ export function GrassField({
 /**
  * Moving water.
  *
- * Written as a normal lit material with the wave motion injected into its
- * shader, rather than as a raw ShaderMaterial. A raw shader gets no lighting
- * and no fog, which made the moat read as a black trench cut through the field
- * instead of as water sitting in the landscape.
+ * The first version displaced the surface but never touched its normals, so
+ * the light fell on it as if it were still flat and the waves only existed as
+ * a colour trick. That is why it read as silly: the geometry said "sea" and
+ * the shading said "painted floor".
  *
- * Still no textures: the ripples and the glint on the crests are arithmetic.
- * `swell` scales the whole wave system, so the same water serves a ditch a few
- * units across and the open Golden Horn.
+ * This sums four wave trains running in different directions, and computes the
+ * surface normal analytically from their gradients, so the lighting is the
+ * wave. On a Phong material that also gives a real specular glint, which is
+ * most of what makes water look wet.
+ *
+ * Still no textures anywhere — it is all arithmetic.
  */
+const WAVE_GLSL = /* glsl */ `
+  uniform float uTime;
+  uniform float uSwell;
+  uniform float uChop;
+  varying float vWave;
+
+  // One wave train: direction, wavelength, amplitude, speed.
+  float waveTrain(vec2 p, vec2 dir, float k, float amp, float speed, inout vec2 grad) {
+    vec2 d = normalize(dir);
+    float phase = dot(d, p) * k + uTime * speed;
+    grad += d * (amp * k * cos(phase));
+    return amp * sin(phase);
+  }
+
+  float waterHeight(vec2 p, out vec2 grad) {
+    grad = vec2(0.0);
+    float s = uSwell;
+    float h = 0.0;
+    h += waveTrain(p, vec2(1.0, 0.18), 0.55 / s, 0.105 * s, 0.85, grad);
+    h += waveTrain(p, vec2(0.28, 1.0), 0.87 / s, 0.068 * s, 1.10, grad);
+    h += waveTrain(p, vec2(-0.72, 0.58), 1.70 / s, 0.034 * s * uChop, 1.55, grad);
+    h += waveTrain(p, vec2(0.9, -0.46), 3.10 / s, 0.017 * s * uChop, 2.15, grad);
+    return h;
+  }
+`
+
 export function RippleWater({
   width,
   depth = 320,
   x = 0,
   z = 0,
   y = -0.1,
-  colour = '#4e7a72',
+  colour = '#3f6a72',
   swell = 1,
-  segmentsX = 6,
-  segmentsZ = 340,
+  chop = 1,
+  segmentsX = 120,
+  segmentsZ = 240,
 }) {
   const material = useMemo(() => {
-    const m = new THREE.MeshLambertMaterial({ color: colour })
+    const m = new THREE.MeshPhongMaterial({
+      color: colour,
+      specular: new THREE.Color('#9fc4cc'),
+      shininess: 90,
+      flatShading: false,
+    })
     m.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = { value: 0 }
       shader.uniforms.uSwell = { value: swell }
-      shader.vertexShader =
-        'uniform float uTime;\nuniform float uSwell;\nvarying float vWave;\n' +
-        shader.vertexShader.replace(
+      shader.uniforms.uChop = { value: chop }
+
+      shader.vertexShader = WAVE_GLSL + shader.vertexShader
+        // Take the normal from the wave gradient rather than the flat plane.
+        .replace(
+          '#include <beginnormal_vertex>',
+          `#include <beginnormal_vertex>
+           vec2 wGrad;
+           float wH = waterHeight(position.xy, wGrad);
+           objectNormal = normalize(vec3(-wGrad.x, -wGrad.y, 1.0));
+           vWave = wH;`
+        )
+        .replace(
           '#include <begin_vertex>',
           `#include <begin_vertex>
-           float w =
-             sin(position.y * 0.85 / uSwell + uTime * 1.05) * 0.05 * uSwell +
-             sin(position.x * 2.30 / uSwell - uTime * 0.70) * 0.03 * uSwell +
-             sin((position.x + position.y) * 4.10 / uSwell + uTime * 1.90) * 0.015 * uSwell;
-           transformed.z += w;
-           vWave = w / uSwell;`
+           transformed.z += wH;`
         )
+
       shader.fragmentShader =
         'varying float vWave;\n' +
         shader.fragmentShader.replace(
           '#include <dithering_fragment>',
           `#include <dithering_fragment>
-           // Crests catch the morning light; troughs sit darker and greener.
-           gl_FragColor.rgb += smoothstep(0.028, 0.062, vWave) * 0.14;
-           gl_FragColor.rgb -= smoothstep(-0.020, -0.060, -vWave) * 0.09;`
+           // Troughs sit deeper and greener; crests lift toward the sky.
+           gl_FragColor.rgb *= 1.0 + clamp(vWave * 1.4, -0.22, 0.30);`
         )
+
       m.userData.shader = shader
     }
     return m
-  }, [colour, swell])
+  }, [colour, swell, chop])
 
   useFrame((state) => {
     const shader = material.userData.shader
@@ -163,9 +204,21 @@ export function RippleWater({
   )
 }
 
-/** The moat: a narrow ditch of the same water. */
+/** The moat: a narrow ditch of the same water, running slower and flatter. */
 export function MoatWater({ x, width, depth = 320, y = -0.1 }) {
-  return <RippleWater x={x} width={width} depth={depth} y={y} swell={1} />
+  return (
+    <RippleWater
+      x={x}
+      width={width}
+      depth={depth}
+      y={y}
+      colour="#4a6f68"
+      swell={0.7}
+      chop={0.6}
+      segmentsX={8}
+      segmentsZ={300}
+    />
+  )
 }
 
 /* ------------------------------------------------------- water reactions */

@@ -26,7 +26,7 @@ import { PALETTE } from './palette.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater, Smoke } from './geometry/Field.jsx'
-import { buildSiegeCamp } from './geometry/siegeCamp.js'
+import { buildSiegeCamp, buildMoatBridge } from './geometry/siegeCamp.js'
 
 import {
   LANE,
@@ -271,6 +271,28 @@ function SiegeCamp() {
   )
 }
 
+/**
+ * Bridges thrown across the moat, so the army has a way over the ditch. Spaced
+ * along the line, where the ladders go up.
+ */
+function MoatBridges() {
+  const geometries = useMemo(() => {
+    const span = LANE.moatWidth + 2.6
+    return [-24, -8, 8, 24].map((z, i) =>
+      buildMoatBridge({ x: LANE.moatX, z, span, seed: 3 + i })
+    )
+  }, [])
+  return (
+    <group>
+      {geometries.map((g, i) => (
+        <mesh key={i} geometry={g} castShadow receiveShadow>
+          <meshLambertMaterial vertexColors flatShading />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 /** Defenders on all three lines, merged into one geometry each. */
 function Garrisons() {
   const outer = useMemo(
@@ -352,6 +374,7 @@ export function LandTerrain() {
       />
 
       <SiegeCamp />
+      <MoatBridges />
       <Walls />
       <Gate />
       <CityBackdrop />
