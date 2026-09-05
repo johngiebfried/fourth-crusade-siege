@@ -63,13 +63,22 @@ function positionFor(level, index, count) {
  * The wall a stage is fought against, and the ladder that gets raised for it.
  * The gates are a gate — nothing to scale — so that stage raises none.
  */
+const LADDER_LEAN = 0.34 // ~20 degrees off vertical, about right for scaling
+
 function ladderFor(stageKey, z) {
-  if (stageKey === 'first-wall') {
-    return { position: [LANE.outerWallX - 1.05, 0, z], height: HEIGHTS.outerWall + 1.0 }
+  // Geometry, not guesswork: a ladder long enough to clear the parapet, with
+  // its foot set back far enough that leaning it puts its head on the wall
+  // face rather than inside the masonry.
+  const place = (wallX, wallWidth, wallHeight) => {
+    const faceX = wallX - wallWidth / 2
+    const topY = wallHeight + 0.55 // clear the parapet so you can step off
+    const length = topY / Math.cos(LADDER_LEAN)
+    const footX = faceX - length * Math.sin(LADDER_LEAN)
+    return { position: [footX, 0, z], height: length, lean: LADDER_LEAN }
   }
-  if (stageKey === 'second-wall') {
-    return { position: [LANE.innerWallX - 1.55, 0, z], height: HEIGHTS.innerWall + 1.2 }
-  }
+
+  if (stageKey === 'first-wall') return place(LANE.outerWallX, 1.4, HEIGHTS.outerWall)
+  if (stageKey === 'second-wall') return place(LANE.innerWallX, 2.2, HEIGHTS.innerWall)
   return null
 }
 
@@ -228,7 +237,13 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }
       ))}
 
       {ladders.map((l) => (
-        <SiegeLadder key={l.key} position={l.position} height={l.height} phase={l.phase} />
+        <SiegeLadder
+          key={l.key}
+          position={l.position}
+          height={l.height}
+          lean={l.lean}
+          phase={l.phase}
+        />
       ))}
 
       {bursts.map((b) => (

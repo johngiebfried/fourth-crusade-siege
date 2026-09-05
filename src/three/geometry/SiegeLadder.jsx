@@ -14,10 +14,16 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PALETTE } from '../palette.js'
 
-/** Lying flat on the ground, pointing away from the wall. */
-const DOWN_ANGLE = 1.5
-/** Leaning against the wall face. */
-const UP_ANGLE = -0.16
+/**
+ * Lying flat on the ground, pointing away from the wall.
+ *
+ * Everything here rotates about Z, which tips the ladder along X — across the
+ * ground and up against the wall face. The rails therefore have to be
+ * separated along Z, parallel to the wall. Separating them along X, as this
+ * first did, puts the ladder's own plane in the plane of rotation, so it rises
+ * edge-on: sideways, and straight through the masonry.
+ */
+const DOWN_ANGLE = Math.PI / 2 - 0.06
 
 function buildLadderGeometry(height) {
   const parts = []
@@ -36,14 +42,17 @@ function buildLadderGeometry(height) {
     return g
   }
 
-  for (const off of [-0.22, 0.22]) {
+  // Rails run up in Y, set apart in Z so the ladder's face is parallel to the
+  // wall it will lean against.
+  for (const off of [-0.24, 0.24]) {
     const rail = new THREE.CylinderGeometry(0.055, 0.06, height, 6)
-    rail.translate(off, height / 2, 0)
+    rail.translate(0, height / 2, off)
     parts.push(paint(rail, colour))
   }
+  // Rungs span between the rails, so their axis is Z.
   for (let y = 0.42; y < height - 0.15; y += 0.42) {
-    const rung = new THREE.CylinderGeometry(0.038, 0.038, 0.44, 5)
-    rung.rotateZ(Math.PI / 2)
+    const rung = new THREE.CylinderGeometry(0.038, 0.038, 0.48, 5)
+    rung.rotateX(Math.PI / 2)
     rung.translate(0, y, 0)
     parts.push(paint(rung, dark))
   }
@@ -55,16 +64,20 @@ function buildLadderGeometry(height) {
 }
 
 /**
+ * @param {[number,number,number]} position  the ladder's foot
+ * @param {number} height  the ladder's length
+ * @param {number} lean    radians off vertical when resting on the wall
  * @param {'rising'|'up'|'falling'} phase
  */
-export function SiegeLadder({ position, height = 4.4, phase = 'rising' }) {
+export function SiegeLadder({ position, height = 4.4, lean = 0.34, phase = 'rising' }) {
   const pivot = useRef()
   const geometry = useMemo(() => buildLadderGeometry(height), [height])
 
   useFrame((_, delta) => {
     const g = pivot.current
     if (!g) return
-    const target = phase === 'falling' ? DOWN_ANGLE : UP_ANGLE
+    // Negative tips the head toward +X, which is where the wall is.
+    const target = phase === 'falling' ? DOWN_ANGLE : -lean
     // Raising is brisk; toppling back is slower and heavier.
     const rate = phase === 'falling' ? 2.2 : 3.4
     g.rotation.z = THREE.MathUtils.damp(g.rotation.z, target, rate, delta)
