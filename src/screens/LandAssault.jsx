@@ -67,18 +67,34 @@ const LADDER_LEAN = 0.34 // ~20 degrees off vertical, about right for scaling
 
 function ladderFor(stageKey, z) {
   // Geometry, not guesswork: a ladder long enough to clear the parapet, with
-  // its foot set back far enough that leaning it puts its head on the wall
-  // face rather than inside the masonry.
-  const place = (wallX, wallWidth, wallHeight) => {
+  // its foot set back exactly far enough that leaning it puts the head on the
+  // wall face rather than inside the masonry.
+  //
+  // `behind` is how much clear ground lies behind the foot. If the ladder is
+  // longer than that, it cannot be laid flat and toppled up without sweeping
+  // through whatever is back there, so it is swung up along the wall instead.
+  const place = (wallX, wallWidth, wallHeight, obstacleX) => {
     const faceX = wallX - wallWidth / 2
     const topY = wallHeight + 0.55 // clear the parapet so you can step off
     const length = topY / Math.cos(LADDER_LEAN)
     const footX = faceX - length * Math.sin(LADDER_LEAN)
-    return { position: [footX, 0, z], height: length, lean: LADDER_LEAN }
+    const behind = obstacleX === null ? Infinity : footX - obstacleX
+    return {
+      position: [footX, 0, z],
+      height: length,
+      lean: LADDER_LEAN,
+      alongWall: length > behind,
+    }
   }
 
-  if (stageKey === 'first-wall') return place(LANE.outerWallX, 1.4, HEIGHTS.outerWall)
-  if (stageKey === 'second-wall') return place(LANE.innerWallX, 2.2, HEIGHTS.innerWall)
+  if (stageKey === 'first-wall') {
+    // Open field behind — room to topple a ladder up the ordinary way.
+    return place(LANE.outerWallX, 1.4, HEIGHTS.outerWall, null)
+  }
+  if (stageKey === 'second-wall') {
+    // The terrace, hemmed in by the back of the outer wall.
+    return place(LANE.innerWallX, 2.2, HEIGHTS.innerWall, LANE.outerWallX + 0.7)
+  }
   return null
 }
 
@@ -242,6 +258,7 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }
           position={l.position}
           height={l.height}
           lean={l.lean}
+          alongWall={l.alongWall}
           phase={l.phase}
         />
       ))}
