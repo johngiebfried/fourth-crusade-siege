@@ -27,38 +27,16 @@ import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater } from './geometry/Field.jsx'
 
-/** Lane landmarks, in world X. Everything else positions off these. */
-export const LANE = {
-  campX: -20,
-  moatX: -13,
-  moatWidth: 3.4,
-  outerWallX: -8,
-  terraceX: -4,
-  innerWallX: 0,
-  gateX: 9,
-  cityX: 14,
-  /** Wall length along Z. Deliberately far longer than the camera sees,
-   *  so no end of the chain is ever in frame. */
-  laneDepth: 150,
-}
+import {
+  LANE,
+  HEIGHTS,
+  INNER_TOWERS,
+  OUTER_TOWERS,
+  GATE_STREET,
+} from './lane.js'
 
-export const HEIGHTS = {
-  outerWall: 3.4,
-  innerWall: 7.4,
-  outerTower: 5.0,
-  tower: 9.8,
-  gate: 6.2,
-}
+export { LANE, HEIGHTS }
 
-/** Towers march along the wall; the outer line's are smaller and interleaved. */
-const INNER_TOWERS = 26
-const OUTER_TOWERS = 26
-
-/**
- * The two wall lines. Each is a single merged geometry — courses, merlons,
- * every tower along it, arrow slits and the rubble at its foot — so a
- * hundred-and-fifty-unit wall with twenty-six towers costs one draw call.
- */
 function Walls() {
   const outer = useMemo(() => {
     const towers = []
@@ -74,7 +52,7 @@ function Walls() {
     }
     return buildWallLine({
       wall: {
-        width: 1.4,
+        width: LANE.outerWallWidth,
         depth: LANE.laneDepth,
         height: HEIGHTS.outerWall,
         x: LANE.outerWallX,
@@ -107,7 +85,7 @@ function Walls() {
     }
     return buildWallLine({
       wall: {
-        width: 2.2,
+        width: LANE.innerWallWidth,
         depth: LANE.laneDepth,
         height: HEIGHTS.innerWall,
         x: LANE.innerWallX,
@@ -143,7 +121,7 @@ function Gate() {
     () =>
       buildWallLine({
         wall: {
-          width: 2.4,
+          width: LANE.gateWidth,
           depth: LANE.laneDepth,
           height: HEIGHTS.gate,
           merlonWidth: 0.55,
@@ -238,7 +216,7 @@ function CityBackdrop() {
       const z = -95 + r2 * 190
       // Keep a street clear in front of the gate. A gate needs a road, and it
       // is also the only ground the bribery camera has to stand on.
-      if (Math.abs(z) < 8 && x < 30) continue
+      if (Math.abs(z) < GATE_STREET.halfWidth && x < GATE_STREET.untilX) continue
       const w = 1.6 + r * 2.4
       const h = 1.6 + r2 * 2.8
       const tone = 0.88 + rand(i + 91) * 0.24

@@ -18,59 +18,21 @@ import { useCallback, useMemo, useState } from 'react'
 import allCharacters from '../data/characters.json'
 import { canCaptain } from '../game/rules.js'
 import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
+import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton } from './ui.jsx'
 
 /* -------------------------------------------------------------- fragments */
-
-function Panel({ children, wide = false }) {
-  return (
-    <div
-      className={`pointer-events-auto mx-4 w-full ${
-        wide ? 'max-w-3xl' : 'max-w-2xl'
-      } rounded-xl border border-amber-900/30 bg-[#f4ead6]/94 px-8 py-6 shadow-2xl backdrop-blur-sm`}
-    >
-      {children}
-    </div>
-  )
-}
 
 function StepHeading({ step, of, title, blurb }) {
   return (
     <div className="text-center">
       {step && (
-        <div className="text-xs uppercase tracking-[0.32em] text-amber-800">
+        <Eyebrow>
           Step {step} of {of}
-        </div>
+        </Eyebrow>
       )}
-      <h2 className="mt-2 text-3xl font-bold leading-tight text-red-900 md:text-4xl">{title}</h2>
+      <Heading>{title}</Heading>
       {blurb && <p className="mt-2 text-lg text-stone-700">{blurb}</p>}
     </div>
-  )
-}
-
-function PrimaryButton({ children, disabled, onClick, className = '' }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-lg px-10 py-4 text-xl font-bold shadow-lg transition-colors ${
-        disabled
-          ? 'cursor-not-allowed bg-stone-300 text-stone-500'
-          : 'bg-red-800 text-amber-50 hover:bg-red-700'
-      } ${className}`}
-    >
-      {children}
-    </button>
-  )
-}
-
-function GhostButton({ children, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="rounded-lg border border-stone-500/60 px-8 py-4 text-lg font-medium text-stone-700 transition-colors hover:bg-stone-900/10"
-    >
-      {children}
-    </button>
   )
 }
 
@@ -224,9 +186,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
         return (
           <Panel>
             <div className="text-center">
-              <div className="text-sm uppercase tracking-[0.42em] text-amber-800">
-                The Fourth Crusade
-              </div>
+              <Eyebrow>The Fourth Crusade</Eyebrow>
               <h1 className="mt-3 text-4xl font-bold leading-tight text-red-900 md:text-5xl">
                 The Siege of Constantinople
               </h1>

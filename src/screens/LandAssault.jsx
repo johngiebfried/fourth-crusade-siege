@@ -11,7 +11,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
-import { LandTerrain, LANE, HEIGHTS } from '../three/LandScene.jsx'
+import { LandTerrain } from '../three/LandScene.jsx'
+import {
+  LANE,
+  HEIGHTS,
+  LAND_FRAMINGS,
+  LAND_OFFSET,
+  LAND_FOV,
+  cameraFor,
+  ladderFor,
+} from '../three/lane.js'
 import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
 import { SiegeLadder } from '../three/geometry/SiegeLadder.jsx'
 import { Die } from '../three/geometry/Die.jsx'
@@ -63,41 +72,6 @@ function positionFor(level, index, count) {
  * The wall a stage is fought against, and the ladder that gets raised for it.
  * The gates are a gate — nothing to scale — so that stage raises none.
  */
-const LADDER_LEAN = 0.34 // ~20 degrees off vertical, about right for scaling
-
-function ladderFor(stageKey, z) {
-  // Geometry, not guesswork: a ladder long enough to clear the parapet, with
-  // its foot set back exactly far enough that leaning it puts the head on the
-  // wall face rather than inside the masonry.
-  //
-  // `behind` is how much clear ground lies behind the foot. If the ladder is
-  // longer than that, it cannot be laid flat and toppled up without sweeping
-  // through whatever is back there, so it is swung up along the wall instead.
-  const place = (wallX, wallWidth, wallHeight, obstacleX) => {
-    const faceX = wallX - wallWidth / 2
-    const topY = wallHeight + 0.55 // clear the parapet so you can step off
-    const length = topY / Math.cos(LADDER_LEAN)
-    const footX = faceX - length * Math.sin(LADDER_LEAN)
-    const behind = obstacleX === null ? Infinity : footX - obstacleX
-    return {
-      position: [footX, 0, z],
-      height: length,
-      lean: LADDER_LEAN,
-      alongWall: length > behind,
-    }
-  }
-
-  if (stageKey === 'first-wall') {
-    // Open field behind — room to topple a ladder up the ordinary way.
-    return place(LANE.outerWallX, 1.4, HEIGHTS.outerWall, null)
-  }
-  if (stageKey === 'second-wall') {
-    // The terrace, hemmed in by the back of the outer wall.
-    return place(LANE.innerWallX, 2.2, HEIGHTS.innerWall, LANE.outerWallX + 0.7)
-  }
-  return null
-}
-
 /** Where the die is thrown for a pawn resolving at a given level. */
 function diePositionFor(level, pawnPos) {
   const lift = level === LEVELS.camp ? 1.7 : 2.0
@@ -115,46 +89,14 @@ function diePositionFor(level, pawnPos) {
  * object on every render — R3F then re-applies it and snaps the camera back
  * to its starting position, so no amount of per-frame easing ever survives.
  */
-const FOV = 22
-
 /**
  * The camera stands out on the attackers' side and looks back along the line
- * of the walls, rather than square-on to them.
+ * of the walls. Square-on, a wall is a slab seen end-first and reads as a
+ * cross-section — the cutaway look.
  *
- * Square-on, a wall is a slab seen end-first and reads as a cross-section — the
- * cutaway look. From here each wall runs as a diagonal across the frame, with
- * the next line standing taller behind it, so the defences read as one
- * continuous chain. `OFFSET` is the direction from the point being watched to
- * the camera: back along -X, up, and round to +Z.
+ * Its numbers live in `three/lane.js` so `scripts/check-scene.mjs` can assert
+ * that no framing ever puts the camera inside masonry, at any aspect ratio.
  */
-const OFFSET = (() => {
-  // From the watched point back to the camera: out on the attackers' side,
-  // well up, and round toward +Z so the line of the walls runs across frame.
-  // Elevation is a balance: too low and the wall lines overlap into one mass,
-  // too high and you look down onto their tops and lose the faces entirely.
-  // Thirty degrees keeps the banded face readable while still lifting each
-  // line clear of the one in front.
-  const v = new THREE.Vector3(-0.62, 0.5, 0.6)
-  return v.normalize()
-})()
-
-/**
- * Each stage names the point it watches and how much *vertical* world space
- * must be in frame.
- *
- * Height rather than width is deliberate: the wall chain stacks up the screen,
- * one line above the next, so the vertical extent is what has to fit. Solving
- * from width instead would crop the chain on a wide display, which is exactly
- * the shape a classroom projector is. A wider screen simply shows more of the
- * wall running off both edges, which is what keeps the ends out of shot.
- */
-const FRAMINGS = {
-  'first-wall': { at: [-10.5, 3.0, 0], height: 29 },
-  'second-wall': { at: [-3.5, 4.6, 0], height: 31 },
-  'city-gates': { at: [5.0, 4.4, 0], height: 33 },
-  wide: { at: [-4, 4.0, 0], height: 42 },
-}
-
 function CameraRig({ focus }) {
   const camRef = useRef()
   const size = useThree((state) => state.size)
@@ -162,19 +104,18 @@ function CameraRig({ focus }) {
   const aspect = Math.max(0.5, size.width / Math.max(1, size.height))
 
   const frame = useMemo(() => {
-    const f = FRAMINGS[focus] || FRAMINGS.wide
-    const halfFov = (FOV * Math.PI) / 360
-    // On a very narrow window there is not enough width for the wall to run
-    // off both edges, so pull back a little further there.
-    const widthRelief = aspect < 1.2 ? 1.2 / Math.max(0.6, aspect) : 1
-    const dist = THREE.MathUtils.clamp(
-      (f.height / 2 / Math.tan(halfFov)) * widthRelief,
-      30,
-      190
-    )
-    const look = new THREE.Vector3(...f.at)
-    const pos = look.clone().addScaledVector(OFFSET, dist)
-    return { pos, look }
+    const f = LAND_FRAMINGS[focus] || LAND_FRAMINGS.wide
+    const solved = cameraFor({
+      framing: f,
+      offset: LAND_OFFSET,
+      fov: LAND_FOV,
+      aspect,
+      clamp: [30, 190],
+    })
+    return {
+      pos: new THREE.Vector3(...solved.position),
+      look: new THREE.Vector3(...solved.look),
+    }
   }, [focus, aspect])
 
   useFrame((_, delta) => {
@@ -198,7 +139,7 @@ function CameraRig({ focus }) {
     <PerspectiveCamera
       ref={camRef}
       makeDefault
-      fov={FOV}
+      fov={LAND_FOV}
       near={0.1}
       far={400}
       position={[-58, 48, 52]}

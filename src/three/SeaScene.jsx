@@ -20,23 +20,9 @@ import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { RippleWater } from './geometry/Field.jsx'
 
-export const SEA_LANE = {
-  stagingX: -34,
-  approachX: -17,
-  atWallX: -7.4,
-  wallX: 0,
-  insideX: 7,
-  /** Wall length along Z — far longer than the camera sees. */
-  laneDepth: 150,
-}
+import { SEA_LANE, SEA_HEIGHTS, SEA_TOWERS } from './lane.js'
 
-export const SEA_HEIGHTS = {
-  wall: 5.8,
-  tower: 8.0,
-  water: 0,
-}
-
-const SEA_TOWERS = 24
+export { SEA_LANE, SEA_HEIGHTS }
 
 /* ------------------------------------------------------------------ water */
 
@@ -73,7 +59,7 @@ function SeaWall() {
     }
     return buildWallLine({
       wall: {
-        width: 1.9,
+        width: SEA_LANE.wallWidth,
         depth: SEA_LANE.laneDepth,
         height: SEA_HEIGHTS.wall,
         x: SEA_LANE.wallX,

@@ -15,7 +15,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
-import { SeaTerrain, SEA_LANE, SEA_HEIGHTS } from '../three/SeaScene.jsx'
+import { SeaTerrain } from '../three/SeaScene.jsx'
+import {
+  SEA_LANE,
+  SEA_HEIGHTS,
+  SEA_FRAMINGS,
+  SEA_OFFSET,
+  SEA_FOV,
+  cameraFor,
+} from '../three/lane.js'
 import { Ship, SplashBurst } from '../three/geometry/Ship.jsx'
 import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
 import { Die } from '../three/geometry/Die.jsx'
@@ -99,39 +107,14 @@ function crewPosition(level, shipPos, slotOnShip, crewCount, slotOverall, overal
 
 /* ---------------------------------------------------------------- camera */
 
-const FOV = 32
-
 /**
- * As on the land lane: the camera stands off to one side and looks back along
- * the line of the wall, so it runs as a diagonal across the frame with the
- * ships in front of it. Square-on, a wall is a slab seen end-first and reads
- * as a cross-section.
+ * As on the land lane, the camera looks along the wall rather than square on
+ * to it — but lower, because at the land lane's pitch the horizon falls
+ * outside the frame and hides the far shore, and this lane is about the fleet
+ * being inside the Horn with Galata opposite.
+ *
+ * Numbers live in `three/lane.js`, where the scene checks can reach them.
  */
-const OFFSET = (() => {
-  // Lower than the land lane, and deliberately so. At the land lane's thirty
-  // degrees the horizon sits outside the top of the frame, which is fine over
-  // a field but wrong here: it hides the far shore, and the whole point of
-  // this lane is that the fleet is inside the Golden Horn with Galata and its
-  // chain tower opposite. A shallower pitch with a wider lens keeps the far
-  // bank and a strip of sky in shot, and water reads far better at a grazing
-  // angle than from above.
-  const v = new THREE.Vector3(-0.7, 0.242, 0.67)
-  return v.normalize()
-})()
-
-/**
- * Framing is solved from *vertical* extent, not width. The composition stacks
- * up the screen — water, ships, wall, city — so height is the binding
- * constraint, and solving from width crops it on exactly the wide displays a
- * projector uses.
- */
-const FRAMINGS = {
-  approach: { at: [-18, 4.0, 0], height: 34 },
-  piloting: { at: [-13, 4.0, 0], height: 30 },
-  boarding: { at: [-4.5, 5.2, 0], height: 26 },
-  breaking: { at: [2.5, 5.2, 0], height: 27 },
-}
-
 function CameraRig({ focus }) {
   const camRef = useRef()
   const size = useThree((state) => state.size)
@@ -139,19 +122,18 @@ function CameraRig({ focus }) {
   const aspect = Math.max(0.5, size.width / Math.max(1, size.height))
 
   const frame = useMemo(() => {
-    const f = FRAMINGS[focus] || FRAMINGS.approach
-    const halfFov = (FOV * Math.PI) / 360
-    // On a narrow window there is not enough width for the wall to run off
-    // both edges, so pull back further there.
-    const widthRelief = aspect < 1.2 ? 1.2 / Math.max(0.6, aspect) : 1
-    const dist = THREE.MathUtils.clamp(
-      (f.height / 2 / Math.tan(halfFov)) * widthRelief,
-      30,
-      200
-    )
-    const look = new THREE.Vector3(...f.at)
-    const pos = look.clone().addScaledVector(OFFSET, dist)
-    return { pos, look }
+    const f = SEA_FRAMINGS[focus] || SEA_FRAMINGS.approach
+    const solved = cameraFor({
+      framing: f,
+      offset: SEA_OFFSET,
+      fov: SEA_FOV,
+      aspect,
+      clamp: [30, 200],
+    })
+    return {
+      pos: new THREE.Vector3(...solved.position),
+      look: new THREE.Vector3(...solved.look),
+    }
   }, [focus, aspect])
 
   useFrame((_, delta) => {
@@ -173,7 +155,7 @@ function CameraRig({ focus }) {
     <PerspectiveCamera
       ref={camRef}
       makeDefault
-      fov={FOV}
+      fov={SEA_FOV}
       near={0.1}
       far={520}
       position={[-70, 26, 66]}

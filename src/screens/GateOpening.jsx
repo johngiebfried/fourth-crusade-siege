@@ -7,7 +7,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
-import { LandTerrain, LANE, HEIGHTS } from '../three/LandScene.jsx'
+import { LandTerrain } from '../three/LandScene.jsx'
+import { LANE, GATE_CAMERA } from '../three/lane.js'
 import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
 
@@ -26,9 +27,9 @@ import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
 // and the gate is under seven units deep — nowhere near enough to frame the
 // gate from outside — and this is the better shot anyway: the city is what is
 // being entered, so the city is where the camera should be.
-const GATE_START = new THREE.Vector3(LANE.gateX + 15, 5.2, 8.5)
-const GATE_END = new THREE.Vector3(LANE.gateX + 9.5, 4.0, 5.0)
-const GATE_LOOK = new THREE.Vector3(LANE.gateX, 2.6, 0)
+const GATE_START = new THREE.Vector3(...GATE_CAMERA.start)
+const GATE_END = new THREE.Vector3(...GATE_CAMERA.end)
+const GATE_LOOK = new THREE.Vector3(...GATE_CAMERA.look)
 
 function GateCamera() {
   const camRef = useRef()
@@ -47,7 +48,7 @@ function GateCamera() {
     <PerspectiveCamera
       ref={camRef}
       makeDefault
-      fov={38}
+      fov={GATE_CAMERA.fov}
       near={0.1}
       far={320}
       position={GATE_START.toArray()}

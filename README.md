@@ -53,6 +53,21 @@ capacity; sunk ships never boarding:
 node scripts/check-rules.mjs
 ```
 
+A second suite checks the *world* rather than the dice: that no camera framing
+puts the camera inside masonry at any aspect ratio, that ladders reach the wall
+face without sweeping through anything, that the walls run past the edge of the
+frame, that the gate camera stands on clear ground with the gate in view, and
+that every city landmark sits on land.
+
+```bash
+node scripts/check-scene.mjs
+```
+
+Every one of those assertions exists because something broke. The gate-opening
+camera was written against a fifteen-unit gate wall; when the wall grew to a
+hundred and fifty it ended up buried in masonry, and nothing caught it for two
+commits.
+
 ## State of the build
 
 **Working:** the opening — an isometric establishing shot of the city with a

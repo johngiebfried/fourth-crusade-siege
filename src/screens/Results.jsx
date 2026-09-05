@@ -1,68 +1,81 @@
 /**
- * Results and sack order. Out of scope for the redesign — the existing screen,
- * ported unchanged. This is the hand-off point to the Sack phase.
+ * Results and sack order — the hand-off to the Sack phase.
+ *
+ * The last thing the class sees before the module changes gear, so it gets the
+ * city behind it like everything else rather than reverting to a form.
  */
+
+import { CityBackdrop } from './CityBackdrop.jsx'
+import { DarkPanel, Eyebrow, GhostButton } from './ui.jsx'
+
+const STATUS = {
+  inside: { label: 'Entered the city', tone: 'text-emerald-300' },
+  shipwrecked: { label: 'Shipwrecked', tone: 'text-sky-300' },
+  ready: { label: 'Outside the walls', tone: 'text-stone-400' },
+}
 
 export default function Results({ cityFallen, firstToEnter, finalSummary, sackOrder, onReset }) {
   return (
-    <div className="min-h-screen overflow-y-auto bg-gradient-to-br from-amber-50 to-red-50 p-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-red-900 mb-4">
-            {cityFallen ? '🎊 Constantinople Has Fallen! 🎊' : '⚔️ Attack Results ⚔️'}
-          </h1>
-          {firstToEnter && (
-            <p className="text-2xl text-amber-700 font-bold">First to Enter: {firstToEnter}</p>
-          )}
-        </div>
+    <div className="relative h-screen w-screen overflow-hidden bg-[#1c1512]">
+      <CityBackdrop />
 
-        <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Summary</h2>
-          <div className="space-y-2">
+      <div className="pointer-events-none absolute inset-0 flex items-start justify-center overflow-y-auto px-2 py-8">
+        <DarkPanel wide>
+          <Eyebrow dark>{cityFallen ? 'The city has fallen' : 'The assault is over'}</Eyebrow>
+          <h1 className="mt-3 text-4xl font-bold leading-tight text-amber-100 md:text-5xl">
+            {cityFallen ? 'Constantinople Has Fallen' : 'The Walls Have Held'}
+          </h1>
+
+          {firstToEnter && (
+            <div className="mt-5 rounded-lg border border-amber-800/50 bg-amber-950/40 px-5 py-3">
+              <span className="text-sm uppercase tracking-[0.2em] text-amber-500">
+                First to enter
+              </span>
+              <div className="mt-1 text-2xl font-bold text-amber-100">{firstToEnter}</div>
+            </div>
+          )}
+
+          <div className="mt-6 space-y-2 text-lg leading-relaxed text-stone-300">
             {finalSummary.map((line, idx) => (
-              <p key={idx} className="text-xl text-gray-700">
-                {line}
-              </p>
+              <p key={idx}>{line}</p>
             ))}
           </div>
-        </div>
 
-        {cityFallen && sackOrder.length > 0 && (
-          <div className="bg-white rounded-lg shadow-xl p-8 mb-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">Sack Order</h2>
-            <p className="text-gray-600 mb-6">
-              Order of priority for selecting regions to plunder:
-            </p>
-            <div className="space-y-3">
-              {sackOrder.map((entry) => (
-                <div
-                  key={entry.position}
-                  className="flex items-center gap-6 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="text-3xl font-bold text-amber-600 w-16 text-center">
-                    #{entry.position}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-bold text-xl text-gray-800">{entry.name}</div>
-                    <div className="text-gray-600">{entry.faction}</div>
-                  </div>
-                  <div className="text-gray-600">
-                    {entry.status === 'inside' && '✅ Entered City'}
-                    {entry.status === 'shipwrecked' && '🌊 Shipwrecked'}
-                    {entry.status === 'ready' && '⚔️ Outside Walls'}
-                  </div>
-                </div>
-              ))}
+          {cityFallen && sackOrder.length > 0 && (
+            <div className="mt-8">
+              <Eyebrow dark>Sack order</Eyebrow>
+              <p className="mt-2 text-base text-stone-400">
+                Order of priority for choosing a region to plunder. Those who entered the city
+                come first, then the rest by fama, then the shipwrecked.
+              </p>
+              <ol className="mt-4 divide-y divide-stone-700/70 rounded-lg border border-stone-700/70 bg-black/25">
+                {sackOrder.map((entry) => {
+                  const status = STATUS[entry.status] ?? STATUS.ready
+                  return (
+                    <li key={entry.position} className="flex items-center gap-4 px-4 py-2.5">
+                      <span className="w-9 shrink-0 text-right text-xl font-bold text-amber-500">
+                        {entry.position}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-lg font-medium text-amber-50">
+                          {entry.name}
+                        </span>
+                        <span className="text-sm text-stone-500">{entry.faction}</span>
+                      </span>
+                      <span className={`shrink-0 text-sm ${status.tone}`}>{status.label}</span>
+                    </li>
+                  )
+                })}
+              </ol>
             </div>
-          </div>
-        )}
+          )}
 
-        <button
-          onClick={onReset}
-          className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg text-xl transition-colors shadow-lg"
-        >
-          🔄 New Siege
-        </button>
+          <div className="mt-8">
+            <GhostButton dark onClick={onReset}>
+              Begin a new siege
+            </GhostButton>
+          </div>
+        </DarkPanel>
       </div>
     </div>
   )
