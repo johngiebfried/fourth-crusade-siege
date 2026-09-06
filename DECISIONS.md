@@ -984,20 +984,16 @@ medieval face can be relied on across a room of unknown school laptops. macOS
 ships Luminari and Herculanum; Windows only has Old English Text MT if Office
 put it there. The choice is a font file or no medieval type.
 
-**UnifrakturMaguntia** is now shipped in the repo — a textura quadrata, the
-formal book hand of exactly this period, 88KB, SIL Open Font Licence 1.1, with
-`OFL.txt` alongside it as the licence requires. **In the repo, not on a CDN**:
-a classroom with no network or a blocked font host would otherwise fall
-silently back to Georgia mid-lesson, which is the failure this is meant to end.
+A font is now shipped in the repo — **in the repo, not on a CDN**: a classroom
+with no network or a blocked font host would otherwise fall silently back to
+Georgia mid-lesson, which is the failure this is meant to end. Which font took
+two goes; see the entry below.
 
 The no-external-assets rule still holds absolutely where it was aimed — the 3D
 scene, where every mesh is procedural and nothing is fetched. Type is a
 different kind of thing.
 
-It is set **everywhere, body text included**, which was the call. Blackletter is
-markedly harder to read at distance than a serif, so the whole page is set
-larger and leaded more generously to pay for it — which is what a manuscript
-does anyway.
+It is set **everywhere, body text included**, which was the call.
 
 ### Three places keep the serif, on purpose
 
@@ -1038,6 +1034,36 @@ manuscript page, and geometric rather than anatomical, so it can be constructed
 correctly rather than observed badly. The line-filler is also the one piece of
 ornament with an actual job: it is what a scribe ran along a short last line to
 keep the text block's edge.
+
+## Revision: the hand, second choice
+
+The textura was rejected on sight, and rightly — it is correct for 1204 and
+genuinely hard to read, which is the wrong trade for a text a class reads off a
+projector. The replacement had to be a *scribal* hand without being a fraktur,
+and that is a narrower gap than it sounds. Five candidates were rendered in the
+actual panel and judged side by side rather than argued about:
+
+| | Verdict |
+| --- | --- |
+| **UnifrakturMaguntia** (textura) | Rejected. Authentic and hard to read. |
+| **Cardo**, **Junge** (Carolingian descendants) | The trap. Carolingian minuscule is the direct ancestor of every book serif in use, so an authentic one reads as a nice modern serif — exactly the complaint this was meant to fix. |
+| **Uncial Antiqua** | The most convincingly scribal of the five, but its true uncial `g` and `t` turn "get over it" into "ʒet over it", and it is five centuries early for this siege besides. |
+| **MedievalSharp** | Chosen. Rounded, unmistakably hand-drawn, and with no letterform a student will misread. |
+
+The honest cost: MedievalSharp is a modern designer's medieval hand rather than
+a historical script. Every other candidate paid for its authenticity in
+legibility, and for a teaching tool on a projector that is the wrong currency.
+
+The font family is declared as `Hand` rather than by its own name, and the
+`@font-face` block carries the swap instructions, so changing this decision is
+two lines and a file. The candidates are all SIL OFL 1.1 and all live in
+`google/fonts` under `ofl/<name>/`.
+
+**`.tally` survives the swap, changed in kind.** Under the textura the dice
+numbers had to revert to a serif outright, its numerals being unrecognisable.
+This hand's numerals are clear, so they stay in it and are merely set heavier.
+The rule is kept because the reason for it has not gone away — a misread roll
+is a rules dispute — and the next swap may need it again.
 
 ## Still open, and the caveat that goes with them
 

@@ -3,26 +3,49 @@
 /*
  * The hand.
  *
- * UnifrakturMaguntia — a textura quadrata, the formal book hand of the
- * thirteenth and fourteenth centuries, which is exactly the period this game
- * sits in. Shipped in the repo rather than fetched from a CDN: a classroom
- * with no network or a blocked font host would otherwise fall silently back to
- * Georgia mid-lesson, which is the failure this is meant to end.
+ * MedievalSharp: a rounded, pen-drawn book hand. Not a blackletter.
  *
- * This is a deliberate exception to the project's no-external-assets rule.
- * That rule was written about the 3D scene — no image or model files, every
- * mesh procedural — and it holds there absolutely. Type is a different thing:
- * there is no way to generate a book hand at runtime, and no medieval face can
- * be relied on to exist across a room of unknown school laptops. macOS ships
- * Luminari and Herculanum; Windows only has Old English Text MT if Office put
- * it there. So it is shipped, once, at 88KB.
+ * A textura quadrata was tried first and rejected — correct for 1204 and
+ * genuinely hard to read, which is the wrong trade for a text a class reads off
+ * a projector. What replaced it had to be a *scribal* hand without being a
+ * fraktur, and that is a narrower gap than it sounds:
+ *
+ *   Carolingian minuscule, the obvious answer, is the direct ancestor of every
+ *   book serif in use. An authentic one (Cardo, Junge) reads as a nice modern
+ *   serif — which is exactly the complaint it was meant to fix.
+ *
+ *   An uncial (Uncial Antiqua) is the most convincingly scribal of the
+ *   candidates, but its true uncial `g` and `t` turn "get over it" into
+ *   "ʒet over it", and it is five centuries early for this siege besides.
+ *
+ * MedievalSharp is a modern designer's medieval hand rather than a historical
+ * script, which is the honest cost of the choice. In exchange it is rounded,
+ * unmistakably hand-drawn, and has no letterform a student will misread.
+ *
+ * ── To swap it ────────────────────────────────────────────────────────────
+ *
+ * Drop the .ttf in src/fonts/, replace its OFL.txt, and change the two lines
+ * in the @font-face below. Everything else keys off the `Hand` family name.
+ * Candidates already weighed: MedievalSharp (here), UncialAntiqua-Regular,
+ * Cardo-Regular, Junge-Regular, UnifrakturMaguntia-Book — all SIL OFL 1.1,
+ * all in google/fonts under ofl/<name>/.
+ *
+ * ── Why it is shipped rather than fetched ─────────────────────────────────
+ *
+ * A CDN link would fall silently back to Georgia in a classroom with no
+ * network or a blocked font host, mid-lesson. This is a deliberate exception
+ * to the project's no-external-assets rule, which was written about the 3D
+ * scene — every mesh procedural, nothing fetched — and still holds there
+ * absolutely. Type is a different thing: a book hand cannot be generated at
+ * runtime, and no medieval face can be relied on across a room of unknown
+ * school laptops.
  *
  * SIL Open Font Licence 1.1 — see src/fonts/OFL.txt, which must travel with
- * the font. Copyright (c) 2010 j. 'mach' wust; (c) 2009 Peter Wiegel.
+ * the font. Copyright (c) 2011 wmk69.
  */
 @font-face {
-  font-family: 'Textura';
-  src: url('./fonts/UnifrakturMaguntia-Book.ttf') format('truetype');
+  font-family: 'Hand';
+  src: url('./fonts/MedievalSharp.ttf') format('truetype');
   font-weight: 400 700;
   font-style: normal;
   font-display: swap;
@@ -62,27 +85,33 @@ body,
 }
 
 body {
-  /* Textura throughout, body text included. Blackletter is markedly harder to
-     read than a serif at distance, so the whole page is set larger and leaded
-     more generously to pay for it — which is what a manuscript does anyway.
-     The serif stack behind it is what shows for the fraction of a second
-     before the font loads, and if the file is ever missing. */
-  font-family: 'Textura', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  /* The hand throughout, body text included. The serif behind it is what shows
+     for the fraction of a second before the font loads, and if the file is
+     ever missing. */
+  font-family: 'Hand', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   font-size: 17.5px;
-  line-height: 1.65;
+  line-height: 1.6;
   background: #1c1512;
   color: var(--ink);
 }
 
 /*
- * Two places keep a plain face, deliberately.
+ * `.tally` marks the numbers the game is actually played on — dice results,
+ * thresholds, fama counts — which have to be read correctly at a glance from
+ * across a room, because a misread roll is a rules dispute.
  *
- * Numerals in a textura are quirky by design — several are unrecognisable to a
- * modern eye — and this game is played on dice results and fama counts that
- * have to be read correctly at a glance from across a room. A misread roll is
- * a rules dispute. So anything tagged `.tally` reverts to the serif.
+ * Under the textura these had to revert to a serif outright: its numerals are
+ * quirky by design and several are unrecognisable. This hand's numerals are
+ * clear, so they stay in it and are merely set a touch heavier. The rule is
+ * kept because the *reason* for it has not gone away, and the next font swap
+ * may need it again.
  */
-.tally,
+.tally {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Typed input stays in a plain face: it is data entry, not text. */
 input[type='number'],
 input[type='text'] {
   font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
@@ -126,17 +155,16 @@ canvas {
 
 /* Rubricated label: small red capitals, well tracked, as a marginal heading. */
 /*
- * Rubricated label: red, and NOT set in capitals.
+ * Rubricated label: red, and not set in capitals.
  *
- * A tracked line of small caps is a modern web idiom, and in a textura it is
- * also the worst possible choice: majuscules in this hand are ornate display
- * letters meant to be used one at a time, and a whole line of them is close to
- * undecipherable. A scribe rubricating a heading wrote it in the ordinary
- * hand, in red. So do we.
+ * A tracked line of small caps is a modern web idiom. A scribe rubricating a
+ * heading wrote it in the ordinary hand, in red — and under the textura this
+ * was not a preference but a necessity, since a whole line of its majuscules
+ * is close to undecipherable. It stays because it is right either way.
  */
 .rubric {
   color: var(--rubric);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-size: 1rem;
   font-weight: 400;
 }

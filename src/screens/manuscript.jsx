@@ -114,7 +114,7 @@ function drawInitial(ctx, size, letter, palette) {
   // The letter, reserved in parchment white with a thin dark contour so it
   // holds its shape against the vine-work behind it.
   ctx.save()
-  ctx.font = `${Math.round(size * 0.74)}px Textura, 'Old English Text MT', Luminari, 'Iowan Old Style', Georgia, serif`
+  ctx.font = `${Math.round(size * 0.74)}px Hand, 'Old English Text MT', Luminari, 'Iowan Old Style', Georgia, serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
@@ -155,7 +155,7 @@ export function IlluminatedCapital({ letter, palette = 'lapis', size = 88, class
     // nothing would ever redraw it.
     paint()
     document.fonts
-      ?.load(`${Math.round(size * 0.74)}px Textura`)
+      ?.load(`${Math.round(size * 0.74)}px Hand`)
       .then(paint)
       .catch(() => {})
 
