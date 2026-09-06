@@ -49,18 +49,33 @@ function Walls() {
   const runs = (from, to) => ({ depth: to - from, z: (from + to) / 2 })
   const half = LANE.laneDepth / 2
 
+  /**
+   * Keep a curtain tower from crowding the gate's own pair.
+   *
+   * Skipping towers that fall *inside* the opening is not enough: the next one
+   * along can still land a few units from a gate tower, and the two read as a
+   * clump rather than as a gate with clear wall either side of it. Anything
+   * closer than `keep` is pushed out to that distance, which shifts one tower
+   * a little further down the wall and leaves the gate standing on its own.
+   */
+  const clearOfGate = (z, keep) => {
+    const d = z - LAND_GATE.z
+    if (Math.abs(d) >= keep) return z
+    return LAND_GATE.z + (d >= 0 ? keep : -keep)
+  }
+
   const outer = useMemo(() => {
     const gap = LANE.LAND_GATE_OUTER ?? LAND_GATE.outerHalf
     const towers = []
     const spacing = LANE.laneDepth / OUTER_TOWERS
     for (let i = 0; i < OUTER_TOWERS; i++) {
-      const z = -half + spacing * i
-      if (Math.abs(z - LAND_GATE.z) < gap + 3.4) continue
+      const raw = -half + spacing * i
+      if (Math.abs(raw - LAND_GATE.z) < gap + 3.4) continue
       towers.push({
         radius: 1.15,
         height: HEIGHTS.outerTower,
         x: LANE.outerWallX - 0.55,
-        z,
+        z: clearOfGate(raw, 11.5),
         polygonal: i % 2 === 0,
       })
     }
@@ -110,13 +125,13 @@ function Walls() {
     const towers = []
     const spacing = LANE.laneDepth / INNER_TOWERS
     for (let i = 0; i < INNER_TOWERS; i++) {
-      const z = -half + spacing * (i + 0.5)
-      if (Math.abs(z - LAND_GATE.z) < gap + 5.2) continue
+      const raw = -half + spacing * (i + 0.5)
+      if (Math.abs(raw - LAND_GATE.z) < gap + 5.2) continue
       towers.push({
         radius: 1.9,
         height: HEIGHTS.tower,
         x: LANE.innerWallX - 0.9,
-        z,
+        z: clearOfGate(raw, 13.0),
         polygonal: i % 2 === 1,
       })
     }

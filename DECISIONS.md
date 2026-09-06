@@ -1604,6 +1604,36 @@ reconstructions is crenellated, and the teeth are most of what makes a tower
 read as a fighting platform rather than a pillar. Square towers get three
 merlons a side, polygonal ones a ring of seven.
 
+## Revision: three things wrong along the moat
+
+### The counterscarp ran straight through its own bridge
+
+Crenellations and all. A low crenellated wall standing across the middle of the
+causeway that is supposed to carry traffic over the ditch — which is not a
+subtle error, and it had been there since the moat works went in.
+
+The counterscarp is now built as two runs with the road between them, and each
+run ends in a pier where it meets the opening. That reads as a gateway in the
+outer defence, which is what it was: an attacker had to come through this gap
+or get over the wall either side of it.
+
+### The gate correction had overshot
+
+`innerHalf` went 3.4 → 0.95 against the Porta Rhegium, which was right in
+direction and too far in degree: at 0.95 the opening was narrower than two
+crusaders abreast, and the figures beside it made that obvious. 1.35 now, with
+the outer wall's at 1.15. Still a doorway in a wall rather than a gap in one.
+
+### A tower was crowding the gate
+
+Skipping the towers that fall *inside* the opening is not enough. The next one
+along still landed four units from a gate tower, and the pair read as a clump
+rather than as a gate with clear wall either side.
+
+`clearOfGate` pushes any curtain tower closer than a set distance out to it —
+11.5 units on the outer line, 13 on the inner. One tower moves a little further
+down the wall and the gate stands on its own.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

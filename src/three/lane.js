@@ -75,13 +75,15 @@ export const LAND_GATE = {
   /**
    * Half the opening in each wall line.
    *
-   * Small. The first version used 3.4 on a wall 7.4 high — a seven-unit hole
-   * in a seven-and-a-half-unit wall, which is a breach, not a gate. The Porta
-   * Rhegium reconstruction shows a doorway about a third of the wall's height,
-   * and the outer wall's opening smaller again.
+   * Small, but not so small that the men going through it look like mice.
+   * The first version used 3.4 on a wall 7.4 high — a seven-unit hole in a
+   * seven-and-a-half-unit wall, which is a breach, not a gate. The correction
+   * then overshot: at 0.95 the opening was narrower than two crusaders
+   * abreast. This sits between, and still reads as a doorway in a wall rather
+   * than a gap in one.
    */
-  innerHalf: 0.95,
-  outerHalf: 0.8,
+  innerHalf: 1.35,
+  outerHalf: 1.15,
 }
 
 /**

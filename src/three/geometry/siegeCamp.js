@@ -287,15 +287,39 @@ export function buildMoatWorks({
 
   // The counterscarp: a low wall along the field edge, with its own small
   // merlons. An attacker had to get over this before he even reached the ditch.
-  const cs = new THREE.BoxGeometry(0.46, 0.9, to - from)
-  cs.translate(outer - 0.6, 0.45, (from + to) / 2)
-  parts.push(paint(cs, PALETTE.wallStone, 0.95, { aoHeight: 0.9 }))
+  //
+  // It breaks for the road. It used to run straight through the causeway,
+  // crenellations and all — a crenellated wall standing across the middle of
+  // the bridge that is supposed to carry traffic over it.
+  const roadHalf = gateZ === null ? 0 : 1.5
+  const runs =
+    gateZ === null
+      ? [[from, to]]
+      : [
+          [from, gateZ - roadHalf],
+          [gateZ + roadHalf, to],
+        ]
 
-  const merlonPitch = 1.5
-  for (let z = from; z < to; z += merlonPitch) {
-    const m = new THREE.BoxGeometry(0.5, 0.42, 0.8)
-    m.translate(outer - 0.6, 1.1, z + 0.4)
-    parts.push(paint(m, PALETTE.wallStoneAlt, 0.9 + rand() * 0.16))
+  for (const [a, b] of runs) {
+    if (b - a < 0.2) continue
+    const cs = new THREE.BoxGeometry(0.46, 0.9, b - a)
+    cs.translate(outer - 0.6, 0.45, (a + b) / 2)
+    parts.push(paint(cs, PALETTE.wallStone, 0.95, { aoHeight: 0.9 }))
+
+    // A pier at each end of a run, where the wall stops at the road.
+    for (const end of gateZ === null ? [] : [a, b]) {
+      if (Math.abs(end - gateZ) > roadHalf + 0.1) continue
+      const pier = new THREE.BoxGeometry(0.72, 1.25, 0.72)
+      pier.translate(outer - 0.6, 0.62, end)
+      parts.push(paint(pier, PALETTE.wallStoneAlt, 1.02, { aoHeight: 1.25 }))
+    }
+
+    const merlonPitch = 1.5
+    for (let z = a; z < b - merlonPitch * 0.5; z += merlonPitch) {
+      const m = new THREE.BoxGeometry(0.5, 0.42, 0.8)
+      m.translate(outer - 0.6, 1.1, z + 0.4)
+      parts.push(paint(m, PALETTE.wallStoneAlt, 0.9 + rand() * 0.16))
+    }
   }
 
   // The causeway at the gate.
