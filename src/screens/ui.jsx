@@ -10,125 +10,85 @@
  * `index.css`.
  */
 
-/* ------------------------------------------------------------- drolleries */
+/* --------------------------------------------------------------- penwork */
 
-/**
- * A drollery: the grotesque a bored scribe drew in the margin. Hybrid
- * creatures, a hare with a trumpet, a snail — they have nothing to do with the
- * text and that is the point of them.
+/*
+ * Pen-flourishes and line-fillers, not drolleries.
  *
- * These are the strongest single signal that a page is medieval rather than
- * merely brown, so they go in the margins of the big screens. Drawn as inline
- * paths: no fetched asset, and they stay crisp at any size.
+ * Marginal grotesques were tried here first — a hare with a trumpet, a snail,
+ * a hybrid — and they were bad. Figure drawing at this size lives or dies on
+ * anatomy, and hand-authored SVG paths for a hare are not going to beat a
+ * scribe who drew hares all day. A crude drollery is worse than none: it reads
+ * as clip-art and drags the whole page down with it.
+ *
+ * What a manuscript page has just as much of, and what *is* within reach here,
+ * is penwork: cadels, flourishes, knotwork and line-fillers. They are
+ * geometric rather than anatomical, so they can be constructed rather than
+ * observed, and they are drawn correctly by construction at any size.
  */
-const DROLLERIES = {
-  // A hare blowing a trumpet: the standard marginal joke, the hunted turned
-  // herald, heckling the knights the page is actually about.
-  //
-  // Drawn as separated masses with the limbs as strokes. The first version had
-  // everything overlapping and both filled and stroked, and came out as one
-  // amorphous blob — at this size a drollery lives or dies on its silhouette.
-  hare: (
-    <g>
-      {/* Haunch and body. */}
-      <ellipse cx="21" cy="45" rx="11" ry="10" />
-      <ellipse cx="34" cy="44" rx="14" ry="8.5" transform="rotate(-8 34 44)" />
-      {/* Neck and head. */}
-      <ellipse cx="49" cy="34" rx="9" ry="6.5" transform="rotate(-24 49 34)" />
-      {/* Muzzle. */}
-      <path d="M55 31 q7 1 8 4 q-4 3 -9 2 z" />
-      {/* Ears, long and apart — the one feature that must read. */}
-      <path d="M47 28 q-5 -14 -2 -21 q5 3 6 19 z" />
-      <path d="M52 27 q0 -15 5 -20 q3 5 -1 20 z" />
-      {/* Trumpet, from the muzzle up and out, with a flared bell. */}
-      <g fill="none" strokeWidth="2.6">
-        <path d="M62 33 l10 -7" />
-      </g>
-      <path d="M70 28 l9 -7 q2 4 0 9 l-8 2 z" />
-      {/* Forelegs and hind leg. */}
-      <g fill="none" strokeWidth="2.8">
-        <path d="M42 49 q2 7 0 12" />
-        <path d="M36 50 q1 6 -1 11" />
-        <path d="M17 53 q-3 6 1 10 M18 63 h7" />
-      </g>
-      {/* Scut. */}
-      <circle cx="10" cy="41" r="4.5" />
-    </g>
-  ),
-
-  // The snail: the other great marginal joke — armed knights recoiling from
-  // one. Belongs on a page about men who would not climb a wall.
-  snail: (
-    <g>
-      {/* Foot. */}
-      <path d="M8 56 q0 -7 9 -7 l26 0 q7 0 7 4 q0 4 -7 4 z" />
-      {/* Shell, as an open spiral rather than concentric rings. */}
-      <g fill="none" strokeWidth="4">
-        <path d="M40 50 a15 15 0 1 1 3 -12 a10 10 0 1 0 -8 8 a5.5 5.5 0 1 1 2 -7" />
-      </g>
-      {/* Head and eyestalks. */}
-      <path d="M45 52 q10 -2 13 -8 q4 2 3 6 q-2 5 -12 6 z" />
-      <g fill="none" strokeWidth="2.4">
-        <path d="M56 45 q5 -6 4 -13" />
-        <path d="M52 46 q7 -4 12 -3" />
-      </g>
-      <circle cx="60" cy="30" r="2.8" />
-      <circle cx="65" cy="42" r="2.4" />
-    </g>
-  ),
-
-  // A hybrid: a hooded man's head on a bird's body, one of the commonest
-  // grotesques in the margins of a thirteenth-century psalter.
-  hybrid: (
-    <g>
-      {/* Bird body and tail. */}
-      <ellipse cx="30" cy="47" rx="16" ry="10" transform="rotate(6 30 47)" />
-      <path d="M15 48 q-11 2 -14 -5 q9 0 13 -4 z" />
-      {/* A wing, folded. */}
-      <path d="M26 42 q10 -3 17 3 q-8 6 -17 3 z" />
-      {/* Legs and feet. */}
-      <g fill="none" strokeWidth="2.8">
-        <path d="M28 57 q-1 6 -2 9 M25 66 h7" />
-        <path d="M38 56 q2 6 2 9 M38 65 h7" />
-      </g>
-      {/* Neck, then a hooded human head turned back over the shoulder. */}
-      <path d="M42 44 q3 -8 9 -11 l6 6 q-6 4 -8 10 z" />
-      <path d="M50 32 q1 -11 10 -12 q9 -1 10 8 q1 8 -7 10 q-9 2 -13 -6 z" />
-      {/* The hood's point, falling behind. */}
-      <path d="M52 24 q-6 -6 -3 -12 q6 1 9 7 z" />
-      {/* Face reserved out of the ink: brow, eye, beard line. */}
-      <g style={{ fill: '#efe2c4', stroke: 'none' }}>
-        <circle cx="64" cy="29" r="2.1" />
-        <path d="M60 36 q6 2 10 -1 q-3 5 -10 4 z" />
-      </g>
-    </g>
-  ),
-}
 
 /**
- * A marginal grotesque. `which` picks the creature; `flip` faces it the other
- * way, because a drollery should look in toward the text it is heckling.
+ * A line-filler: the band of penwork a scribe ran along a short last line so
+ * that the text block kept its edge. A real feature of a ruled page, and the
+ * one piece of ornament that has an actual job.
  */
-export function Drollery({ which = 'hare', flip = false, size = 76, className = '' }) {
-  // shrink-0 matters: inside a flex row an SVG with no basis collapses to
-  // nothing, which is how the first one of these rendered as a smudge.
+export function LineFiller({ className = '', height = 14 }) {
   return (
     <svg
       aria-hidden
-      viewBox="0 0 80 72"
-      width={size}
-      height={size * 0.9}
-      className={`shrink-0 ${className}`}
-      style={{
-        fill: 'var(--ink)',
-        stroke: 'var(--ink)',
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
-        opacity: 0.72,
-        transform: flip ? 'scaleX(-1)' : undefined,
-      }}
+      viewBox="0 0 240 14"
+      preserveAspectRatio="none"
+      height={height}
+      className={`w-full ${className}`}
     >
-      {DROLLERIES[which] ?? DROLLERIES.hare}
+      <path
+        d="M0 7 h6 m0 0 q6 -7 12 0 q6 7 12 0 q6 -7 12 0 q6 7 12 0 q6 -7 12 0 q6 7 12 0
+           q6 -7 12 0 q6 7 12 0 q6 -7 12 0 q6 7 12 0 q6 -7 12 0 q6 7 12 0 q6 -7 12 0
+           q6 7 12 0 q6 -7 12 0 q6 7 12 0 h6"
+        fill="none"
+        stroke="var(--rubric)"
+        strokeWidth="1.6"
+        opacity="0.55"
+      />
+    </svg>
+  )
+}
+
+/**
+ * A pen-flourish for the corner of a leaf: a spiralling stem with hairline
+ * tendrils and bulb terminals, of the kind that runs off the ascenders of a
+ * top line. Built from arcs, so it is right by construction.
+ */
+export function PenFlourish({ size = 108, flip = false, className = '' }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 120 120"
+      width={size}
+      height={size}
+      className={`shrink-0 ${className}`}
+      style={{ transform: flip ? 'scaleX(-1)' : undefined }}
+    >
+      <g fill="none" stroke="var(--ink)" strokeLinecap="round" opacity="0.5">
+        {/* The main stem, swinging down and coiling. */}
+        <path d="M8 8 C 46 10, 74 30, 78 62 C 80 84, 62 96, 48 88 C 36 81, 38 62, 54 60
+                 C 68 58, 78 70, 76 84"
+              strokeWidth="2.6" />
+        {/* Hairline tendrils off the stem. */}
+        <path d="M30 14 C 44 26, 46 42, 38 54" strokeWidth="1.2" />
+        <path d="M52 22 C 62 34, 62 48, 54 58" strokeWidth="1.2" />
+        <path d="M78 62 C 92 56, 104 62, 106 76" strokeWidth="1.5" />
+        <path d="M20 10 C 22 26, 16 38, 6 44" strokeWidth="1.2" />
+      </g>
+      {/* Bulb terminals: the little swelled dots a quill leaves at the end of
+          a stroke, and the detail that makes penwork read as penwork. */}
+      <g fill="var(--rubric)" opacity="0.6">
+        <circle cx="106" cy="76" r="3.2" />
+        <circle cx="76" cy="84" r="2.8" />
+        <circle cx="6" cy="44" r="2.6" />
+        <circle cx="38" cy="54" r="2.2" />
+        <circle cx="54" cy="58" r="2.2" />
+      </g>
     </svg>
   )
 }

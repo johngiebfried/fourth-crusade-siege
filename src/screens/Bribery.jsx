@@ -42,7 +42,7 @@ export default function Bribery({ onConfirm, onDecline }) {
           }
         >
           <div className="mt-6 border border-red-900/25 bg-[#e9dcc0]/70 p-5">
-            <div className="text-xs uppercase tracking-[0.28em] text-red-900/70">The price</div>
+            <div className="rubric">The price</div>
             <dl className="mt-3 space-y-2 text-lg">
               {PRICES.map(([label, cost], i) => (
                 <div
@@ -52,7 +52,7 @@ export default function Bribery({ onConfirm, onDecline }) {
                   }`}
                 >
                   <dt className="text-stone-700">{label}</dt>
-                  <dd className="shrink-0 text-2xl font-bold text-red-900">{cost}</dd>
+                  <dd className="tally shrink-0 text-2xl font-bold text-red-900">{cost}</dd>
                 </div>
               ))}
             </dl>

@@ -1,6 +1,34 @@
 @import 'tailwindcss';
 
 /*
+ * The hand.
+ *
+ * UnifrakturMaguntia — a textura quadrata, the formal book hand of the
+ * thirteenth and fourteenth centuries, which is exactly the period this game
+ * sits in. Shipped in the repo rather than fetched from a CDN: a classroom
+ * with no network or a blocked font host would otherwise fall silently back to
+ * Georgia mid-lesson, which is the failure this is meant to end.
+ *
+ * This is a deliberate exception to the project's no-external-assets rule.
+ * That rule was written about the 3D scene — no image or model files, every
+ * mesh procedural — and it holds there absolutely. Type is a different thing:
+ * there is no way to generate a book hand at runtime, and no medieval face can
+ * be relied on to exist across a room of unknown school laptops. macOS ships
+ * Luminari and Herculanum; Windows only has Old English Text MT if Office put
+ * it there. So it is shipped, once, at 88KB.
+ *
+ * SIL Open Font Licence 1.1 — see src/fonts/OFL.txt, which must travel with
+ * the font. Copyright (c) 2010 j. 'mach' wust; (c) 2009 Peter Wiegel.
+ */
+@font-face {
+  font-family: 'Textura';
+  src: url('./fonts/UnifrakturMaguntia-Book.ttf') format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
  * The whole interface is a manuscript page.
  *
  * The reference is Inkulinati: vellum ground, iron-gall ink line-work,
@@ -34,9 +62,30 @@ body,
 }
 
 body {
-  font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  /* Textura throughout, body text included. Blackletter is markedly harder to
+     read than a serif at distance, so the whole page is set larger and leaded
+     more generously to pay for it — which is what a manuscript does anyway.
+     The serif stack behind it is what shows for the fraction of a second
+     before the font loads, and if the file is ever missing. */
+  font-family: 'Textura', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  font-size: 17.5px;
+  line-height: 1.65;
   background: #1c1512;
   color: var(--ink);
+}
+
+/*
+ * Two places keep a plain face, deliberately.
+ *
+ * Numerals in a textura are quirky by design — several are unrecognisable to a
+ * modern eye — and this game is played on dice results and fama counts that
+ * have to be read correctly at a glance from across a room. A misread roll is
+ * a rules dispute. So anything tagged `.tally` reverts to the serif.
+ */
+.tally,
+input[type='number'],
+input[type='text'] {
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
 }
 
 canvas {
@@ -76,12 +125,20 @@ canvas {
 }
 
 /* Rubricated label: small red capitals, well tracked, as a marginal heading. */
+/*
+ * Rubricated label: red, and NOT set in capitals.
+ *
+ * A tracked line of small caps is a modern web idiom, and in a textura it is
+ * also the worst possible choice: majuscules in this hand are ornate display
+ * letters meant to be used one at a time, and a whole line of them is close to
+ * undecipherable. A scribe rubricating a heading wrote it in the ordinary
+ * hand, in red. So do we.
+ */
 .rubric {
   color: var(--rubric);
-  text-transform: uppercase;
-  letter-spacing: 0.28em;
-  font-size: 0.72rem;
-  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 1rem;
+  font-weight: 400;
 }
 
 /*

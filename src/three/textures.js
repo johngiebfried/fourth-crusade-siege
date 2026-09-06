@@ -17,6 +17,11 @@ export function nameLabelTexture(name) {
   if (labelCache.has(name)) return labelCache.get(name)
 
   const pad = 22
+  // Deliberately NOT the textura the rest of the interface is set in. A plate
+  // is drawn at 46px and then rendered down to a handful of screen pixels over
+  // a pawn's head, and a blackletter at that size is mush. Same reasoning as
+  // the `.tally` numerals: anything that has to be read instantly and
+  // correctly at small size keeps the serif.
   const fontSize = 46
   const measureCanvas = document.createElement('canvas')
   const mctx = measureCanvas.getContext('2d')

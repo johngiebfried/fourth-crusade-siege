@@ -272,10 +272,10 @@ export function CrusaderCamPanel({ className = '' }) {
       style={{ background: '#1c1512' }}
     >
       <div className="flex items-center justify-between gap-2 bg-[#2a211a] px-3 py-1.5">
-        <span className="truncate text-[11px] uppercase tracking-[0.18em] text-amber-500">
+        <span className="truncate text-[13px] text-amber-500">
           Crusader Camp
         </span>
-        <span className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-widest text-red-400">
+        <span className="flex shrink-0 items-center gap-1.5 text-[12px] text-red-400">
           <span className="inline-block h-2 w-2 rotate-45" style={{ background: 'var(--rubric)' }} />
           Galata
         </span>

@@ -38,7 +38,7 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
         >
           {firstToEnter && (
             <div className="mb-5 border border-red-900/30 bg-[#eadcbc]/70 px-5 py-3 text-center">
-              <span className="text-xs uppercase tracking-[0.24em] text-red-900/70">
+              <span className="rubric">
                 First to enter
               </span>
               <div className="mt-1 text-2xl font-bold text-red-900">{firstToEnter}</div>
@@ -53,7 +53,7 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
 
           {cityFallen && sackOrder.length > 0 && (
             <div className="mt-8">
-              <div className="text-xs uppercase tracking-[0.28em] text-red-900/70">
+              <div className="rubric">
                 Sack order
               </div>
               <p className="mt-2 text-base text-stone-600">
@@ -65,7 +65,7 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
                   const status = STATUS[entry.status] ?? STATUS.ready
                   return (
                     <li key={entry.position} className="flex items-center gap-4 px-4 py-2.5">
-                      <span className="w-9 shrink-0 text-right text-xl font-bold text-red-900">
+                      <span className="tally w-9 shrink-0 text-right text-xl font-bold text-red-900">
                         {entry.position}
                       </span>
                       <span className="min-w-0 flex-1">

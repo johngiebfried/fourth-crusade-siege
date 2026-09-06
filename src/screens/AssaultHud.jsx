@@ -14,7 +14,7 @@
 
 import { useMemo } from 'react'
 import { pickLore } from '../game/lore.js'
-import { Drollery } from './ui.jsx'
+import { LineFiller } from './ui.jsx'
 
 /**
  * A stage's threshold is usually one number. The sea breakthrough is the
@@ -34,7 +34,7 @@ export function StageBanner({ stage, remaining, total }) {
         </div>
         <div className="mt-1.5 flex flex-wrap items-center justify-center gap-5 text-sm">
           <span
-            className="px-3 py-1 font-bold"
+            className="tally px-3 py-1 font-bold"
             style={{ background: 'var(--rubric)', color: 'var(--vellum-lit)' }}
           >
             {stage.thresholdLabel
@@ -43,7 +43,7 @@ export function StageBanner({ stage, remaining, total }) {
                 ? 'A 1 sinks the ship'
                 : `Roll ${stage.threshold}+`}
           </span>
-          <span style={{ color: 'var(--ink-soft)' }}>
+          <span className="tally" style={{ color: 'var(--ink-soft)' }}>
             {total - remaining} of {total} resolved
           </span>
         </div>
@@ -93,12 +93,14 @@ export function RollReadout({ activeRoll, lane = 'land' }) {
           className="mt-2 flex items-center justify-center gap-3 text-xl"
           style={{ color: 'var(--ink-soft)' }}
         >
-          <span className="text-4xl font-black" style={{ color: 'var(--ink)' }}>
+          <span className="tally text-4xl font-black" style={{ color: 'var(--ink)' }}>
             {entry.roll}
           </span>
-          {entry.bonus > 0 && <span>+ {entry.bonus}</span>}
+          {entry.bonus > 0 && <span className="tally">+ {entry.bonus}</span>}
           <span style={{ opacity: 0.55 }}>vs</span>
-          <span>{entry.threshold === 2 ? 'a 1 sinks' : `${entry.threshold}+`}</span>
+          <span className="tally">
+            {entry.threshold === 2 ? 'a 1 sinks' : `${entry.threshold}+`}
+          </span>
         </div>
         <div
           className="mt-3 text-2xl font-bold"
@@ -125,13 +127,15 @@ export function Prompt({ show, remaining, noun = 'crusader' }) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center pb-10">
       <div
-        className="manuscript-scope vellum ink-frame-light mx-4 flex items-center gap-4 px-7 py-3 text-center text-xl"
+        className="manuscript-scope vellum ink-frame-light mx-4 px-8 py-3 text-center text-xl"
         style={{ color: 'var(--ink)' }}
       >
-        <Drollery which="snail" size={44} />
         <span>
           Click a {noun} to resolve their attempt —{' '}
-          <span style={{ color: 'var(--rubric)', fontWeight: 700 }}>{remaining}</span> left in this
+          <span className="tally" style={{ color: 'var(--rubric)', fontWeight: 700 }}>
+            {remaining}
+          </span>{' '}
+          left in this
           stage
         </span>
       </div>
@@ -155,7 +159,9 @@ export function CancelledNotice({ lines, onContinue }) {
           {line}
         </div>
       ))}
-      <Drollery which="hybrid" size={92} className="mt-10" />
+      <div className="mt-10 w-64">
+        <LineFiller />
+      </div>
       <div className="mt-6 text-lg" style={{ color: 'var(--ink-soft)' }}>
         Click to continue
       </div>

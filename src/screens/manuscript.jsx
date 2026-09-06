@@ -114,7 +114,7 @@ function drawInitial(ctx, size, letter, palette) {
   // The letter, reserved in parchment white with a thin dark contour so it
   // holds its shape against the vine-work behind it.
   ctx.save()
-  ctx.font = `bold ${Math.round(size * 0.72)}px 'Old English Text MT', Luminari, Herculanum, 'Iowan Old Style', Georgia, serif`
+  ctx.font = `${Math.round(size * 0.74)}px Textura, 'Old English Text MT', Luminari, 'Iowan Old Style', Georgia, serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
@@ -136,14 +136,32 @@ export function IlluminatedCapital({ letter, palette = 'lapis', size = 88, class
   const ref = useRef()
 
   useEffect(() => {
-    const canvas = ref.current
-    if (!canvas) return
-    const dpr = Math.min(2, window.devicePixelRatio || 1)
-    canvas.width = size * dpr
-    canvas.height = size * dpr
-    const ctx = canvas.getContext('2d')
-    ctx.scale(dpr, dpr)
-    drawInitial(ctx, size, letter, INITIAL_PALETTES[palette] ?? INITIAL_PALETTES.lapis)
+    let cancelled = false
+
+    const paint = () => {
+      const canvas = ref.current
+      if (!canvas || cancelled) return
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
+      canvas.width = size * dpr
+      canvas.height = size * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+      drawInitial(ctx, size, letter, INITIAL_PALETTES[palette] ?? INITIAL_PALETTES.lapis)
+    }
+
+    // Draw once now so the panel is never empty, then again once the hand has
+    // actually loaded. Canvas text does not wait for a webfont the way the DOM
+    // does: draw too early and the initial is set in Georgia for good, because
+    // nothing would ever redraw it.
+    paint()
+    document.fonts
+      ?.load(`${Math.round(size * 0.74)}px Textura`)
+      .then(paint)
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
   }, [letter, palette, size])
 
   return (
@@ -235,7 +253,7 @@ export function ManuscriptLeaf({
               className="float-left mr-4 mt-1"
             />
             <p className="text-lg leading-relaxed text-stone-800">
-              <span className="font-semibold uppercase tracking-wide text-red-900">{lead}</span>{' '}
+              <span style={{ color: 'var(--rubric)' }}>{lead}</span>{' '}
               {tail}
             </p>
             <div className="clear-both" />
@@ -424,7 +442,7 @@ export function ManuscriptBordered({
               className="float-left mr-4 mt-1"
             />
             <p className="text-lg leading-relaxed text-stone-800">
-              <span className="font-semibold uppercase tracking-wide text-red-900">{lead}</span>{' '}
+              <span style={{ color: 'var(--rubric)' }}>{lead}</span>{' '}
               {tail}
             </p>
             <div className="clear-both" />
@@ -457,7 +475,7 @@ export function Marginalia({ entry, dark = false }) {
       </p>
       {entry.source && (
         <p
-          className={`mt-1 text-xs uppercase tracking-[0.18em] ${
+          className={`mt-1 text-sm ${
             dark ? 'text-amber-600/80' : 'text-red-900/60'
           }`}
         >

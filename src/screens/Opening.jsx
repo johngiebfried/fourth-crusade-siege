@@ -18,7 +18,7 @@ import { useCallback, useMemo, useState } from 'react'
 import allCharacters from '../data/characters.json'
 import { canCaptain } from '../game/rules.js'
 import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
-import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton , Drollery, InkIcon } from './ui.jsx'
+import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton, LineFiller, InkIcon } from './ui.jsx'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
 
@@ -209,8 +209,8 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
             </div>
             {/* The title is a beat the reader is already stopped at, so it
                 takes a passage on the city they are about to attack. */}
-            <div className="mt-8 flex items-end gap-5">
-              <Drollery which="hare" size={96} />
+            <div className="mt-7">
+              <LineFiller />
               <Marginalia entry={titleGloss} />
             </div>
           </Panel>
@@ -232,7 +232,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
                   <button
                     key={n}
                     onClick={() => setCountText(String(n))}
-                    className={`quill-button px-4 py-2 text-lg ${
+                    className={`quill-button tally px-4 py-2 text-lg ${
                       count === n
                         ? 'border-red-800 bg-red-800 text-amber-50'
                         : 'border-stone-400 text-stone-700 hover:bg-white/60'

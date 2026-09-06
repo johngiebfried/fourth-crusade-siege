@@ -970,6 +970,75 @@ each lane has at least four passages that fit it, a hundred draws in one lane
 never return the other's, and a lane exhausts its own passages before
 repeating.
 
+## Revision: a real hand, and no more drolleries
+
+### The font: a deliberate exception to the no-assets rule
+
+The manuscript styling was carried entirely by decoration — vellum, ink frames,
+rubrication, ruling, illuminated initials — while the type stayed a system
+serif, because the brief forbids fetched assets. Judged in place, that was not
+good enough. The page looked brown, not medieval.
+
+There is no way around it: a book hand cannot be generated at runtime, and no
+medieval face can be relied on across a room of unknown school laptops. macOS
+ships Luminari and Herculanum; Windows only has Old English Text MT if Office
+put it there. The choice is a font file or no medieval type.
+
+**UnifrakturMaguntia** is now shipped in the repo — a textura quadrata, the
+formal book hand of exactly this period, 88KB, SIL Open Font Licence 1.1, with
+`OFL.txt` alongside it as the licence requires. **In the repo, not on a CDN**:
+a classroom with no network or a blocked font host would otherwise fall
+silently back to Georgia mid-lesson, which is the failure this is meant to end.
+
+The no-external-assets rule still holds absolutely where it was aimed — the 3D
+scene, where every mesh is procedural and nothing is fetched. Type is a
+different kind of thing.
+
+It is set **everywhere, body text included**, which was the call. Blackletter is
+markedly harder to read at distance than a serif, so the whole page is set
+larger and leaded more generously to pay for it — which is what a manuscript
+does anyway.
+
+### Three places keep the serif, on purpose
+
+**Numerals and tallies.** Textura numerals are quirky by design and several are
+unrecognisable to a modern eye. This game is played on dice results, thresholds
+and fama counts read at a glance from across a room, and a misread roll is a
+rules dispute. Anything tagged `.tally` reverts.
+
+**Name plates in the 3D scene.** Drawn at 46px and rendered down to a handful
+of screen pixels over a pawn's head. A blackletter at that size is mush.
+
+**Text inputs**, for the same reason as the tallies.
+
+### Rubrics are no longer set in capitals
+
+A tracked line of small caps is a modern web idiom, and in a textura it is also
+the worst available choice: majuscules in this hand are ornate display letters
+meant to be used *one at a time* — which is exactly what the illuminated
+initial uses them for — and a whole line of them is close to undecipherable.
+A scribe rubricating a heading wrote it in the ordinary hand, in red.
+
+The illuminated initial now draws in the shipped hand, and waits for it:
+canvas text does not defer to a webfont the way the DOM does, so it paints
+once immediately and again on `document.fonts.load`, or the capital would be
+set in Georgia permanently because nothing would ever redraw it.
+
+### The drolleries are gone
+
+The marginal grotesques were bad, and they are removed rather than redrawn a
+third time. Figure drawing at that size lives or dies on anatomy, and
+hand-authored SVG paths for a hare are not going to beat a scribe who drew
+hares all day. A crude drollery is worse than none: it reads as clip-art and
+drags the page down with it.
+
+What replaced them is **penwork** — a rubricated line-filler, and a pen
+flourish with hairline tendrils and bulb terminals. Just as characteristic of a
+manuscript page, and geometric rather than anatomical, so it can be constructed
+correctly rather than observed badly. The line-filler is also the one piece of
+ornament with an actual job: it is what a scribe ran along a short last line to
+keep the text block's edge.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be
