@@ -393,3 +393,223 @@ export function buildCityQuarter({
 
   return merge(parts)
 }
+
+/**
+ * The Megalos Pyrgos — the Great Tower, or Castle of Galata.
+ *
+ * What stood here in 1204 was **not** the tower tourists photograph. That is
+ * the Christea Turris, Genoese, built in 1348: a slim stone cylinder with a
+ * conical cap, high on the hill of Beyoğlu. Drawing it here was a hundred and
+ * forty-four years early and in the wrong place, and it is the sort of error
+ * that survives because the wrong building is the famous one.
+ *
+ * The Byzantine work was a different thing entirely. No drawing of it survives,
+ * but Villehardouin and Robert of Clari between them describe it clearly
+ * enough: a heavy square castle-keep flanked by walls, standing **at the
+ * water's edge** on what is now the Karaköy waterfront, low and squat rather
+ * than tall. Its job was not to see from — it was the northern anchor of the
+ * iron chain across the Golden Horn, and it was built to take a battering ram
+ * and shot from ships. Inside was the capstan that hauled the chain taut to the
+ * Tower of St Nicholas on the far shore, and around it a dry moat and an outer
+ * gate with a portcullis.
+ *
+ * So: squat, square, walled, with the winch and the ditch, and less than half
+ * the height of the thing it replaces.
+ */
+export function buildGalataKeep({ seed = 5 } = {}) {
+  const rand = rng(seed)
+  const parts = []
+  const STONE = '#c4b89c'
+  const STONE_LIT = '#d3c8ac'
+  const STONE_DEEP = '#b0a488'
+
+  const keepW = 3.6
+  const keepD = 3.2
+  const keepH = 4.2
+
+  // The dry moat: a shallow ditch cut round the whole work.
+  const ditch = new THREE.BoxGeometry(11.5, 0.5, 10.5)
+  ditch.translate(0, -0.26, 0)
+  parts.push(paint(ditch, '#7d7458', { tone: 0.8 }))
+  const platform = new THREE.BoxGeometry(9.4, 0.55, 8.4)
+  platform.translate(0, 0.02, 0)
+  parts.push(paint(platform, '#8d8a63', { tone: 0.95 }))
+
+  // The keep: thick, heavy, battered at the base.
+  const batter = new THREE.BoxGeometry(keepW + 0.5, 0.8, keepD + 0.5)
+  batter.translate(0, 0.4, 0)
+  parts.push(paint(batter, STONE_DEEP, { tone: 0.95, ao: 0.3, aoFrom: 0, aoTo: 0.8 }))
+
+  const keep = new THREE.BoxGeometry(keepW, keepH, keepD)
+  keep.translate(0, 0.8 + keepH / 2, 0)
+  parts.push(paint(keep, STONE, { tone: 1, ao: 0.26, aoFrom: 0.8, aoTo: 2.6 }))
+
+  // A string course, and the corbelled head.
+  const course = new THREE.BoxGeometry(keepW + 0.18, 0.16, keepD + 0.18)
+  course.translate(0, 0.8 + keepH * 0.55, 0)
+  parts.push(paint(course, STONE_DEEP, { tone: 1.08 }))
+
+  const crown = new THREE.BoxGeometry(keepW + 0.55, 0.42, keepD + 0.55)
+  crown.translate(0, 0.8 + keepH + 0.21, 0)
+  parts.push(paint(crown, STONE_LIT, { tone: 1.06 }))
+
+  // Merlons round the keep's head.
+  const top = 0.8 + keepH + 0.42
+  for (const [along, across, count] of [
+    ['x', keepD / 2 + 0.24, 5],
+    ['z', keepW / 2 + 0.24, 5],
+  ]) {
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < count; i++) {
+        const t = (i + 0.5) / count - 0.5
+        const m = new THREE.BoxGeometry(0.42, 0.5, 0.42)
+        if (along === 'x') m.translate(t * (keepW + 0.4), top + 0.25, side * across)
+        else m.translate(side * across, top + 0.25, t * (keepD + 0.4))
+        parts.push(paint(m, i % 2 ? STONE : STONE_LIT, { tone: 0.98 + rand() * 0.1 }))
+      }
+    }
+  }
+
+  // Arrow slits on the seaward face.
+  for (const y of [2.0, 3.4]) {
+    for (const dz of [-0.8, 0.8]) {
+      const slit = new THREE.BoxGeometry(0.1, 0.6, 0.16)
+      slit.translate(-keepW / 2, y, dz)
+      parts.push(paint(slit, '#3a3226', { tone: 1 }))
+    }
+  }
+
+  // The flanking walls Villehardouin describes, running out to the water and
+  // back, with their own merlons and a gate on the landward side.
+  const wallH = 2.1
+  for (const [w, d, x, z] of [
+    [7.6, 0.55, 0, -3.1],
+    [7.6, 0.55, 0, 3.1],
+    [0.55, 6.2, -3.6, 0],
+  ]) {
+    const g = new THREE.BoxGeometry(w, wallH, d)
+    g.translate(x, 0.55 + wallH / 2, z)
+    parts.push(paint(g, STONE_DEEP, { tone: 0.96, ao: 0.28, aoFrom: 0.55, aoTo: 2.0 }))
+
+    const cap = new THREE.BoxGeometry(w + 0.16, 0.3, d + 0.16)
+    cap.translate(x, 0.55 + wallH + 0.15, z)
+    parts.push(paint(cap, STONE_LIT, { tone: 1.04 }))
+  }
+
+  // The outer gate, landward, with its portcullis.
+  const gateH = 1.5
+  for (const side of [-1, 1]) {
+    const pier = new THREE.BoxGeometry(0.8, wallH + 0.9, 0.9)
+    pier.translate(3.6, 0.55 + (wallH + 0.9) / 2, side * 1.25)
+    parts.push(paint(pier, STONE, { tone: 1, ao: 0.3, aoFrom: 0.55, aoTo: 2.2 }))
+  }
+  const lintel = new THREE.BoxGeometry(0.9, 0.5, 3.4)
+  lintel.translate(3.6, 0.55 + gateH + 0.25, 0)
+  parts.push(paint(lintel, STONE_LIT, { tone: 1.05 }))
+  // The portcullis itself, down.
+  for (let i = 0; i < 6; i++) {
+    const bar = new THREE.BoxGeometry(0.1, gateH, 0.09)
+    bar.translate(3.32, 0.55 + gateH / 2, -0.8 + (i / 5) * 1.6)
+    parts.push(paint(bar, '#4b463c', { tone: 1 }))
+  }
+
+  // The capstan: the winch that hauled the chain taut across the Horn. It is
+  // the entire reason this castle is here, so it is on the seaward platform
+  // where it can be seen rather than hidden inside the keep.
+  const drum = new THREE.CylinderGeometry(0.62, 0.72, 1.0, 10)
+  drum.translate(-2.5, 1.05, 0)
+  parts.push(paint(drum, PALETTE.hullTimber, { tone: 1 }))
+  const cap = new THREE.CylinderGeometry(0.78, 0.68, 0.2, 10)
+  cap.translate(-2.5, 1.62, 0)
+  parts.push(paint(cap, PALETTE.hullTimberDark, { tone: 1.05 }))
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2
+    const bar = new THREE.BoxGeometry(2.1, 0.11, 0.11)
+    bar.rotateY(a)
+    bar.translate(-2.5 + Math.cos(a) * 1.0, 1.5, Math.sin(a) * 1.0)
+    parts.push(paint(bar, PALETTE.hullTimber, { tone: 0.94 + rand() * 0.14 }))
+  }
+
+  // The chain running off toward the water, and the ring it is made fast to.
+  // Broken by the Venetians in July 1203, which is why the fleet in this scene
+  // is inside the Horn rather than shut out of it.
+  const ring = new THREE.TorusGeometry(0.42, 0.11, 6, 12)
+  ring.rotateX(Math.PI / 2)
+  ring.translate(-3.6, 0.9, 0)
+  parts.push(paint(ring, '#4b463c', { tone: 1 }))
+  for (let i = 0; i < 7; i++) {
+    const link = new THREE.TorusGeometry(0.2, 0.06, 5, 9)
+    link.rotateX(i % 2 ? Math.PI / 2 : 0)
+    link.translate(-4.1 - i * 0.36, 0.72 - i * 0.07, 0)
+    parts.push(paint(link, '#4b463c', { tone: 0.92 + (i % 2) * 0.14 }))
+  }
+
+  return merge(parts)
+}
+
+/**
+ * Small craft riding at anchor.
+ *
+ * These were a capsule with a stick through it, which from the title camera
+ * read as a line of channel buoys rather than as shipping. A boat is
+ * recognisable at almost any size from three things: a hull that is *pointed
+ * at one end*, a stem and stern that rise clear of the water, and a yard
+ * crossing the mast. None of that costs anything, and without it a hull is a
+ * float.
+ *
+ * Merged into one geometry — sixteen of these are one draw call.
+ */
+export function buildMooredCraft(spots) {
+  const parts = []
+
+  for (const { x, z, r, scale = 1, tone = 1 } of spots) {
+    const S = scale
+    const local = []
+    const add = (g, hex, t = 1) => local.push(paint(g, hex, { tone: tone * t }))
+
+    // Hull: a wedge, wide amidships and drawn to a point forward.
+    const hull = new THREE.CylinderGeometry(0.34 * S, 0.16 * S, 1.9 * S, 6, 1)
+    hull.rotateZ(Math.PI / 2)
+    hull.scale(1, 0.62, 1)
+    add(hull, PALETTE.hullTimber)
+
+    // Stem and stern posts, rising clear of the water — the curl that says
+    // "boat" at ten pixels.
+    for (const [dx, h] of [
+      [0.98 * S, 0.42 * S],
+      [-0.95 * S, 0.34 * S],
+    ]) {
+      const post = new THREE.BoxGeometry(0.12 * S, h, 0.14 * S)
+      post.rotateZ(dx > 0 ? -0.35 : 0.3)
+      post.translate(dx, h * 0.4, 0)
+      add(post, PALETTE.hullTimberDark, 0.94)
+    }
+
+    // A strake along the sheer, which catches the light and gives the hull a
+    // waterline to sit on.
+    const strake = new THREE.BoxGeometry(1.75 * S, 0.07 * S, 0.5 * S)
+    strake.translate(0, 0.16 * S, 0)
+    add(strake, PALETTE.hullTimberDark, 1.06)
+
+    const mast = new THREE.CylinderGeometry(0.035 * S, 0.05 * S, 1.7 * S, 5)
+    mast.translate(0.05 * S, 0.9 * S, 0)
+    add(mast, PALETTE.hullTimberDark)
+
+    // The yard, and the sail furled along it. A bare mast is a pole; a yard
+    // makes it rigging.
+    const yard = new THREE.CylinderGeometry(0.028 * S, 0.028 * S, 1.3 * S, 5)
+    yard.rotateX(Math.PI / 2)
+    yard.translate(0.05 * S, 1.42 * S, 0)
+    add(yard, PALETTE.hullTimberDark, 0.95)
+    const furled = new THREE.BoxGeometry(0.13 * S, 0.13 * S, 1.05 * S)
+    furled.translate(0.05 * S, 1.35 * S, 0)
+    add(furled, '#d8cdb4', 0.98)
+
+    const g = merge(local)
+    g.rotateY(r)
+    g.translate(x, 0, z)
+    parts.push(g)
+  }
+
+  return merge(parts)
+}

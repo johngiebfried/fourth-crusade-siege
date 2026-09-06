@@ -338,6 +338,122 @@ console.log('\nEvery figure on screen has a livery')
   )
 }
 
+/* ------------------------------------------------ the title-screen framing */
+
+/*
+ * Does the opening shot actually contain the city?
+ *
+ * Both earlier framings were set by nudging numbers and looking at a still,
+ * and both were wrong in ways a still hid: one left a third of the frame as
+ * empty Marmara with the peninsula stranded behind the title panel, the other
+ * ran the land walls off the left edge and cut the Galata keep in half.
+ *
+ * So this reproduces the camera's projection from the constants the component
+ * actually uses — read out of the source, not restated here, or the check
+ * would only ever agree with itself — and measures where the subject lands.
+ */
+{
+  const src = await readFile(base + 'src/screens/CityBackdrop.jsx', 'utf8')
+  const num = (k) => Number(src.match(new RegExp(`const ${k} = ([\\d.]+)`))[1])
+  const SPAN = num('CITY_SPAN')
+  const RISE = num('CITY_RISE')
+  const AIM = JSON.parse(src.match(/const AIM = (\[[^\]]+\])/)[1])
+  const RADIUS = Number(src.match(/const radius = (\d+)/)[1])
+  const [, base_, sweep] = src.match(/Math\.PI \* ([\d.]+) \+ Math\.sin\(t\) \* ([\d.]+)/)
+  const midAngle = Math.PI * Number(base_)
+  const halfSweep = Number(sweep)
+
+  // The subject: the shoreline, the tallest domes over it, and the keep at
+  // Galata — the three things the shot is *of*.
+  const subject = []
+  for (const [x, z] of city.PENINSULA) {
+    subject.push([x, 0, z])
+    subject.push([x, 8, z])
+  }
+  subject.push([27, 14, -24.1])
+  subject.push([6, 22, 8])
+
+  /** The subject's bounding box in the camera's screen plane, at one angle. */
+  const project = (angle) => {
+    const cam = [Math.sin(angle) * RADIUS, RADIUS * 0.62, Math.cos(angle) * RADIUS]
+    const f = [AIM[0] - cam[0], AIM[1] - cam[1], AIM[2] - cam[2]]
+    const fl = Math.hypot(...f)
+    for (let i = 0; i < 3; i++) f[i] /= fl
+    // right = forward × up, with up = (0, 1, 0).
+    const r = [-f[2], 0, f[0]]
+    const rl = Math.hypot(...r)
+    for (let i = 0; i < 3; i++) r[i] /= rl
+    const u = [
+      r[1] * f[2] - r[2] * f[1],
+      r[2] * f[0] - r[0] * f[2],
+      r[0] * f[1] - r[1] * f[0],
+    ]
+    let x0 = Infinity
+    let x1 = -Infinity
+    let y0 = Infinity
+    let y1 = -Infinity
+    for (const p of subject) {
+      const d = [p[0] - AIM[0], p[1] - AIM[1], p[2] - AIM[2]]
+      const sx = d[0] * r[0] + d[1] * r[1] + d[2] * r[2]
+      const sy = d[0] * u[0] + d[1] * u[1] + d[2] * u[2]
+      x0 = Math.min(x0, sx)
+      x1 = Math.max(x1, sx)
+      y0 = Math.min(y0, sy)
+      y1 = Math.max(y1, sy)
+    }
+    return { x0, x1, y0, y1 }
+  }
+
+  /*
+   * The visible half-extents. The zoom is solved from whichever viewport
+   * dimension is tighter, so the frame is checked at the two shapes a
+   * classroom might actually use: a projector at 16:9 and a laptop at 16:10.
+   * The narrow one binds on height, the wide one on width, and a framing that
+   * only works on the shape I happen to be screenshotting is not a framing.
+   */
+  const shapes = [
+    ['16:9', 1920, 1080],
+    ['16:10', 1680, 1050],
+    ['4:3', 1024, 768],
+  ]
+
+  for (const [label, w, h] of shapes) {
+    const zoom = Math.max(2, Math.min(w / SPAN, h / (SPAN * RISE)))
+    const halfW = w / zoom / 2
+    const halfH = h / zoom / 2
+    let worst = Infinity
+    let worstEdge = ''
+    let lowest = Infinity
+    for (let k = -1; k <= 1; k++) {
+      const b = project(midAngle + k * halfSweep)
+      const margins = [
+        ['left', halfW + b.x0],
+        ['right', halfW - b.x1],
+        ['bottom', halfH + b.y0],
+        ['top', halfH - b.y1],
+      ]
+      for (const [edge, m] of margins) {
+        if (m < worst) {
+          worst = m
+          worstEdge = edge
+        }
+      }
+      lowest = Math.min(lowest, (b.y0 + b.y1) / 2)
+    }
+    check(
+      `the whole city stays in frame at ${label}, across the drift`,
+      worst > 0.5,
+      `tightest margin ${worst.toFixed(1)} units at the ${worstEdge}`
+    )
+    // And sitting low, so the title panel lands on sky rather than on rooftops.
+    check(
+      `the city sits below centre at ${label}`,
+      lowest < -0.5,
+      `subject centre ${lowest.toFixed(1)} units from the middle`
+    )
+  }
+}
+
 console.log('')
 if (failures) {
   console.error(`${failures} scene invariant(s) failed`)

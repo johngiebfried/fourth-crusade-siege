@@ -18,9 +18,7 @@ import { useCallback, useMemo, useState } from 'react'
 import allCharacters from '../data/characters.json'
 import { canCaptain } from '../game/rules.js'
 import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
-import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton, LineFiller, InkIcon } from './ui.jsx'
-import { Marginalia } from './manuscript.jsx'
-import { pickLore } from '../game/lore.js'
+import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton, InkIcon } from './ui.jsx'
 import { FACTIONS } from '../three/factions.js'
 
 /** The five factions, in the order the boon step lists them. */
@@ -141,7 +139,6 @@ function NumberField({ value, onChange, min = 0, max = 99, autoFocus = false }) 
 export default function Opening({ round = 1, roster: existingRoster = null, onComplete }) {
   // Scheme B: the title is one of the beats the game already spends waiting,
   // so it carries a passage rather than dead time.
-  const titleGloss = useMemo(() => pickLore('city'), [])
 
   const [step, setStep] = useState(existingRoster ? 'refuse' : 'title')
   const [countText, setCountText] = useState('12')
@@ -223,12 +220,6 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
               <div className="mt-7">
                 <PrimaryButton onClick={() => setStep('count')}>Begin the Siege</PrimaryButton>
               </div>
-            </div>
-            {/* The title is a beat the reader is already stopped at, so it
-                takes a passage on the city they are about to attack. */}
-            <div className="mt-7">
-              <LineFiller />
-              <Marginalia entry={titleGloss} />
             </div>
           </Panel>
         )
@@ -528,6 +519,9 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
         {body()}
       </div>
 
+      {/* Bottom left. Both bottom corners cost something — this one hides a
+          stretch of sea wall that repeats along the whole shore, the other
+          hides Hagia Sophia and the palace on the point, which do not. */}
       {step === 'title' && (
         <CrusaderCamPanel className="absolute bottom-6 left-6 w-[min(40vw,300px)]" />
       )}

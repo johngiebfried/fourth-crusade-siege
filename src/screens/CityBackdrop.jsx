@@ -21,8 +21,33 @@ import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { Atmosphere } from '../three/geometry/Sky.jsx'
 
-/** World units the shot must span, so the whole peninsula stays in frame. */
-const CITY_SPAN = 74
+/**
+ * The shot, solved rather than eyeballed.
+ *
+ * The subject is the peninsula shoreline, the domes standing over it and the
+ * keep at Galata across the Horn. Projected into the camera's screen plane at
+ * every point of the drift, that subject measures about 76 units across and 37
+ * high, and its centre does not sit over the origin — the peninsula runs
+ * north-east, so aiming at (0, 0, 0) leaves it noticeably off to one side.
+ *
+ * Guessing at the aim is what produced both of the earlier framings: one with
+ * the city marooned in the middle of the frame under the title panel and a
+ * third of the shot empty Marmara, and one that swung so far the land walls ran
+ * off the left edge and the Galata keep was cut in half by the right. So these
+ * three numbers come from `scripts/check-scene.mjs`, which measures the same
+ * projection and fails if the subject no longer fits or drifts off centre.
+ */
+const CITY_SPAN = 82
+
+/** Vertical units the shot must cover — the subject's height plus margin. */
+const CITY_RISE = 0.56
+
+/**
+ * Aimed above the water rather than at it. Lifting the aim point drops the
+ * city down the frame, which puts the empty sky behind the title panel and the
+ * shoreline near the bottom edge instead of the reverse.
+ */
+const AIM = [-4.6, 7.7, -2.4]
 
 function IsoCamera() {
   const camRef = useRef()
@@ -32,7 +57,7 @@ function IsoCamera() {
   // fits the city has to be solved from whichever dimension is tighter.
   const zoom = useMemo(() => {
     const byWidth = size.width / CITY_SPAN
-    const byHeight = size.height / (CITY_SPAN * 0.72)
+    const byHeight = size.height / (CITY_SPAN * CITY_RISE)
     return Math.max(2, Math.min(byWidth, byHeight))
   }, [size.width, size.height])
 
@@ -46,7 +71,7 @@ function IsoCamera() {
     cam.position.set(Math.sin(angle) * radius, radius * 0.62, Math.cos(angle) * radius)
     cam.zoom = zoom
     cam.updateProjectionMatrix()
-    cam.lookAt(2, 0, -2)
+    cam.lookAt(AIM[0], AIM[1], AIM[2])
   })
 
   return <OrthographicCamera ref={camRef} makeDefault near={1} far={480} position={[70, 74, 96]} />

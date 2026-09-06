@@ -218,6 +218,15 @@ export const WALLS = [
 
 /* -------------------------------------------------------------- the city */
 
+/*
+ * Held in reserve, like the siegecraft notes on the assault HUD.
+ *
+ * These used to gloss the title card. The panel is the one thing standing
+ * between the class and the model of the city they are about to attack, and a
+ * three-line note pushed it down over the Golden Horn for the sake of a fact
+ * nobody was reading at that moment. The set stays — it is the obvious source
+ * if a debrief screen ever wants it — but nothing draws from it today.
+ */
 export const CITY = [
   {
     text: 'Constantinople in 1200 held perhaps 400,000 people. Paris held around 50,000. Nothing in Latin Christendom was remotely comparable.',

@@ -36,6 +36,8 @@ import {
   buildHippodrome,
   buildGreatPalace,
   buildCypresses,
+  buildGalataKeep,
+  buildMooredCraft,
 } from './geometry/landmarks.js'
 
 /* ------------------------------------------------------------------ water */
@@ -351,55 +353,11 @@ function Blachernae({ position = [-27, -16.5] }) {
  */
 function ChainTower({ position = [27, -24.1] }) {
   const [px, pz] = position
-
+  const geometry = useMemo(() => buildGalataKeep(), [])
   return (
-    <group position={[px, SHORE_Y, pz]}>
-      {/* Battered ashlar base */}
-      <mesh position={[0, 0.9, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[2.25, 2.7, 1.8, 12]} />
-        <meshLambertMaterial color="#c4b89c" flatShading />
-      </mesh>
-      {/* Shaft */}
-      <mesh position={[0, 5.0, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[2.0, 2.25, 6.4, 12]} />
-        <meshLambertMaterial color="#d3c8ac" flatShading />
-      </mesh>
-      {/* String courses, to give the shaft some scale */}
-      {[3.0, 6.2].map((y, i) => (
-        <mesh key={i} position={[0, y, 0]}>
-          <cylinderGeometry args={[2.14, 2.14, 0.22, 12]} />
-          <meshLambertMaterial color="#b6aa8d" flatShading />
-        </mesh>
-      ))}
-      {/* Machicolated crown, corbelled out */}
-      <mesh position={[0, 8.5, 0]} castShadow>
-        <cylinderGeometry args={[2.5, 2.05, 0.9, 12]} />
-        <meshLambertMaterial color="#c9bda0" flatShading />
-      </mesh>
-      {/* Merlons round the parapet */}
-      {Array.from({ length: 12 }, (_, i) => {
-        const a = (i / 12) * Math.PI * 2
-        return (
-          <mesh key={i} position={[Math.cos(a) * 2.3, 9.35, Math.sin(a) * 2.3]} rotation={[0, -a, 0]}>
-            <boxGeometry args={[0.42, 0.55, 0.42]} />
-            <meshLambertMaterial color="#d3c8ac" flatShading />
-          </mesh>
-        )
-      })}
-      {/* Conical roof */}
-      <mesh position={[0, 10.4, 0]} castShadow>
-        <coneGeometry args={[2.0, 1.9, 12]} />
-        <meshLambertMaterial color="#8d6a4a" flatShading />
-      </mesh>
-
-      {/* The ring the chain was made fast to, down at the water. The chain
-          itself is gone: the crusaders broke it in July 1203, which is why the
-          fleet in this scene is inside the Horn rather than shut out of it. */}
-      <mesh position={[2.6, -1.2, 2.2]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.5, 0.13, 6, 14]} />
-        <meshLambertMaterial color="#4b463c" flatShading />
-      </mesh>
-    </group>
+    <mesh geometry={geometry} position={[px, SHORE_Y, pz]} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 
@@ -454,9 +412,9 @@ function GalataShore() {
 
 /** The Venetian fleet, drawn up inside the Golden Horn. */
 function FleetInTheHorn() {
-  const ships = useMemo(() => {
+  const geometry = useMemo(() => {
     const rand = rng(19)
-    const out = []
+    const spots = []
     for (let i = 0; i < 16; i++) {
       // Between the two shores of the inlet, toward its mouth.
       const t = rand()
@@ -464,26 +422,21 @@ function FleetInTheHorn() {
       const northZ = -20 - (1 - t) * 8
       const southZ = -13 - (1 - t) * 6
       const z = northZ + rand() * (southZ - northZ) * 0.7 + 1.5
-      out.push({ x, z, r: rand() * 0.5 - 0.25 })
+      spots.push({
+        x,
+        z,
+        r: rand() * Math.PI * 2,
+        scale: 0.85 + rand() * 0.5,
+        tone: 0.88 + rand() * 0.26,
+      })
     }
-    return out
+    return buildMooredCraft(spots)
   }, [])
 
   return (
-    <group>
-      {ships.map((s, i) => (
-        <group key={i} position={[s.x, 0.45, s.z]} rotation={[0, s.r, 0]}>
-          <mesh castShadow>
-            <capsuleGeometry args={[0.24, 1.0, 3, 8]} />
-            <meshLambertMaterial color={PALETTE.hullTimber} flatShading />
-          </mesh>
-          <mesh position={[0, 0.85, 0]}>
-            <cylinderGeometry args={[0.035, 0.045, 1.5, 5]} />
-            <meshLambertMaterial color={PALETTE.hullTimberDark} />
-          </mesh>
-        </group>
-      ))}
-    </group>
+    <mesh geometry={geometry} position={[0, 0.45, 0]} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 

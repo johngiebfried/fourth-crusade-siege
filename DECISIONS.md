@@ -1857,6 +1857,66 @@ hard-coded `axleY + 0.5`. That number was the original error: it put the padded
 crossbeam half a unit below the beam, so the arm swung up and stopped in
 mid-air with nothing arresting it.
 
+## The title screen
+
+### The tower at Galata was the wrong tower by 144 years
+
+What stood there was a round, tapering, conical-roofed thing about twelve units
+high — which is to say the Galata Tower every photograph of Istanbul contains.
+That building is the Genoese **Christea Turris**, raised in **1348**, a
+century and a half after this siege, by a colony that did not exist in 1204.
+
+The 1204 structure was the **Megalos Pyrgos**, the Great Tower, also called the
+Castle of Galata: a low fortified keep at the **water's edge** — roughly
+today's Karaköy waterfront, not up the hill where the Genoese tower stands —
+square or rectangular in plan, flanked by curtain walls, and squat rather than
+slender. It housed the **capstan for the iron chain** that ran across the mouth
+of the Horn to the Tower of St Nicholas on the far shore, and it was covered by
+a dry moat and an outer gate with an iron portcullis.
+
+`buildGalataKeep` builds that instead: the moat, the platform, a battered
+square keep about a third of the old height, a corbelled crown with merlons,
+arrow slits on the seaward face, flanking walls, the landward gate with its
+portcullis, and the capstan with its six bars and the chain running down to
+the water. The chain is the reason the place mattered to this siege at all, so
+it is on screen rather than implied.
+
+### The harbour craft were buoys
+
+Capsule plus stick. `buildMooredCraft` gives each one a six-sided tapering
+hull, raked stem and stern posts, a strake along the sheer, a mast, a yard and
+a furled sail — at the scale of the panorama that is the difference between
+shipping and floating litter.
+
+### The framing is now solved rather than nudged
+
+Two earlier framings were set by moving numbers and looking at a still, and
+both were wrong in ways a still hides. The first left the peninsula across the
+middle of the frame where the title panel covers it, with a third of the shot
+as empty Marmara. The second overcorrected: the land walls ran off the left
+edge and the keep at Galata was cut in half by the right.
+
+So the three constants — `CITY_SPAN`, `CITY_RISE` and `AIM` — come from
+projecting the actual subject (the shoreline, the domes over it, the keep
+across the Horn) into the camera's screen plane and solving for a fit. Not
+being able to trust a screenshot is the same problem that produced the
+mangonel's four faults, and it gets the same answer: `check-scene.mjs` now
+reproduces that projection, at three viewport shapes and across the whole
+drift, and fails if any part of the city leaves the frame or if the subject
+stops sitting below centre.
+
+Both discarded framings fail it. Mutation-checked, as ever — a check that
+cannot fail is not a check.
+
+### The title card lost its gloss
+
+The panel is the one thing standing between the class and the model of the city
+they are about to attack, and a three-line note on the bronze horses pushed it
+down over the Golden Horn for a fact nobody reads while looking for the start
+button. The `city` lore set stays written and tested — it is the obvious source
+for a debrief screen — but nothing draws from it now. That is the same call
+already made for the siegecraft notes on the assault HUD.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be
