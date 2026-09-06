@@ -21,6 +21,10 @@ import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
 import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton, LineFiller, InkIcon } from './ui.jsx'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
+import { FACTIONS } from '../three/factions.js'
+
+/** The five factions, in the order the boon step lists them. */
+const FACTION_ORDER = Object.keys(FACTIONS)
 
 /* -------------------------------------------------------------- fragments */
 
@@ -143,6 +147,12 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
   const [countText, setCountText] = useState('12')
   const [roster, setRoster] = useState(existingRoster ?? [])
   const [refuserIds, setRefuserIds] = useState([])
+  // The speech boon. Awarded once, before the first attack, and it holds for
+  // the whole siege — so on round two it is read back off the roster rather
+  // than asked again.
+  const [boonFaction, setBoonFaction] = useState(
+    existingRoster?.find((c) => c.bonus > 0)?.faction ?? 'none'
+  )
   const [landText, setLandText] = useState('')
   const [seaText, setSeaText] = useState('')
   const [smallGroupIds, setSmallGroupIds] = useState([])
@@ -172,7 +182,14 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
 
   const finish = useCallback(
     (assign) => {
-      const players = roster.map((char) => ({
+      // The boon rides on the roster, not on component state: the roster is
+      // what comes back as `existingRoster` for round two, so baking it in
+      // here is what makes it hold "for the siege" rather than for one round.
+      const withBoon = roster.map((char) => ({
+        ...char,
+        bonus: boonFaction !== 'none' && char.faction === boonFaction ? 1 : 0,
+      }))
+      const players = withBoon.map((char) => ({
         ...char,
         attackChoice: refuserIds.includes(char.id) ? 'sit_out' : assign(char),
         shipId: null,
@@ -180,9 +197,9 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
         status: 'ready',
         rollHistory: [],
       }))
-      onComplete(players, roster)
+      onComplete(players, withBoon)
     },
-    [roster, refuserIds, onComplete]
+    [roster, refuserIds, boonFaction, onComplete]
   )
 
   /* --------------------------------------------------------------- steps */
@@ -233,9 +250,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
                     key={n}
                     onClick={() => setCountText(String(n))}
                     className={`quill-button tally px-4 py-2 text-lg ${
-                      count === n
-                        ? 'border-red-800 bg-red-800 text-amber-50'
-                        : 'border-stone-400 text-stone-700 hover:bg-white/60'
+                      count === n ? 'quill-button-selected' : ''
                     }`}
                   >
                     {n}
@@ -272,7 +287,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
           <Panel wide>
             <StepHeading
               step={2}
-              of={3}
+              of={round > 1 ? 3 : 4}
               title="Does anyone refuse to attack?"
               blurb={`Sitting out costs a crusader 1 fama.${
                 round > 1 ? ' This is round two — the choice is open again.' : ''
@@ -295,14 +310,14 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
               <GhostButton
                 onClick={() => {
                   setRefuserIds([])
-                  setStep('where')
+                  setStep(round > 1 ? 'where' : 'boon')
                 }}
               >
                 No one refuses
               </GhostButton>
               <PrimaryButton
                 disabled={refuserIds.length >= roster.length}
-                onClick={() => setStep('where')}
+                onClick={() => setStep(round > 1 ? 'where' : 'boon')}
               >
                 {refuserIds.length === 0
                   ? 'Continue'
@@ -317,12 +332,68 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
           </Panel>
         )
 
-      case 'where':
+      case 'boon': {
+        // The speech before the assault. Whichever faction gave the most
+        // rousing one adds 1 to every die its members roll for the whole
+        // siege — the mechanical payoff for a piece of student work that
+        // otherwise leaves no trace in the model.
+        const options = [
+          ['none', 'No faction won the boon'],
+          ...FACTION_ORDER.map((f) => [f, f]),
+        ]
         return (
           <Panel wide>
             <StepHeading
               step={3}
-              of={3}
+              of={4}
+              title="Did a speech win a faction the boon?"
+              blurb="The most rousing speech adds 1 to every die that faction rolls, for the whole siege."
+            />
+
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              {options.map(([value, label]) => {
+                const on = boonFaction === value
+                const n = value === 'none' ? 0 : roster.filter((c) => c.faction === value).length
+                return (
+                  <button
+                    key={value}
+                    onClick={() => setBoonFaction(value)}
+                    className={`quill-button px-5 py-3 text-left text-lg ${
+                      on ? 'quill-button-selected' : ''
+                    }`}
+                  >
+                    {label}
+                    {value !== 'none' && (
+                      <span className="tally ml-2 text-sm opacity-70">
+                        {n} in the roster
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="mt-5 text-center text-base" style={{ color: 'var(--ink-soft)' }}>
+              A six raised to a seven changes no outcome — it only decides who gets over first.
+            </p>
+
+            <div className="mt-7 flex justify-center">
+              <PrimaryButton onClick={() => setStep('where')}>
+                {boonFaction === 'none'
+                  ? 'No boon — continue'
+                  : `${boonFaction} carry the boon — continue`}
+              </PrimaryButton>
+            </div>
+          </Panel>
+        )
+      }
+
+      case 'where':
+        return (
+          <Panel wide>
+            <StepHeading
+              step={round > 1 ? 3 : 4}
+              of={round > 1 ? 3 : 4}
               title="Where do they attack?"
               blurb={`${attackers.length} crusader${attackers.length === 1 ? '' : 's'} ready.`}
             />

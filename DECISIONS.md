@@ -1065,6 +1065,92 @@ This hand's numerals are clear, so they stay in it and are merely set heavier.
 The rule is kept because the reason for it has not gone away — a misread roll
 is a rules dispute — and the next swap may need it again.
 
+## Revision: reading the instructor's manual and the gamebook
+
+The published game arrived late in the build, and it settled several things
+that had been guesswork. Two changes came out of it, both small, and a longer
+list of things deliberately *not* done.
+
+### The module's actual job
+
+The manual's online-teaching section names the thing this replaces: *"moving
+small clip-art boats or chess figures of knights may provide a modest
+replacement for the heightened drama of the attack."* And: *"The Siege and Sack
+modules of Phase III are the places where students 'feel' the game most
+intensely, and this can be the yeast that really catalyzes their learning
+experience."*
+
+So this is the drama engine for the moment the game leans on hardest, and its
+competition is clip-art. That is a clearer brief than the one it was built to.
+
+### The speech boon
+
+The manual gives the faction with the most rousing pre-assault speech *"a
+powerful boon, namely that any member of that group can increase by one all
+their dice rolls for the siege."* The data model always supported it — `bonus`
+sits on every character and `rules.js` adds it to every roll — but it was
+hardcoded to zero and unreachable, so the speeches left no trace in the model.
+
+There is now a step between the refusals and the attack choice: pick the
+faction that won, or no faction. It is asked in round one only, and the boon
+**rides on the roster rather than on component state** — the roster is what
+comes back as `existingRoster` for round two, so baking it in there is what
+makes it hold "for the siege" rather than for one round.
+
+### The sack order gains the tier it was missing
+
+The manual: first position to the first man in, *"followed by those who also
+made it onto **either the second set of land walls or the sea walls**"*, then
+everyone else by fama, shipwrecked last.
+
+That third tier did not exist. Anyone who got onto the inner wall or the sea
+wall and fell short was dropped in with the men who never left the ground. It
+is now its own tier, `status: 'walls'`, set for a man who rolled in the final
+stage of either lane and failed — he was standing on the wall when he did it.
+
+The effect is the point: in a test round, Berthold of Katzenellenbogen (fama 3)
+came out ranked above Boniface of Montferrat (fama 10), because Berthold got
+onto the inner wall and Boniface did not. The manual has these men roll afresh
+against each other to order the tier; we rank them on the roll they already
+made, which needs no extra step at the table and rewards the same thing.
+
+The by-fama ordering of the tier *below* is the pedagogy, and the manual says
+so outright: it exists *"to imitate the historical complaint of the sack
+mentioned by Robert of Clari that the rich and powerful lords took all the
+spoils for themselves, leaving the common knights with nothing."*
+
+### Selection stopped looking like hover
+
+Adding a list of faction choices exposed an old bug: `.quill-button:hover`
+filled with rubric, which is exactly how a *selected* option was drawn. With a
+cursor resting anywhere in a list, the projector showed two options apparently
+chosen and no way to tell which was real. Hover now only tints; rubric fill
+means chosen, and only chosen.
+
+### Deliberately not done
+
+- **The fama reroll.** The gamebook tells students they may *"spend a point of
+  fama... to reroll dice during an attack on the city."* The author does not
+  use the rule and does not want it modelled. Recorded here because the
+  gamebook is fixed and a student may well ask.
+- **A narration engine.** The manual's model narration is far richer than
+  "Repelled by defenders!" — but the author prefers the flat line: less
+  complicated, and it does not slow the table.
+- **A visible fama ledger.** Scores will have moved in earlier phases and no
+  instructor is going to key them in. The siege reports position, not points.
+- **Greek agency in the siege.** It belongs to the sack, not here.
+- **Sack-order export.** What is on screen is usable as it stands.
+
+### Known divergences between the original code and the printed manual
+
+Left as they are, faithful to the code, and recorded so the choice is visible:
+
+| | Manual | Code, and this port |
+| --- | --- | --- |
+| Ship capacity | *"can then carry **2** other crusaders"* | 3 passengers |
+| Final roll | 5+, reduced 1 per additional man, no floor | `max(3, 6 − n)` |
+| Round-one penalty | attackers who fail lose 1 fama | those who sit out lose 1 fama |
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

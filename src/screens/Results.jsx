@@ -13,6 +13,9 @@ import { pickLore } from '../game/lore.js'
 
 const STATUS = {
   inside: { label: 'Entered the city', tone: 'text-emerald-800' },
+  // Got onto the second land wall or the sea wall and no further. The manual
+  // ranks these men above everyone who never left the ground.
+  walls: { label: 'Reached the walls', tone: 'text-amber-800' },
   shipwrecked: { label: 'Shipwrecked', tone: 'text-sky-800' },
   ready: { label: 'Outside the walls', tone: 'text-stone-500' },
 }
@@ -58,7 +61,8 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
               </div>
               <p className="mt-2 text-base text-stone-600">
                 Order of priority for choosing a region to plunder. Those who entered the city
-                come first, then the rest by fama, then the shipwrecked.
+                come first, then those who reached the walls, then the rest by fama, then the
+                shipwrecked.
               </p>
               <ol className="mt-4 divide-y divide-red-900/15 border border-red-900/25 bg-[#eadcbc]/60">
                 {sackOrder.map((entry) => {

@@ -49,6 +49,60 @@ for (let i = 0; i < 4000; i++) {
   }
 }
 console.log('land runs', landRuns, '| sea runs', seaRuns, '| errors', err)
+
+// ---- The speech boon, and the tier the sack order credits ----------------
+{
+  let bad = 0
+
+  // The boon adds 1 to every die a member of that faction rolls, in both
+  // lanes and at every stage. It is the mechanical payoff for the speeches.
+  for (let i = 0; i < 300; i++) {
+    const pick = [...chars].sort(() => Math.random() - 0.5).slice(0, 10)
+    const boonFaction = pick[0].faction
+    const withBoon = pick.map((c) => ({ ...c, bonus: c.faction === boonFaction ? 1 : 0 }))
+    const land = buildLandAssault(withBoon.slice().sort((a, b) => b.fama - a.fama))
+    for (const st of land.stages) {
+      for (const e of st.entries) {
+        const want = withBoon.find((c) => c.id === e.playerId).bonus
+        if (e.bonus !== want) bad++
+        if (e.total !== e.roll + want) bad++
+      }
+    }
+  }
+  console.log('boon reaches every land roll:', bad === 0)
+
+  // A man who rolled in the last stage and failed was standing on the second
+  // land wall, or on the sea wall, when he did. He must outrank everyone who
+  // never left the ground.
+  const FINAL = new Set(['City Gates', 'Breaking Through'])
+  let sawWalls = 0, misfiled = 0
+  for (let i = 0; i < 600; i++) {
+    const pick = [...chars].sort(() => Math.random() - 0.5).slice(0, 10)
+    for (const build of [buildLandAssault, buildSeaAssault]) {
+      const res = build(pick.slice().sort((a, b) => b.fama - a.fama))
+      const queue = res.queue ?? []
+      const status = new Map(pick.map((c) => [c.id, 'ready']))
+      for (const item of queue) {
+        if (item.type !== 'roll' || !item.playerId) continue
+        if (item.enteredCity) status.set(item.playerId, 'inside')
+        else if (item.shipSunk) status.set(item.playerId, 'shipwrecked')
+        else if (FINAL.has(item.stage) && status.get(item.playerId) === 'ready')
+          status.set(item.playerId, 'walls')
+      }
+      for (const [id, st] of status) {
+        if (st === 'walls') {
+          sawWalls++
+          // Nobody can be on the walls without having passed the stage before.
+          const mine = queue.filter((q) => q.type === 'roll' && q.playerId === id)
+          if (!mine.some((q) => FINAL.has(q.stage))) misfiled++
+          if (mine.some((q) => q.enteredCity)) misfiled++
+        }
+      }
+    }
+  }
+  console.log('men credited as reaching the walls:', sawWalls, '| misfiled:', misfiled)
+  if (bad || misfiled) { console.error('boon/walls checks failed'); process.exit(1) }
+}
 console.log('stages-reached distribution', stageCounts)
 console.log('entrants across 4000 land rounds:', entrants)
 

@@ -66,14 +66,45 @@ export default function App() {
 
   /* ------------------------------------------------- round resolution */
 
+/**
+ * The final stage of each lane, by the label `rules.js` stamps on its rolls.
+ * A man who rolled here and failed was on the wall when he did it.
+ */
+const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
+
+
+  /**
+   * Sack order, per the instructor's manual.
+   *
+   * Four tiers, not three. Everyone who got *into* the city comes first, then
+   * everyone who got onto the second land wall or the sea wall without getting
+   * in, then everyone else by fama, then the shipwrecked last.
+   *
+   * That third tier was missing, and it is the one that credits the men who
+   * did the dangerous part and fell short. The manual has these students roll
+   * afresh against each other; we rank them on the roll they already made,
+   * which needs no extra step at the table and rewards the same thing.
+   *
+   * The fama ordering of the last tier is the point of the whole exercise —
+   * it reproduces Robert of Clari's complaint that the rich lords took the
+   * spoils and left the common knights nothing.
+   */
   const calculateSackOrder = useCallback((playerList) => {
     const insiders = playerList.filter((p) => p.status === 'inside')
+    const onWalls = playerList
+      .filter((p) => p.status === 'walls')
+      .sort((a, b) => (b.wallRoll ?? 0) - (a.wallRoll ?? 0) || b.fama - a.fama)
     const others = playerList.filter(
-      (p) => p.status !== 'inside' && p.status !== 'shipwrecked'
+      (p) => p.status !== 'inside' && p.status !== 'walls' && p.status !== 'shipwrecked'
     )
     const shipwrecked = playerList.filter((p) => p.status === 'shipwrecked')
 
-    const sorted = [...insiders, ...others.sort((a, b) => b.fama - a.fama), ...shipwrecked]
+    const sorted = [
+      ...insiders,
+      ...onWalls,
+      ...others.sort((a, b) => b.fama - a.fama),
+      ...shipwrecked,
+    ]
 
     setSackOrder(
       sorted.map((p, idx) => ({
@@ -102,6 +133,14 @@ export default function App() {
           } else if (item.shipSunk) {
             updatedPlayers[idx].status = 'shipwrecked'
             updatedPlayers[idx].fama = Math.max(0, updatedPlayers[idx].fama - 1)
+          } else if (FINAL_STAGES.has(item.stage)) {
+            // He rolled in the last stage, so he was standing on the second
+            // land wall or on the sea wall when he failed. That is further
+            // than anyone below him got, and the sack order should say so.
+            if (updatedPlayers[idx].status === 'ready') {
+              updatedPlayers[idx].status = 'walls'
+              updatedPlayers[idx].wallRoll = item.total ?? item.roll ?? 0
+            }
           }
         }
       })
@@ -113,7 +152,7 @@ export default function App() {
         setCityFallen(true)
         calculateSackOrder(updatedPlayers)
         setFinalSummary([
-          `VICTORY! ${insiders.length} crusaders entered the city`,
+          `${insiders.length} crusader${insiders.length === 1 ? '' : 's'} entered the city`,
           'Constantinople has fallen to the Fourth Crusade!',
         ])
         setPlayers(updatedPlayers)

@@ -52,8 +52,17 @@ export function StageBanner({ stage, remaining, total }) {
   )
 }
 
-/** Some rules messages already carry their own tick or cross; don't double it. */
-const stripMarker = (message) => message.replace(/^[✓✗]\s*/, '')
+/**
+ * Rules messages arrive with their own decoration: a leading tick or cross,
+ * and in the triumphant ones an emoji. Both are stripped for display — the
+ * strings in `rules.js` are the original author's and are not edited, but a
+ * 2015 colour bitmap sitting on a vellum page undoes the whole treatment.
+ */
+const stripMarker = (message) =>
+  message
+    .replace(/^[✓✗]\s*/, '')
+    .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+    .trim()
 
 /**
  * The readout after a roll.
