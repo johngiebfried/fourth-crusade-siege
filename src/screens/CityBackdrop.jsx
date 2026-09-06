@@ -268,14 +268,15 @@ function CrusaderCamScene() {
 export function CrusaderCamPanel({ className = '' }) {
   return (
     <div
-      className={`overflow-hidden rounded-lg border-2 border-amber-900/40 bg-[#1c1512] shadow-2xl ${className}`}
+      className={`ink-frame overflow-hidden ${className}`}
+      style={{ background: '#1c1512' }}
     >
       <div className="flex items-center justify-between gap-2 bg-[#2a211a] px-3 py-1.5">
         <span className="truncate text-[11px] uppercase tracking-[0.18em] text-amber-500">
           Crusader Camp
         </span>
         <span className="flex shrink-0 items-center gap-1.5 text-[10px] uppercase tracking-widest text-red-400">
-          <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          <span className="inline-block h-2 w-2 rotate-45" style={{ background: 'var(--rubric)' }} />
           Galata
         </span>
       </div>

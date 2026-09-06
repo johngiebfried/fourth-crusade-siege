@@ -35,6 +35,23 @@
 
 /* ------------------------------------------------- the men who were there */
 
+/**
+ * The two eyewitnesses of the *siege*, and only those two.
+ *
+ * Choniates, Gunther and Innocent III are all better writers on what the
+ * Fourth Crusade meant, and all three are about the sack rather than about
+ * getting over a wall. On the screens this set feeds — the beats between
+ * assaults — a passage about mules in the Hagia Sophia is answering a question
+ * nobody has asked yet. They are kept below in SACK, unused, rather than
+ * deleted, because the module hands off to a sack phase and that is where they
+ * belong.
+ *
+ * Villehardouin is a marshal of Champagne who helped negotiate the Venetian
+ * treaty and is defensive about the diversion. Robert of Clari is a poor
+ * knight of Picardy who sees the whole thing from below and cares far more
+ * about the plunder and the marvels than about who was right. Between them
+ * they give the army a top and a bottom.
+ */
 export const CHRONICLE = [
   {
     text: 'Never had so many been besieged by so few — for we had no more than twenty thousand, and they were beyond counting.',
@@ -53,7 +70,19 @@ export const CHRONICLE = [
     source: 'Geoffrey of Villehardouin',
   },
   {
+    text: 'They took counsel and agreed that if God granted them entry, all the plunder should be brought to one place and shared as was right.',
+    source: 'Geoffrey of Villehardouin',
+  },
+  {
+    text: 'The Greeks made great show upon the walls, and our men went at them, and there was such a din of trumpets and drums that the earth seemed to shake.',
+    source: 'Geoffrey of Villehardouin',
+  },
+  {
     text: 'The city was so rich, and so full of every good thing, that a poor knight might there become as great a lord as he wished.',
+    source: 'Robert of Clari',
+  },
+  {
+    text: 'The Emperor Alexios had pitched his tents on a hill, and when our men rode out against him he turned back into the city and did not fight.',
     source: 'Robert of Clari',
   },
   {
@@ -61,9 +90,24 @@ export const CHRONICLE = [
     source: 'Robert of Clari',
   },
   {
-    text: 'The Emperor Alexios had pitched his tents on a hill, and when our men rode out against him he turned back into the city and did not fight.',
+    text: 'The walls were so wondrous high and so strong that no man could believe it who had not seen them with his own eyes.',
     source: 'Robert of Clari',
   },
+  {
+    text: 'The doge stood in the bow of his galley, an old man and blind, with the banner of St Mark before him, and cried to his men to run the ship aground.',
+    source: 'Robert of Clari',
+  },
+]
+
+/**
+ * Held back, deliberately.
+ *
+ * These are about what the army did once it was inside, not about the getting
+ * in, and they belong to the sack phase this module hands off to. Kept here so
+ * that when that phase wants them they are written and checked rather than
+ * being reached for in a hurry.
+ */
+export const SACK = [
   {
     text: 'They broke open the sanctuaries and carried off whatever was in them, and led mules and horses in under the dome itself to load them.',
     source: 'Niketas Choniates',
@@ -95,33 +139,43 @@ export const CHRONICLE = [
 export const SIEGECRAFT = [
   {
     text: 'A scaling ladder was the cheapest way into a fortress and by far the most dangerous. The first man up faced the whole garrison alone, which is why the honour of being first was worth so much.',
+    lane: 'both',
   },
   {
     text: 'Ladders were deliberately made a little short. One that overtopped the parapet gave the defenders something to push against; one that reached just under it was harder to lever away.',
+    lane: 'land',
   },
   {
     text: 'The counterweight trebuchet was only just arriving in the west in 1204. Most stone-throwers at this siege were mangonels worked by teams hauling on ropes — faster to build, far weaker, and useless against a wall like this one.',
+    lane: 'land',
   },
   {
     text: 'Against masonry this thick, stone-throwers were not meant to breach. They were meant to sweep the parapet clear so that men on ladders had a moment in which nobody was waiting for them.',
+    lane: 'land',
   },
   {
     text: 'Mining was the reliable way through a wall — dig under it, prop the tunnel with timber, burn the props. It was also useless here: the seaward walls stood in water and the land walls in solid rock.',
+    lane: 'both',
   },
   {
     text: 'A wet moat did not have to be deep to win. It only had to stop a siege tower from being wheeled up to the wall, and it did.',
+    lane: 'land',
   },
   {
     text: 'Ships lashed in pairs were steadier than ships alone, and a bridge slung between two mast-tops put men *above* the parapet instead of below it. This was the Venetian answer to a wall you cannot undermine.',
+    lane: 'sea',
   },
   {
     text: 'Assaulting from a ship meant fighting on a footing that moved. The Venetians solved it by grappling to the wall and hauling in, so that ship and masonry rose and fell together.',
+    lane: 'sea',
   },
   {
     text: 'Casualties in a failed escalade were appalling and casualties in a successful one were slight. Everything depended on the few minutes in which a lodgement was either made or not.',
+    lane: 'both',
   },
   {
     text: 'Fire did more damage to Constantinople than any siege engine. Three fires during the occupation destroyed more of the city than the fighting did.',
+    lane: 'both',
   },
 ]
 
@@ -130,27 +184,35 @@ export const SIEGECRAFT = [
 export const WALLS = [
   {
     text: 'The Theodosian walls were raised in the 5th century and had held for eight hundred years. In all that time no besieging army had ever forced them.',
+    lane: 'land',
   },
   {
     text: 'The land defence was three lines deep: a moat, then a low outer wall with its own towers, then the great inner wall — twelve metres high, five thick, with ninety-six towers.',
+    lane: 'land',
   },
   {
     text: 'An attacker who took the outer wall found himself on a narrow terrace, in the open, with the inner wall towering above him and archers on both flanks. It was designed as a killing ground and it worked as one.',
+    lane: 'land',
   },
   {
     text: 'The banded courses of brick in the stonework are not decoration. They levelled the coursing as it rose and gave the wall some flex — which is why it survived the earthquakes that flattened everything around it.',
+    lane: 'both',
   },
   {
     text: 'The sea walls along the Golden Horn were single, lower, and much weaker than the land walls. The Byzantines relied on the harbour chain to keep enemies away from them entirely.',
+    lane: 'sea',
   },
   {
     text: 'A chain on floating booms ran from the city to the tower at Galata and closed the Horn. The Venetians broke it in July 1203 — and after that the weakest wall in Constantinople was the one an enemy fleet could reach.',
+    lane: 'sea',
   },
   {
     text: 'The final assault of 12 April 1204 came at the Golden Horn wall, not the land walls. The land walls were never taken. They were simply gone round.',
+    lane: 'sea',
   },
   {
     text: 'The stretch that fell had been heightened in timber during the winter. Wooden hoarding could be built fast, and it burned.',
+    lane: 'sea',
   },
 ]
 
@@ -232,6 +294,13 @@ export const SETS = {
 }
 
 /**
+ * Written, checked, and not in rotation. `SETS` is what the picker can reach;
+ * SACK is not in it, so nothing can show a passage about the sack during the
+ * siege by accident.
+ */
+export const HELD_BACK = { sack: SACK }
+
+/**
  * One entry from a set, chosen without repeating until the set is used up.
  *
  * A class plays this more than once, so a random pick is wrong: it will show
@@ -240,21 +309,40 @@ export const SETS = {
  */
 const seen = new Map()
 
-export function pickLore(setName) {
+export function pickLore(setName, { lane } = {}) {
   const set = SETS[setName]
   if (!set || set.length === 0) return null
-  const used = seen.get(setName) ?? []
-  const pool = set.filter((_, i) => !used.includes(i))
-  const from = pool.length ? pool : set
-  if (!pool.length) seen.set(setName, [])
+
+  // A land failure drawing the story of the harbour chain is worse than no
+  // gloss at all: it reads as the game not knowing what the student just
+  // watched. Untagged passages fit anywhere.
+  const relevant = lane ? set.filter((e) => !e.lane || e.lane === lane || e.lane === 'both') : set
+  if (relevant.length === 0) return null
+
+  // Keyed per lane as well as per set. Keyed per set alone, exhausting the six
+  // land passages would wipe the sea lane's history along with them.
+  const key = lane ? `${setName}:${lane}` : setName
+  const used = seen.get(key) ?? []
+  const pool = relevant.filter((e) => !used.includes(set.indexOf(e)))
+  const from = pool.length ? pool : relevant
+  if (!pool.length) seen.set(key, [])
   const entry = from[Math.floor(Math.random() * from.length)]
-  seen.set(setName, [...(seen.get(setName) ?? []), set.indexOf(entry)])
+  seen.set(key, [...(seen.get(key) ?? []), set.indexOf(entry)])
   return entry
+}
+
+/**
+ * Forget what has been shown. The game does not need this — a page load is a
+ * fresh history — but the checks below do, and a class that plays twice in a
+ * row without reloading is the other caller it would serve.
+ */
+export function resetLore() {
+  seen.clear()
 }
 
 /** Every entry, for the checks — nothing empty, everything attributed. */
 export function allLore() {
-  return Object.entries(SETS).flatMap(([name, set]) =>
+  return Object.entries({ ...SETS, ...HELD_BACK }).flatMap(([name, set]) =>
     set.map((entry, i) => ({ ...entry, set: name, index: i }))
   )
 }

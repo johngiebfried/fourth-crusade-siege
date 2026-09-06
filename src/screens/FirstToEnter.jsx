@@ -28,7 +28,10 @@ export default function FirstToEnter({ name, onContinue }) {
           wide
           eyebrow="First to Enter"
           palette="vermilion"
-          body={`${name} was the first crusader over the wall and into Constantinople, before whom no man of this army had set foot inside the city.`}
+          body={
+            `${name || 'The first man'} was the first crusader over the wall and into ` +
+            'Constantinople, before whom no man of this army had set foot inside the city.'
+          }
         >
           <Marginalia entry={gloss} />
           <div className="mt-8 text-center">

@@ -870,6 +870,106 @@ to repeat, nothing empty, nothing long enough to stop the game, every chronicle
 entry sourced, no general entry sourced, no passage in two sets, and the picker
 exhausting before repeating. `npm run check` now runs all three suites.
 
+## Revision: the whole interface becomes a manuscript page
+
+The reference is *Inkulinati*: vellum ground, iron-gall ink line-work,
+vermilion rubrication, gold used sparingly, and drolleries in the margin. What
+that rules out is everything the modern web reaches for by default — rounded
+corners, soft drop shadows, flat saturated UI colour, emoji. A scribe had a
+quill, three pigments and a piece of skin.
+
+It was done at the **primitive** level rather than screen by screen, so it
+reaches everything at once: tokens and `.vellum` / `.ink-frame` /
+`.quill-button` / `.ruled` in `index.css`, and the shared furniture in
+`screens/ui.jsx` rebuilt on top of them. `manuscript-scope` zeroes every border
+radius inside a panel, because a rounded corner is the single most modern thing
+a box can do and they otherwise creep back in one Tailwind class at a time.
+
+Three specific things were doing most of the damage:
+
+**The dark panels.** Bribery, the results and the first-to-enter callout were
+all inverted slate cards. They are vellum now. Weight on a manuscript comes
+from a heavier ink frame and more rubrication, not from flipping the ground —
+and the dark cards made the 3D lane behind them look like a screenshot pasted
+into a web app.
+
+**The emoji.** 🏰 🚢 ⚔️ 👑 were colour bitmaps from 2015 sitting in the middle
+of a manuscript, and no amount of vellum around them helps. They are drawn in
+ink now. The crossed swords took two goes: an X with arrowheads on it is a
+compass rose, so the sword is built upright — blade, crossguard, grip, pommel —
+and then rotated twice.
+
+**The roll readout.** Emerald-on-green success and red-on-pink failure was pure
+web. Success and failure now read as ink and vermilion, which is how a
+manuscript marks anything at all.
+
+### Drolleries
+
+The marginal grotesques are the strongest single signal that a page is medieval
+rather than merely brown, so there are three — a hare with a trumpet, a snail,
+and a hooded man's head on a bird's body — drawn as inline paths.
+
+Two things had to be got right. They collapse to a smudge inside a flex row
+without `shrink-0`, an SVG with no basis having nothing to hold its width open.
+And the first drawings overlapped everything and both filled *and* stroked it,
+which produced one amorphous blob: at this size a drollery lives or dies on its
+silhouette, so the masses are separated and the limbs are strokes.
+
+### On the lettering, again
+
+Still no blackletter body face, for the reasons in the previous entry: a
+webfont is a fetched asset and no blackletter can be relied on across unknown
+school laptops. The manuscript signal is carried by the initial, the
+rubrication, the ruling and the margins — the parts that always render, and
+that stay readable on a projector.
+
+## Revision: where the textbook actually appears
+
+**Scheme B — the waiting beats.** The three moments the game already spends
+doing nothing now carry a passage: the title screen takes `city`, the "fleet
+stands in" beat before the sea assault takes `fleet`, and the gate opening
+takes `chronicle`. No new screens, no interruption, roughly three to six
+passages a playthrough.
+
+**Scheme C — failures only.** A failed roll carries a fact from `siegecraft` or
+`walls` under the readout. Failure is when a student actually has the question —
+*why didn't that work?* — and it is the one beat where nobody is mid-decision.
+Successes stay clean on purpose: a fact under every roll becomes wallpaper and
+stops being read.
+
+### The chronicle set is two men now
+
+Choniates, Gunther of Pairis and Innocent III are better writers on what the
+Fourth Crusade *meant*, and all three are about the sack rather than about
+getting over a wall. On the beats this set feeds, a passage about mules in the
+Hagia Sophia answers a question nobody has asked yet.
+
+So the rotation is Villehardouin and Robert of Clari — the two eyewitnesses of
+the siege itself, and between them the top and the bottom of the army: a
+marshal who helped negotiate the Venetian treaty and is defensive about the
+diversion, and a poor knight of Picardy who cares far more about the plunder
+and the marvels than about who was right.
+
+The rest are kept in `HELD_BACK.sack`, written and checked but out of the
+picker's reach, because the module hands off to a sack phase and that is where
+they belong. `SETS` is what the picker can see; `HELD_BACK` is not in it.
+
+### The gloss has to match the lane
+
+The first failure gloss shown on the *land* wall was the story of the harbour
+chain. Every passage in `siegecraft` and `walls` now carries `lane: 'land' |
+'sea' | 'both'`, and the picker filters on it — an irrelevant fact is worse
+than no fact, because it reads as the game not knowing what the student just
+watched.
+
+The seen-list is keyed per *lane* as well as per set. Keyed per set alone,
+exhausting the six land passages would wipe the sea lane's history with them.
+
+`scripts/check-lore.mjs` covers all of it: every tagged passage carries a lane,
+each lane has at least four passages that fit it, a hundred draws in one lane
+never return the other's, and a lane exhausts its own passages before
+repeating.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

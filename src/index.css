@@ -1,5 +1,31 @@
 @import 'tailwindcss';
 
+/*
+ * The whole interface is a manuscript page.
+ *
+ * The reference is Inkulinati: vellum ground, iron-gall ink line-work,
+ * vermilion rubrication, gold leaf used sparingly, and drolleries in the
+ * margin. What that rules out is everything the modern web reaches for by
+ * default — rounded corners, soft drop shadows, flat saturated UI colour,
+ * emoji. A scribe had a quill, three pigments and a piece of skin.
+ *
+ * The tokens live here rather than in Tailwind config so that the plain CSS
+ * below and the components can both reach them.
+ */
+:root {
+  --vellum: #efe2c4;
+  --vellum-lit: #f7eed9;
+  --vellum-deep: #dfcda4;
+  --ink: #2b2118;
+  --ink-soft: #5a4a37;
+  --rubric: #a32b25;
+  --rubric-deep: #7d1f1a;
+  --lapis: #2f4d8a;
+  --gold: #c9a227;
+  --gold-lit: #eed77a;
+  --gold-deep: #8a6a14;
+}
+
 html,
 body,
 #root {
@@ -8,11 +34,121 @@ body,
 }
 
 body {
-  font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  font-family: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
   background: #1c1512;
+  color: var(--ink);
 }
 
 canvas {
   display: block;
   touch-action: none;
+}
+
+/*
+ * Vellum. The mottle is painted in gradients rather than sampled from a scan:
+ * no fetched asset, and it scales to any panel size without tiling.
+ */
+.vellum {
+  background-color: var(--vellum);
+  background-image:
+    radial-gradient(ellipse at 18% 12%, rgba(255, 250, 236, 0.75), transparent 52%),
+    radial-gradient(ellipse at 84% 78%, rgba(196, 170, 124, 0.5), transparent 55%),
+    radial-gradient(ellipse at 62% 26%, rgba(255, 252, 242, 0.55), transparent 42%),
+    radial-gradient(ellipse at 30% 88%, rgba(205, 180, 136, 0.42), transparent 50%);
+}
+
+/*
+ * An ink frame: a heavy rule with a hairline inside it, the way a scribe
+ * bounded a text block. Two borders and no radius — a rounded corner is the
+ * single most modern thing a panel can do.
+ */
+.ink-frame {
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 1px rgba(239, 226, 196, 0.9),
+    inset 0 0 0 3px rgba(43, 33, 24, 0.5),
+    0 10px 26px rgba(20, 14, 9, 0.45);
+}
+
+.ink-frame-light {
+  border: 1.5px solid var(--ink-soft);
+  box-shadow: 0 6px 18px rgba(20, 14, 9, 0.35);
+}
+
+/* Rubricated label: small red capitals, well tracked, as a marginal heading. */
+.rubric {
+  color: var(--rubric);
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+/*
+ * A quill-drawn button. Ink outline on vellum, and it darkens rather than
+ * lifting — nothing on a page has a drop shadow that moves.
+ */
+.quill-button {
+  border: 2px solid var(--ink);
+  background-color: var(--vellum-lit);
+  color: var(--ink);
+  font-weight: 700;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+  box-shadow: inset 0 0 0 1px rgba(239, 226, 196, 0.9);
+}
+
+.quill-button:hover:not(:disabled) {
+  background-color: var(--rubric);
+  color: var(--vellum-lit);
+}
+
+.quill-button:disabled {
+  border-color: rgba(90, 74, 55, 0.4);
+  background-color: rgba(223, 205, 164, 0.6);
+  color: rgba(90, 74, 55, 0.55);
+  cursor: not-allowed;
+}
+
+/* The emphatic one: rubricated ground, for the action that advances the game. */
+.quill-button-primary {
+  border: 2px solid var(--ink);
+  background-color: var(--rubric);
+  color: var(--vellum-lit);
+  font-weight: 700;
+  transition: background-color 140ms ease;
+  box-shadow: inset 0 0 0 1px rgba(239, 226, 196, 0.35);
+}
+
+.quill-button-primary:hover:not(:disabled) {
+  background-color: var(--rubric-deep);
+}
+
+.quill-button-primary:disabled {
+  border-color: rgba(90, 74, 55, 0.4);
+  background-color: rgba(160, 140, 110, 0.5);
+  color: rgba(239, 226, 196, 0.6);
+  cursor: not-allowed;
+}
+
+/*
+ * Ruling: the horizontal lines a scribe pricked and ruled before writing a
+ * word. The pitch has to match the text's line-height or it reads as a bug.
+ */
+.ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    rgba(150, 60, 40, 0.13) 31px,
+    rgba(150, 60, 40, 0.13) 32px
+  );
+}
+
+/* Nothing in a manuscript is round. */
+.manuscript-scope *,
+.manuscript-scope *::before,
+.manuscript-scope *::after {
+  border-radius: 0 !important;
 }

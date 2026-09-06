@@ -3,7 +3,7 @@
  * Used after the round-three bribery is confirmed.
  */
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
@@ -11,6 +11,8 @@ import { LandTerrain } from '../three/LandScene.jsx'
 import { LANE, GATE_CAMERA } from '../three/lane.js'
 import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
+import { Marginalia } from './manuscript.jsx'
+import { pickLore } from '../game/lore.js'
 
 /**
  * Stands in front of the gate and pushes slowly in on it.
@@ -88,6 +90,8 @@ function GateDoors({ open }) {
 }
 
 export default function GateOpening({ onDone }) {
+  const gloss = useMemo(() => pickLore('chronicle'), [])
+
   const [open, setOpen] = useState(false)
   const [walked, setWalked] = useState(false)
 
@@ -103,7 +107,7 @@ export default function GateOpening({ onDone }) {
   }, [onDone])
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-stone-900">
+    <div className="relative h-screen w-screen overflow-hidden" style={{ background: '#1c1512' }}>
       <Canvas
         shadows
         gl={RENDERER_PROPS}
@@ -141,19 +145,21 @@ export default function GateOpening({ onDone }) {
       </Canvas>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center pt-8">
-        <div className="rounded-lg bg-black/70 px-10 py-5 text-center">
-          <div className="text-3xl font-bold text-amber-100">The gate is opened from within.</div>
-          <div className="mt-2 text-lg text-stone-300">
+        <div className="manuscript-scope vellum ink-frame max-w-2xl px-10 py-5 text-center">
+          <div className="text-3xl font-bold" style={{ color: 'var(--rubric)' }}>
+            The gate is opened from within.
+          </div>
+          <div className="mt-2 text-lg" style={{ color: 'var(--ink-soft)' }}>
             Constantinople falls — not to a breach, but to a bribe.
           </div>
+          {/* The last of the three waiting beats, and the one where a man who
+              was there has most to say. */}
+          <Marginalia entry={gloss} />
         </div>
       </div>
 
-      <button
-        onClick={onDone}
-        className="absolute bottom-6 right-8 rounded-lg border border-stone-600 px-6 py-3 text-stone-300 transition-colors hover:bg-stone-800"
-      >
-        Continue →
+      <button onClick={onDone} className="quill-button absolute bottom-6 right-8 px-7 py-3 text-lg">
+        Continue
       </button>
     </div>
   )

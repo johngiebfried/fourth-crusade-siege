@@ -200,30 +200,28 @@ export function ManuscriptLeaf({
 
   return (
     <div
-      className={`pointer-events-auto relative mx-4 w-full ${
+      className={`manuscript-scope vellum ink-frame pointer-events-auto relative mx-4 w-full ${
         wide ? 'max-w-3xl' : 'max-w-2xl'
-      } border border-amber-900/40 bg-[#f4ead6] px-10 py-9 shadow-2xl ${className}`}
-      style={{
-        // The tone and mottle of a parchment leaf, painted in gradients rather
-        // than sampled from a scan — no fetched asset, and it scales cleanly.
-        backgroundImage:
-          'radial-gradient(ellipse at 22% 18%, rgba(215,190,150,0.55), transparent 55%),' +
-          'radial-gradient(ellipse at 82% 76%, rgba(198,172,128,0.45), transparent 52%),' +
-          'radial-gradient(ellipse at 60% 30%, rgba(255,250,238,0.6), transparent 45%)',
-      }}
+      } px-10 py-9 ${className}`}
     >
       {/* The double rule a scribe drew to bound the text block. */}
-      <div className="pointer-events-none absolute inset-4 border border-amber-900/25" />
-      <div className="pointer-events-none absolute inset-[1.15rem] border border-amber-900/15" />
+      <div
+        className="pointer-events-none absolute inset-4"
+        style={{ border: '1px solid rgba(122,44,36,0.3)' }}
+      />
+      <div
+        className="pointer-events-none absolute inset-[1.15rem]"
+        style={{ border: '1px solid rgba(122,44,36,0.18)' }}
+      />
 
       <div className="relative">
         {eyebrow && (
-          <div className="mb-3 text-xs uppercase tracking-[0.34em] text-red-900/70">
+          <div className="rubric mb-3">
             {eyebrow}
           </div>
         )}
         {heading && (
-          <h2 className="mb-4 text-3xl font-bold leading-tight text-red-900 md:text-4xl">
+          <h2 className="mb-4 text-3xl font-bold leading-tight md:text-4xl" style={{ color: 'var(--rubric)' }}>
             {heading}
           </h2>
         )}
@@ -270,19 +268,13 @@ export function ManuscriptRuled({
 
   return (
     <div
-      className={`pointer-events-auto relative mx-4 w-full ${
+      className={`manuscript-scope vellum ink-frame pointer-events-auto relative mx-4 w-full ${
         wide ? 'max-w-3xl' : 'max-w-2xl'
-      } border border-amber-900/40 bg-[#f2e7d2] shadow-2xl ${className}`}
+      } ${className}`}
     >
       {/* Ruling: the faint horizontal lines a scribe pricked and ruled before
           writing a word, and the vertical bounding line of the margin. */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(to bottom, transparent, transparent 31px, rgba(150,60,40,0.13) 31px, rgba(150,60,40,0.13) 32px)',
-        }}
-      />
+      <div className="ruled pointer-events-none absolute inset-0" />
       <div className="pointer-events-none absolute inset-y-0 left-[8.75rem] w-px bg-red-900/25" />
 
       <div className="relative flex gap-6 px-8 py-8">
@@ -297,7 +289,7 @@ export function ManuscriptRuled({
 
         <div className="min-w-0 flex-1">
           {heading && (
-            <h2 className="mb-3 text-2xl font-bold leading-tight text-red-900 md:text-3xl">
+            <h2 className="mb-3 text-2xl font-bold leading-tight md:text-3xl" style={{ color: 'var(--rubric)' }}>
               {heading}
             </h2>
           )}
@@ -405,21 +397,21 @@ export function ManuscriptBordered({
 
   return (
     <div
-      className={`pointer-events-auto relative mx-4 w-full ${
+      className={`manuscript-scope vellum ink-frame pointer-events-auto relative mx-4 w-full ${
         wide ? 'max-w-3xl' : 'max-w-2xl'
-      } border border-amber-900/45 bg-[#f5ecd9] shadow-2xl ${className}`}
+      } ${className}`}
     >
       <VineBorder side="left" />
       <VineBorder side="right" />
 
       <div className="relative px-16 py-10">
         {eyebrow && (
-          <div className="mb-3 text-center text-xs uppercase tracking-[0.34em] text-red-900/70">
+          <div className="rubric mb-3 text-center">
             {eyebrow}
           </div>
         )}
         {heading && (
-          <h2 className="mb-5 text-center text-3xl font-bold leading-tight text-red-900 md:text-4xl">
+          <h2 className="mb-5 text-center text-3xl font-bold leading-tight md:text-4xl" style={{ color: 'var(--rubric)' }}>
             {heading}
           </h2>
         )}

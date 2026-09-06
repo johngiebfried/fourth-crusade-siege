@@ -41,6 +41,8 @@ import { PALETTE } from '../three/palette.js'
 import { factionFlagTexture } from '../three/factions.js'
 import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
 import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
+import { Marginalia } from './manuscript.jsx'
+import { pickLore } from '../game/lore.js'
 
 /* ---------------------------------------------------------------- timing */
 
@@ -369,6 +371,9 @@ export default function SeaAssault({ sea, stages, onComplete }) {
   const [sinkingShips, setSinkingShips] = useState(() => new Set())
   const [sunkShips, setSunkShips] = useState(() => new Set())
   const [levels, setLevels] = useState({}) // playerId -> 'deck' | 'wall' | 'inside'
+
+  // Scheme B: the crossing beat carries a passage on the fleet that made it.
+  const standInGloss = useMemo(() => pickLore('fleet'), [])
   const [dissolvingIds, setDissolvingIds] = useState(() => new Set())
   const [goneIds, setGoneIds] = useState(() => new Set())
   const [activeRoll, setActiveRoll] = useState(null)
@@ -729,7 +734,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
   }, [shipViews, stage])
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-800">
+    <div className="relative h-screen w-screen overflow-hidden" style={{ background: '#1c1512' }}>
       <Canvas shadows gl={RENDERER_PROPS} onCreated={configureRenderer}>
         <SeaScene
           ships={shipViews}
@@ -747,18 +752,22 @@ export default function SeaAssault({ sea, stages, onComplete }) {
 
       {sailedIn !== 'done' ? (
         <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-6">
-          <div className="rounded-lg border border-amber-900/30 bg-[#f4ead6]/95 px-8 py-4 text-center shadow-xl">
-            <div className="text-3xl font-bold text-red-900">The Fleet Stands In</div>
-            <div className="mt-1 text-lg text-stone-700">
+          <div className="manuscript-scope vellum ink-frame max-w-2xl px-9 py-4 text-center">
+            <div className="text-3xl font-bold" style={{ color: 'var(--rubric)' }}>
+              The Fleet Stands In
+            </div>
+            <div className="mt-1 text-lg" style={{ color: 'var(--ink-soft)' }}>
               {sea.ships.length} ship{sea.ships.length === 1 ? '' : 's'} row for the Golden Horn
               wall, lashed in pairs with bridges rigged between the mast-tops.
             </div>
+            {/* A beat the game already spends waiting, so it earns its keep. */}
+            <Marginalia entry={standInGloss} />
           </div>
         </div>
       ) : (
         <>
           <StageBanner stage={stage} remaining={remaining} total={stageIds.length} />
-          <RollReadout activeRoll={activeRoll} />
+          <RollReadout activeRoll={activeRoll} lane="sea" />
           <Prompt
             show={!activeRoll && remaining > 0}
             remaining={remaining}

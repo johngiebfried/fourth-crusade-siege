@@ -18,7 +18,9 @@ import { useCallback, useMemo, useState } from 'react'
 import allCharacters from '../data/characters.json'
 import { canCaptain } from '../game/rules.js'
 import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
-import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton } from './ui.jsx'
+import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton , Drollery, InkIcon } from './ui.jsx'
+import { Marginalia } from './manuscript.jsx'
+import { pickLore } from '../game/lore.js'
 
 /* -------------------------------------------------------------- fragments */
 
@@ -48,7 +50,7 @@ function NameDropdown({ label, people, selected, onToggle, limit }) {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-4 rounded-lg border-2 border-stone-500/50 bg-white/70 px-5 py-3 text-left text-lg text-stone-800 transition-colors hover:bg-white"
+        className="quill-button flex w-full items-center justify-between gap-4 px-5 py-3 text-left text-lg font-normal"
       >
         <span>
           {selected.length === 0
@@ -59,7 +61,7 @@ function NameDropdown({ label, people, selected, onToggle, limit }) {
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 max-h-[42vh] w-full overflow-y-auto rounded-lg border-2 border-stone-500/50 bg-[#faf4e8] shadow-2xl">
+        <div className="vellum ink-frame absolute z-20 mt-2 max-h-[42vh] w-full overflow-y-auto">
           {people.map((p) => {
             const isOn = selected.includes(p.id)
             const blocked = !isOn && atLimit
@@ -72,12 +74,12 @@ function NameDropdown({ label, people, selected, onToggle, limit }) {
                   isOn
                     ? 'bg-red-800 text-amber-50'
                     : blocked
-                      ? 'cursor-not-allowed text-stone-400'
+                      ? 'cursor-not-allowed opacity-45'
                       : 'text-stone-800 hover:bg-amber-100'
                 }`}
               >
                 <span
-                  className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border ${
+                  className={`flex h-5 w-5 shrink-0 items-center justify-center border-2 ${
                     isOn ? 'border-amber-200 bg-amber-200 text-red-900' : 'border-stone-400'
                   }`}
                 >
@@ -102,7 +104,7 @@ function NameDropdown({ label, people, selected, onToggle, limit }) {
               <button
                 key={id}
                 onClick={() => onToggle(id)}
-                className="rounded-full bg-red-800 px-3 py-1 text-sm font-medium text-amber-50 hover:bg-red-700"
+                className="quill-button-primary px-3 py-1 text-sm"
               >
                 {p.name} ✕
               </button>
@@ -124,7 +126,8 @@ function NumberField({ value, onChange, min = 0, max = 99, autoFocus = false }) 
       autoFocus={autoFocus}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-32 rounded-lg border-2 border-stone-500/60 bg-white/80 px-4 py-3 text-center text-3xl font-bold text-stone-900 outline-none focus:border-red-800"
+      className="vellum w-32 border-2 px-4 py-3 text-center text-3xl font-bold outline-none"
+      style={{ borderColor: 'var(--ink)', color: 'var(--ink)' }}
     />
   )
 }
@@ -132,6 +135,10 @@ function NumberField({ value, onChange, min = 0, max = 99, autoFocus = false }) 
 /* ------------------------------------------------------------------ screen */
 
 export default function Opening({ round = 1, roster: existingRoster = null, onComplete }) {
+  // Scheme B: the title is one of the beats the game already spends waiting,
+  // so it carries a passage rather than dead time.
+  const titleGloss = useMemo(() => pickLore('city'), [])
+
   const [step, setStep] = useState(existingRoster ? 'refuse' : 'title')
   const [countText, setCountText] = useState('12')
   const [roster, setRoster] = useState(existingRoster ?? [])
@@ -187,13 +194,24 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
           <Panel>
             <div className="text-center">
               <Eyebrow>The Fourth Crusade</Eyebrow>
-              <h1 className="mt-3 text-4xl font-bold leading-tight text-red-900 md:text-5xl">
+              <h1
+                className="mt-3 text-4xl font-bold leading-tight md:text-5xl"
+                style={{ color: 'var(--rubric)' }}
+              >
                 The Siege of Constantinople
               </h1>
-              <div className="mt-2 text-lg text-stone-700">12 April 1204</div>
+              <div className="mt-2 text-lg" style={{ color: 'var(--ink-soft)' }}>
+                12 April 1204
+              </div>
               <div className="mt-7">
                 <PrimaryButton onClick={() => setStep('count')}>Begin the Siege</PrimaryButton>
               </div>
+            </div>
+            {/* The title is a beat the reader is already stopped at, so it
+                takes a passage on the city they are about to attack. */}
+            <div className="mt-8 flex items-end gap-5">
+              <Drollery which="hare" size={96} />
+              <Marginalia entry={titleGloss} />
             </div>
           </Panel>
         )
@@ -214,7 +232,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
                   <button
                     key={n}
                     onClick={() => setCountText(String(n))}
-                    className={`rounded-lg border-2 px-4 py-2 text-lg font-bold transition-colors ${
+                    className={`quill-button px-4 py-2 text-lg ${
                       count === n
                         ? 'border-red-800 bg-red-800 text-amber-50'
                         : 'border-stone-400 text-stone-700 hover:bg-white/60'
@@ -226,11 +244,11 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
               </div>
             </div>
 
-            <div className="mt-5 max-h-40 overflow-y-auto rounded-lg border border-stone-400/50 bg-white/50 p-3">
+            <div className="ink-frame-light mt-5 max-h-40 overflow-y-auto p-3" style={{ background: 'rgba(247,238,217,0.6)' }}>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-stone-700">
                 {preview.map((c, i) => (
                   <span key={c.id}>
-                    <span className="text-stone-400">{i + 1}.</span> {c.name}
+                    <span style={{ opacity: 0.5 }}>{i + 1}.</span> {c.name}
                   </span>
                 ))}
               </div>
@@ -309,21 +327,18 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
               blurb={`${attackers.length} crusader${attackers.length === 1 ? '' : 's'} ready.`}
             />
             <div className="mt-7 grid gap-4 sm:grid-cols-3">
-              <button
-                onClick={() => finish(() => 'land')}
-                className="rounded-xl border-2 border-amber-800/40 bg-amber-50/80 px-6 py-7 text-center transition-colors hover:bg-amber-100"
-              >
-                <div className="text-4xl">🏰</div>
-                <div className="mt-2 text-xl font-bold text-red-900">Land Walls</div>
-                <div className="mt-1 text-sm text-stone-600">All against the Theodosian walls</div>
+              {/* Drawn in ink, not set in emoji. A colour bitmap from 2015 in
+                  the middle of a manuscript is the loudest modern note a page
+                  can strike, and no amount of vellum around it helps. */}
+              <button onClick={() => finish(() => 'land')} className="quill-button px-6 py-6">
+                <InkIcon name="wall" size={58} className="mx-auto" />
+                <div className="mt-2 text-xl font-bold">Land Walls</div>
+                <div className="mt-1 text-sm opacity-75">All against the Theodosian walls</div>
               </button>
-              <button
-                onClick={() => finish(() => 'sea')}
-                className="rounded-xl border-2 border-blue-900/30 bg-sky-50/80 px-6 py-7 text-center transition-colors hover:bg-sky-100"
-              >
-                <div className="text-4xl">🚢</div>
-                <div className="mt-2 text-xl font-bold text-red-900">Sea Walls</div>
-                <div className="mt-1 text-sm text-stone-600">All into the Golden Horn</div>
+              <button onClick={() => finish(() => 'sea')} className="quill-button px-6 py-6">
+                <InkIcon name="ship" size={58} className="mx-auto" />
+                <div className="mt-2 text-xl font-bold">Sea Walls</div>
+                <div className="mt-1 text-sm opacity-75">All into the Golden Horn</div>
               </button>
               <button
                 onClick={() => {
@@ -333,11 +348,11 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
                   setSmallGroupIds([])
                   setStep('split')
                 }}
-                className="rounded-xl border-2 border-stone-500/40 bg-stone-50/80 px-6 py-7 text-center transition-colors hover:bg-stone-100"
+                className="quill-button px-6 py-6"
               >
-                <div className="text-4xl">⚔️</div>
-                <div className="mt-2 text-xl font-bold text-red-900">Split</div>
-                <div className="mt-1 text-sm text-stone-600">Some to each</div>
+                <InkIcon name="swords" size={58} className="mx-auto" />
+                <div className="mt-2 text-xl font-bold">Split</div>
+                <div className="mt-1 text-sm opacity-75">Some to each</div>
               </button>
             </div>
           </Panel>
@@ -404,7 +419,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
             )}
 
             {ready && seaGroup.length > 0 && !seaHasCaptain && (
-              <p className="mt-4 rounded-lg bg-amber-200/70 px-4 py-3 text-center text-base text-amber-950">
+              <p className="ink-frame-light mt-4 px-4 py-3 text-center text-base" style={{ background: 'rgba(201,162,74,0.18)' }}>
                 No Venetian and no Oberto of Biandrate in the sea party — there is nobody to
                 pilot, so the sea assault will be called off.
               </p>
@@ -447,8 +462,8 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
       )}
 
       {round > 1 && step !== 'title' && (
-        <div className="pointer-events-none absolute left-6 top-6 rounded-lg bg-black/55 px-4 py-2 text-sm uppercase tracking-[0.2em] text-amber-300">
-          Round {round}
+        <div className="manuscript-scope vellum ink-frame-light pointer-events-none absolute left-6 top-6 px-4 py-2">
+          <span className="rubric">Round {round}</span>
         </div>
       )}
     </div>
