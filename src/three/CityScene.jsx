@@ -349,7 +349,7 @@ function Blachernae({ position = [-27, -16.5] }) {
  * broke it in July 1203, which is exactly why the fleet is inside the Horn in
  * this scene rather than outside it.
  */
-function ChainTower({ position = [27, -23.5] }) {
+function ChainTower({ position = [27, -24.1] }) {
   const [px, pz] = position
 
   return (

@@ -214,7 +214,10 @@ console.log('\nCity landmarks stand on land')
   check('west of the land walls is land, not water', city.insidePolygon(city.EUROPE, -45, 0))
   check('the Golden Horn is water', !city.insidePolygon(city.EUROPE, 0, -18))
   check('Galata joins the mainland round the head of the Horn', city.insidePolygon(city.EUROPE, -70, -31))
-  check('the chain tower stands on Galata', city.wellInside(city.GALATA, 27, -23.5, 1.2))
+  // The tower anchored the chain across the Horn, so it belongs *at* the
+  // water's edge — the check is that it stands on land at all, with just
+  // enough margin that a refined coastline cannot leave it paddling.
+  check('the chain tower stands on Galata', city.wellInside(city.GALATA, 27, -24.1, 1.2))
 }
 
 console.log('\nA boarder walks the plank in, and lands clear of the towers')

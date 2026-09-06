@@ -22,6 +22,7 @@ import { RippleWater } from './geometry/Field.jsx'
 import { FACTIONS, factionFlagTexture } from './factions.js'
 
 import { SEA_LANE, SEA_HEIGHTS, SEA_TOWERS } from './lane.js'
+import { buildCityQuarter } from './geometry/landmarks.js'
 
 export { SEA_LANE, SEA_HEIGHTS }
 
@@ -115,57 +116,17 @@ function Shore() {
 
 /** The city rising behind the sea wall, merged into one geometry. */
 function CityBehind() {
-  const geometry = useMemo(() => {
-    const rand = (n) => Math.abs((Math.sin(n * 78.233) * 43758.5453) % 1)
-    const parts = []
-    const paint = (g, hex, tone = 1) => {
-      const c = new THREE.Color(hex)
-      const n = g.attributes.position.count
-      const arr = new Float32Array(n * 3)
-      for (let i = 0; i < n; i++) {
-        arr[i * 3] = c.r * tone
-        arr[i * 3 + 1] = c.g * tone
-        arr[i * 3 + 2] = c.b * tone
-      }
-      g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
-      return g
-    }
-
-    for (let i = 0; i < 150; i++) {
-      const a = rand(i)
-      const b = rand(i + 37)
-      const x = SEA_LANE.insideX + 1 + a * 26
-      const z = -95 + b * 190
-      const w = 1.5 + a * 2.4
-      const h = 1.6 + b * 3.0
-      const tone = 0.88 + rand(i + 71) * 0.24
-
-      const body = new THREE.BoxGeometry(w, h, w)
-      body.translate(x, h / 2, z)
-      parts.push(paint(body, PALETTE.cityWall, tone))
-
-      if (i % 3 !== 2) {
-        const r = 0.65 + a * 0.7
-        const drum = new THREE.CylinderGeometry(r, r, 0.52, 12)
-        drum.translate(x, h + 0.26, z)
-        parts.push(paint(drum, PALETTE.cityWall, tone))
-        const dome = new THREE.SphereGeometry(r * 1.05, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2)
-        dome.scale(1, 0.5, 1)
-        dome.translate(x, h + 0.52, z)
-        parts.push(paint(dome, rand(i + 5) > 0.85 ? PALETTE.domeGold : PALETTE.domeLead, tone))
-      } else {
-        const roof = new THREE.BoxGeometry(w * 1.05, 0.56, w * 1.05)
-        roof.translate(x, h + 0.28, z)
-        parts.push(paint(roof, PALETTE.cityRoof, tone))
-      }
-    }
-
-    const merged = mergeGeometries(parts, false)
-    parts.forEach((p) => p.dispose())
-    merged.computeVertexNormals()
-    return merged
-  }, [])
-
+  const geometry = useMemo(
+    () =>
+      buildCityQuarter({
+        seed: 11,
+        count: 230,
+        fromX: SEA_LANE.insideX + 1,
+        toX: SEA_LANE.insideX + 28,
+        cypresses: 70,
+      }),
+    []
+  )
   return (
     <mesh geometry={geometry} castShadow receiveShadow>
       <meshLambertMaterial vertexColors flatShading />

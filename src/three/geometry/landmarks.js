@@ -15,7 +15,19 @@
  */
 
 import * as THREE from 'three'
-import { paint, merge, domeOnDrum, apse, buttress, column, arcade, pitchedRoof } from './buildingKit.js'
+import {
+  paint,
+  merge,
+  domeOnDrum,
+  apse,
+  buttress,
+  column,
+  arcade,
+  pitchedRoof,
+  house,
+  church,
+} from './buildingKit.js'
+import { rng } from './cityBuilder.js'
 import { PALETTE } from '../palette.js'
 
 const MARBLE = '#e6dcc4'
@@ -269,5 +281,115 @@ export function buildCypresses(spots) {
     upper.translate(x, y + h * 0.74, z)
     parts.push(paint(upper, '#47593d', { tone: tone * 1.06 }))
   }
+  return merge(parts)
+}
+
+
+/**
+ * A city quarter seen close, for the ground behind the walls in the two siege
+ * lanes.
+ *
+ * This is the part of the city the class stares at for the whole sequence —
+ * it fills the top third of both assault screens — and it was a hundred and
+ * fifty boxes with a slab or a drum on top. At lane scale a building is three
+ * or four units across rather than half a unit, so every part of the kit
+ * actually reads: the pitch of a roof, the shadow under an eave, the ring of
+ * windows in a drum.
+ *
+ * `keepClear` takes predicates so a caller can hold a street open — the land
+ * lane needs one in front of its gate, both because a gate needs a road and
+ * because it is the only ground the bribery camera has to stand on.
+ */
+export function buildCityQuarter({
+  seed = 3,
+  count = 210,
+  fromX,
+  toX,
+  fromZ = -95,
+  toZ = 95,
+  keepClear = () => false,
+  cypresses = 60,
+}) {
+  const rand = rng(seed)
+  const parts = []
+
+  const spot = () => {
+    for (let tries = 0; tries < 24; tries++) {
+      const x = fromX + rand() * (toX - fromX)
+      const z = fromZ + rand() * (toZ - fromZ)
+      if (!keepClear(x, z)) return [x, z]
+    }
+    return null
+  }
+
+  for (let i = 0; i < count; i++) {
+    const at = spot()
+    if (!at) continue
+    const [x, z] = at
+    const tone = 0.86 + rand() * 0.28
+    const roll = rand()
+
+    if (roll > 0.82) {
+      // A church: dome on a windowed drum, lean-to aisles, an apse.
+      const g = church({
+        r: 1.1 + rand() * 0.9,
+        h: 2.2 + rand() * 1.6,
+        wallHex: PALETTE.cityWall,
+        roofHex: PALETTE.cityRoof,
+        domeHex: rand() > 0.78 ? PALETTE.domeGold : PALETTE.domeLead,
+        tone,
+      })
+      g.rotateY(rand() * Math.PI * 2)
+      g.translate(x, 0, z)
+      parts.push(g)
+    } else if (roll > 0.72) {
+      // A larger public building, presenting an arcade to the street.
+      const w = 4.5 + rand() * 3
+      const h = 2.4 + rand() * 1.4
+      const block = new THREE.BoxGeometry(w, h, 3 + rand() * 2)
+      block.translate(0, h / 2, 0)
+      const g = merge([
+        paint(block, '#ddd0b4', { tone, ao: 0.3, aoFrom: 0, aoTo: h * 0.6 }),
+        (() => {
+          const a = arcade({
+            bays: Math.max(3, Math.round(w / 1.3)),
+            bayW: 1.25,
+            h: h * 0.8,
+            hex: '#e4d8bd',
+            tone,
+            depth: 0.3,
+          })
+          a.translate(0, 0, 1.7 + rand())
+          return a
+        })(),
+      ])
+      g.rotateY(rand() * Math.PI * 2)
+      g.translate(x, 0, z)
+      parts.push(g)
+    } else {
+      const w = 1.8 + rand() * 2.6
+      const g = house({
+        w,
+        d: w * (0.7 + rand() * 0.6),
+        h: 1.6 + rand() * 2.6,
+        wallHex: rand() > 0.45 ? PALETTE.cityWall : '#d9ccae',
+        roofHex: PALETTE.cityRoof,
+        tone,
+        roofPitch: 0.3 + rand() * 0.22,
+      })
+      g.rotateY(rand() * Math.PI)
+      g.translate(x, 0, z)
+      parts.push(g)
+    }
+  }
+
+  const trees = []
+  for (let i = 0; i < cypresses * 6 && trees.length < cypresses; i++) {
+    const at = spot()
+    if (!at) continue
+    trees.push({ x: at[0], z: at[1], y: 0, h: 3.4 + rand() * 2.4, tone: 0.85 + rand() * 0.3 })
+  }
+  if (trees.length) parts.push(buildCypresses(trees))
+
   return merge(parts)
 }

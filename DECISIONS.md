@@ -1361,6 +1361,64 @@ everywhere in period views of the city.
 and 379,000 triangles remains a light scene — the constraint on the target
 hardware is fill rate and the shadow pass, neither of which this touches.
 
+## Revision: the ground the class actually stares at
+
+### The city behind the walls
+
+The panorama got rebuilt from the kit while the two siege lanes — the screens
+the class looks at for the entire sequence — kept a hundred and fifty plain
+boxes with a slab or a drum on top. That was backwards: the panorama is a
+title card, and the lanes fill the top third of the screen for twenty minutes.
+
+`buildCityQuarter` now serves both. At lane scale a building is three or four
+units across rather than half a unit, so every part of the kit finally reads —
+the pitch of a roof, the shade under an eave, the ring of windows in a drum.
+Roughly one house in six is a church with a dome and an apse, one in ten a
+larger public building presenting an arcade to the street, and seventy
+cypresses stand among them.
+
+The land lane still keeps its street clear in front of the gate, passed in as a
+predicate: a gate needs a road, and it is the only ground the bribery camera
+has to stand on.
+
+Sea lane cost: 97 draw calls and 213,000 triangles before, 157 and 289,000
+after. Still a light scene.
+
+### The coastlines were drawn with a ruler
+
+The geography was polygons with three or four vertices over seventy units. The
+Bosphorus bank ran dead straight for its entire length, the Asian shore was
+four points across a hundred and thirty units, and the peninsula came out as a
+wedge. Irregularity at every scale is what reads as land rather than as a
+diagram.
+
+`refineCoast` does two passes. Chaikin's corner-cutting rounds the polyline —
+twice, enough to lose the facets without turning it to mush — and then each
+point is displaced along the local normal by three sine waves of different
+wavelength, giving bays with headlands inside them. It is deterministic, so the
+shore is identical every load and the placement tests stay meaningful, and the
+ends of an open run are pinned so refined segments still meet their neighbours.
+
+Two things this forced:
+
+**The peninsula's shore is generated once and shared.** `EUROPE` and
+`PENINSULA` both describe it, and refining them separately would let them drift
+apart until the city had buildings standing in the Marmara. Both are now
+composed from the same two refined arrays.
+
+**The Marmara coast bellies out.** It ran straight from the land walls to
+Seraglio Point, which is what made the city read as a wedge with a point on it.
+It now bulges south around where the harbours of Julian and Theodosius actually
+were — which is both the fix and the truth.
+
+The head of the Golden Horn also had to be widened and its shores calmed: north
+and south came within five units of each other there, and at the amplitude open
+water carries they crossed and cut a notch out of the land.
+
+The chain tower moved half a unit inland with the refined shore. It still
+stands at the water's edge, which is the entire point of a tower that anchored
+a chain across the Horn.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

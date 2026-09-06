@@ -55,44 +55,197 @@ function paint(geometry, hex) {
  *   shore (Galata) → Galata Point → north up the Bosphorus → far inland.
  * The Golden Horn is the notch this leaves behind.
  */
+/* --------------------------------------------------------------- coasts */
+
+/**
+ * Turn a handful of control points into a coastline.
+ *
+ * The geography was laid out as polygons with three or four vertices over
+ * seventy units, which is a ruler-drawn shore: the Bosphorus bank ran dead
+ * straight for its whole length and the peninsula came out as a wedge. Real
+ * coasts have headlands and bays at every scale, and it is the *irregularity*
+ * that reads as land rather than as a diagram.
+ *
+ * Two passes. Chaikin's corner-cutting rounds the polyline — twice, which is
+ * enough to lose the facets without turning it to mush. Then each point is
+ * displaced along the local normal by two sine waves of different wavelength,
+ * which gives bays with headlands inside them. Deterministic, so the shore is
+ * the same every load and the placement tests stay meaningful.
+ */
+function chaikin(points, closed = false) {
+  const out = []
+  const n = points.length
+  const last = closed ? n : n - 1
+  for (let i = 0; i < last; i++) {
+    const [ax, az] = points[i]
+    const [bx, bz] = points[(i + 1) % n]
+    out.push([ax * 0.75 + bx * 0.25, az * 0.75 + bz * 0.25])
+    out.push([ax * 0.25 + bx * 0.75, az * 0.25 + bz * 0.75])
+  }
+  if (!closed) {
+    out.unshift(points[0])
+    out.push(points[n - 1])
+  }
+  return out
+}
+
+/**
+ * @param anchors indices into the *input* that must not move — a headland the
+ *   rest of the scene is built against, or the point where a wall meets water.
+ */
+export function refineCoast(points, { seed = 1, passes = 2, amp = 1.6, closed = false } = {}) {
+  const fixed = points.map(([x, z]) => [x, z])
+  let pts = fixed
+  for (let i = 0; i < passes; i++) pts = chaikin(pts, closed)
+
+  const n = pts.length
+  return pts.map(([x, z], i) => {
+    const prev = pts[(i - 1 + n) % n]
+    const next = pts[(i + 1) % n]
+    // Outward normal of the local run of shore.
+    const dx = next[0] - prev[0]
+    const dz = next[1] - prev[1]
+    const len = Math.hypot(dx, dz) || 1
+    const nx = dz / len
+    const nz = -dx / len
+
+    const t = i / n
+    // Two wavelengths: broad bays, and headlands within them.
+    const wobble =
+      Math.sin(t * Math.PI * 2 * 3.7 + seed * 1.7) * 0.62 +
+      Math.sin(t * Math.PI * 2 * 11.3 + seed * 4.1) * 0.26 +
+      Math.sin(t * Math.PI * 2 * 23.9 + seed * 9.3) * 0.12
+
+    // Ends of an open coast stay put, so refined runs still meet their
+    // neighbours; the taper is over the first and last tenth.
+    const edge = closed ? 1 : Math.min(1, Math.min(i, n - 1 - i) / (n * 0.1))
+
+    return [x + nx * wobble * amp * edge, z + nz * wobble * amp * edge]
+  })
+}
+
+/*
+ * The peninsula's two water edges, refined once and shared.
+ *
+ * EUROPE and PENINSULA both describe this shore. Refining them separately
+ * would let them drift apart, and the city would end up with buildings in the
+ * Marmara — so the shore is generated here and both polygons are composed from
+ * the same arrays.
+ */
+const HORN_SOUTH = refineCoast(
+  [
+    [-31, -21.5],
+    [-24, -20.2],
+    [-16, -17.5],
+    [-8, -15.8],
+    [0, -13.5],
+    [7, -12.4],
+    [14, -9.5],
+    [21, -7.6],
+    [27, -5],
+    [32, -3],
+    [35.5, -1.5],
+  ],
+  { seed: 3, amp: 1.5 }
+)
+
+const MARMARA_NORTH = refineCoast(
+  [
+    [34, 1],
+    [30, 3.8],
+    [27, 6.2],
+    [22, 9.4],
+    // The coast bellies out south of the straight line between its ends,
+    // around the harbours of Julian and Theodosius. The city was drawn with
+    // this run dead straight and came out as a wedge with a point on it; the
+    // belly is most of what stops that, and it is also where the harbours
+    // actually were.
+    [16, 13.6],
+    [9, 17.2],
+    [2, 19.4],
+    [-5, 21.0],
+    [-12, 22.4],
+    [-20, 24.0],
+    [-26, 24.8],
+    [-31, 25.5],
+  ],
+  { seed: 7, amp: 2.1 }
+)
+
+export const PENINSULA = [...HORN_SOUTH, ...MARMARA_NORTH]
+
+/**
+ * Europe, from the Marmara round the Horn to the Bosphorus.
+ *
+ * The land walls face this: open Thracian ground, not water. That was wrong in
+ * the first version and is the single most important thing on this map.
+ */
 export const EUROPE = [
-  // Marmara coast, west to east
-  [-104, 48],
-  [-72, 41],
-  [-50, 33],
-  [-31, 25.5],
-  [-14, 20.5],
-  [2, 16],
-  [16, 10.5],
-  [27, 5],
-  // Seraglio Point — the eastern tip of the peninsula
-  [34, 1],
-  [35.5, -1.5],
-  // Golden Horn, south shore: east back to west
-  [27, -5],
-  [14, -9.5],
-  [0, -13.5],
-  [-16, -17.5],
-  [-31, -21.5],
-  [-45, -25],
-  [-56, -28.5],
-  // Head of the Horn — the inlet ends here, and the land joins around it
-  [-63, -31.5],
-  // Golden Horn, north shore: west back to east
-  [-56, -36.5],
-  [-42, -35],
-  [-26, -32.5],
-  [-8, -29],
-  [10, -25.5],
-  [24, -22],
-  [31, -20],
-  // Galata Point, where the Horn meets the Bosphorus
-  [36, -18],
-  // Bosphorus, European bank running north
-  [39, -30],
-  [41, -56],
-  [41, -95],
-  // Inland
+  // Marmara coast, west to the land walls.
+  ...refineCoast(
+    [
+      [-104, 48],
+      [-88, 44.5],
+      [-72, 41],
+      [-60, 37],
+      [-50, 33],
+      [-40, 29],
+      [-31, 25.5],
+    ],
+    { seed: 11, amp: 2.2 }
+  ),
+  // The peninsula's own shore, reversed: Marmara back east, then round
+  // Seraglio Point and west along the Horn.
+  ...[...MARMARA_NORTH].reverse(),
+  ...[...HORN_SOUTH].reverse(),
+  // Golden Horn, south shore continuing west past the walls.
+  ...refineCoast(
+    [
+      [-31, -21.5],
+      [-38, -23.4],
+      [-45, -25],
+      [-51, -26.8],
+      [-57, -28.6],
+      [-66, -31.2],
+    ],
+    { seed: 13, amp: 0.85 }
+  ),
+  // Golden Horn, north shore: back east from the head of the inlet.
+  ...refineCoast(
+    [
+      [-66, -31.2],
+      [-62, -35.4],
+      [-56, -37.2],
+      [-49, -35.8],
+      [-42, -35],
+      [-34, -33.8],
+      [-26, -32.5],
+      [-17, -30.8],
+      [-8, -29],
+      [1, -27.3],
+      [10, -25.5],
+      [17, -23.8],
+      [24, -22],
+      [31, -20],
+      [36, -18],
+    ],
+    { seed: 17, amp: 1.0 }
+  ),
+  // Bosphorus, European bank running north. Straight in the first version for
+  // seventy-seven units; the real bank is a run of small bays.
+  ...refineCoast(
+    [
+      [36, -18],
+      [38, -24],
+      [39, -30],
+      [40, -42],
+      [41, -56],
+      [41, -74],
+      [41, -95],
+    ],
+    { seed: 19, amp: 2.0 }
+  ),
+  // Inland.
   [-104, -95],
 ]
 
@@ -102,47 +255,52 @@ export const ASIA = [
   [112, -95],
   [112, 66],
   [62, 66],
-  [56, 34],
-  [52, 8],
-  [54, -14],
-  [52, -40],
-  [55, -66],
-]
-
-/**
- * The city itself: the peninsula between the Horn and the Marmara, closed at
- * the west by the land walls. Used for placing buildings and running the sea
- * walls — not for the land, which is part of EUROPE.
- */
-export const PENINSULA = [
-  [-31, -21.5],
-  [-16, -17.5],
-  [0, -13.5],
-  [14, -9.5],
-  [27, -5],
-  [35.5, -1.5],
-  [34, 1],
-  [27, 5],
-  [16, 10.5],
-  [2, 16],
-  [-14, 20.5],
-  [-31, 25.5],
+  // The Asian bank, which was four points over a hundred and thirty units.
+  ...refineCoast(
+    [
+      [62, 66],
+      [58, 50],
+      [56, 34],
+      [53, 20],
+      [52, 8],
+      [53, -3],
+      [54, -14],
+      [53, -27],
+      [52, -40],
+      [53, -53],
+      [55, -66],
+      [55, -80],
+      [55, -95],
+    ],
+    { seed: 23, amp: 2.4 }
+  ),
 ]
 
 /** Galata and Pera, the shore north of the Horn where the camp stood. */
-export const GALATA = [
-  [-34, -34],
-  [-18, -31],
-  [-2, -28],
-  [14, -24.8],
-  [31, -20.4],
-  [36.5, -18.4],
-  [38, -28],
-  [22, -32],
-  [4, -35.5],
-  [-16, -38],
-  [-34, -40],
-]
+export const GALATA = refineCoast(
+  [
+    [-34, -34],
+    [-26, -32.4],
+    [-18, -31],
+    [-10, -29.6],
+    [-2, -28],
+    [6, -26.4],
+    [14, -24.8],
+    [22, -22.8],
+    [31, -20.4],
+    [36.5, -18.4],
+    [38, -28],
+    [30, -30],
+    [22, -32],
+    [13, -33.8],
+    [4, -35.5],
+    [-6, -36.8],
+    [-16, -38],
+    [-25, -39],
+    [-34, -40],
+  ],
+  { seed: 29, amp: 1.3, closed: true }
+)
 
 /** Where the land walls stand, and how far they run. */
 export const LAND_WALL_X = -31

@@ -27,6 +27,7 @@ import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater, Smoke } from './geometry/Field.jsx'
 import { buildSiegeCamp, buildMoatBridge } from './geometry/siegeCamp.js'
+import { buildCityQuarter } from './geometry/landmarks.js'
 
 import {
   LANE,
@@ -194,62 +195,20 @@ function Ground() {
  * hundred and fifty draw calls for scenery nobody interacts with.
  */
 function CityBackdrop() {
-  const geometry = useMemo(() => {
-    const rand = (n) => Math.abs((Math.sin(n * 127.1) * 43758.5453) % 1)
-    const parts = []
-    const paint = (g, hex, tone = 1) => {
-      const c = new THREE.Color(hex)
-      const n = g.attributes.position.count
-      const arr = new Float32Array(n * 3)
-      for (let i = 0; i < n; i++) {
-        arr[i * 3] = c.r * tone
-        arr[i * 3 + 1] = c.g * tone
-        arr[i * 3 + 2] = c.b * tone
-      }
-      g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
-      return g
-    }
-
-    for (let i = 0; i < 150; i++) {
-      const r = rand(i)
-      const r2 = rand(i + 40)
-      const x = LANE.cityX + 1 + r * 24
-      const z = -95 + r2 * 190
-      // Keep a street clear in front of the gate. A gate needs a road, and it
-      // is also the only ground the bribery camera has to stand on.
-      if (Math.abs(z) < GATE_STREET.halfWidth && x < GATE_STREET.untilX) continue
-      const w = 1.6 + r * 2.4
-      const h = 1.6 + r2 * 2.8
-      const tone = 0.88 + rand(i + 91) * 0.24
-
-      const body = new THREE.BoxGeometry(w, h, w)
-      body.translate(x, h / 2, z)
-      parts.push(paint(body, PALETTE.cityWall, tone))
-
-      if (i % 3 !== 2) {
-        // Drum ringed with windows, then a shallow dome — the Byzantine
-        // church silhouette. Emphatically not a spire.
-        const domeR = 0.7 + r * 0.7
-        const drum = new THREE.CylinderGeometry(domeR, domeR, 0.56, 12)
-        drum.translate(x, h + 0.28, z)
-        parts.push(paint(drum, PALETTE.cityWall, tone))
-
-        const dome = new THREE.SphereGeometry(domeR * 1.06, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2)
-        dome.scale(1, 0.52, 1)
-        dome.translate(x, h + 0.56, z)
-        parts.push(paint(dome, PALETTE.domeLead, tone))
-      } else {
-        const roof = new THREE.BoxGeometry(w * 1.05, 0.6, w * 1.05)
-        roof.translate(x, h + 0.3, z)
-        parts.push(paint(roof, PALETTE.cityRoof, tone))
-      }
-    }
-
-    const merged = mergeGeometries(parts, false)
-    parts.forEach((p) => p.dispose())
-    merged.computeVertexNormals()
-    return merged
-  }, [])
+  const geometry = useMemo(
+    () =>
+      buildCityQuarter({
+        seed: 3,
+        count: 230,
+        fromX: LANE.cityX + 1,
+        toX: LANE.cityX + 26,
+        // A street kept clear in front of the gate. A gate needs a road, and
+        // it is also the only ground the bribery camera has to stand on.
+        keepClear: (x, z) => Math.abs(z) < GATE_STREET.halfWidth && x < GATE_STREET.untilX,
+        cypresses: 70,
+      }),
+    []
+  )
 
   return (
     <mesh geometry={geometry} castShadow receiveShadow>
