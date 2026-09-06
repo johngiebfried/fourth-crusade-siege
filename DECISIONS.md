@@ -1729,6 +1729,51 @@ alternate. The winch is deliberately slow and near enough constant-rate, which
 is what a windlass gives — it is the only part of the cycle meant to be slow,
 and it should not compete with the climb for attention.
 
+## Revision: the engines shoot rarely, and mean it
+
+### The machine was standing in its own hole
+
+At an axle of 1.95 and a cock of −0.66, the head of a 3.5-unit arm sits at
+−0.20 and the stone in its sling at −1.13. Both were underground, so the
+business end of the engine was buried in the grass — and it had been since the
+mangonel was first drawn, because nothing had ever asked where the sling was.
+
+A cocked traction trebuchet rests its stone *on* the ground. The axle is 2.35
+now, the cock −0.44, and the sling shorter: head at 0.86, stone at 0.23.
+
+### Once in three, not every time
+
+Firing on every attempt was wrong twice over. A stone in the air behind every
+climb is noise; and making the climb wait for it each time would add most of a
+second to twenty-four resolutions.
+
+The engines now loose **on the first attempt and every third after it**, and
+when they do, the man waits at the foot of the ladder until the stone has
+struck. The other two attempts in three run at full speed with no engine at
+all.
+
+| Attempt | Engines | Climb starts | Attempt ends |
+| --- | --- | --- | --- |
+| 1 | volley | 3250 ms | 5550 ms |
+| 2 | — | 2550 ms | 4850 ms |
+| 3 | — | 2550 ms | 4850 ms |
+| 4 | volley | 3250 ms | 5550 ms |
+
+Eight volleys over a stage of twenty-four, costing 5.6 seconds in total. That
+is the version where the shot and the climb are obviously connected, rather
+than two things that happen to be on screen together.
+
+Both machines now loose **together**. They used to alternate, which made sense
+when every attempt drew a shot; speaking only once in three, a single machine
+creaking over on its own is a small thing where the moment wants a volley.
+
+### And the climb is slower
+
+`travelSpeed` 1.9 → 1.15, and the resolve beat 1750 → 2300 ms. A crusader in
+mail going up a ladder under shot is not quick, and at the old rate he reached
+the parapet almost as soon as he left the ground. The sea lane keeps its own
+rate: crew there have to move at their ship's, or they slide off it.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

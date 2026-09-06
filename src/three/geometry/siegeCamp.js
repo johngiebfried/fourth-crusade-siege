@@ -101,9 +101,19 @@ function tentParts({ x, z, r, h, tone, flag }) {
  * `facing: -1` gives here, and it is why the machines are built that way.
  */
 export const MANGONEL = {
-  axleY: 1.95,
+  /*
+   * The axle is higher and the cock shallower than they were, because the
+   * machine was standing in its own hole: at an axle of 1.95 and a cock of
+   * −0.66 the head of a 3.5 arm sits at −0.20 and the stone in its sling at
+   * −1.13. Both were underground, so the business end of the engine was buried
+   * in the grass.
+   *
+   * A cocked traction trebuchet rests its stone *on* the ground, which is what
+   * these numbers give: head at 0.86, stone at 0.22.
+   */
+  axleY: 2.35,
   /** Beam angle when cocked: long arm hauled down behind the machine. */
-  cocked: -0.66,
+  cocked: -0.44,
   /** Where the beam finishes, having swung up and over toward the wall. */
   loosed: 2.42,
   longArm: 3.5,
@@ -192,19 +202,20 @@ export function buildMangonelBeam({ withStone = true } = {}) {
   shortArm.translate(-0.75, 0, 0)
   add(shortArm, PALETTE.hullTimberDark)
 
-  // Sling hanging from the head of the long arm.
+  // Sling hanging from the head of the long arm. Short, so that at the cocked
+  // angle the stone rests on the turf instead of below it.
   for (const dz of [-0.22, 0.22]) {
-    const cord = new THREE.CylinderGeometry(0.028, 0.028, 1.0, 4)
-    cord.translate(L, -0.5, dz)
+    const cord = new THREE.CylinderGeometry(0.028, 0.028, 0.55, 4)
+    cord.translate(L, -0.3, dz)
     add(cord, PALETTE.rigging)
   }
   const pouch = new THREE.BoxGeometry(0.5, 0.16, 0.5)
-  pouch.translate(L, -1.02, 0)
+  pouch.translate(L, -0.62, 0)
   add(pouch, '#6f5f4a')
 
   if (withStone) {
     const shot = new THREE.SphereGeometry(0.26, 8, 6)
-    shot.translate(L, -1.18, 0)
+    shot.translate(L, -0.7, 0)
     add(shot, '#8f8673', 0.95)
   }
 

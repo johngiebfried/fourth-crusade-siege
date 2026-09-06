@@ -331,9 +331,11 @@ function Mangonels({ fire = 0 }) {
           key={z}
           position={[LANE.campX - 5, 0, z]}
           facing={-1}
-          // The two loose on alternate attempts, so a stone is in the air
-          // rather more often than either machine could manage alone.
-          fire={Math.floor((fire + (i === 0 ? 1 : 0)) / 2)}
+          // Both loose together. They used to alternate, which made sense
+          // when every attempt drew a shot; now that the engines speak only
+          // once in three, a single machine creaking over on its own is a
+          // small thing where the moment wants a volley.
+          fire={fire}
           target={[LANE.outerWallX, HEIGHTS.outerWall + 0.3, z + (i ? 2.5 : -2.5)]}
           beamGeometry={beam}
           beamEmptyGeometry={beamEmpty}

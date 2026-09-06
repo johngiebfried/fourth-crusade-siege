@@ -34,12 +34,24 @@ import { Atmosphere } from '../three/geometry/Sky.jsx'
 const BEAT = {
   tumble: 1250, // die in the air
   hold: 1300, // settled number held on screen
-  // The climb, lengthened from 1400. The engines loose as it begins and their
-  // stone is in the air for about six-tenths of a second; a shorter ascent had
-  // the crusader on the parapet before the shot arrived, which reads as the
-  // machines firing at a wall nobody is attacking any more.
-  resolve: 1750,
+  resolve: 2300, // climb or dissolve
+  /** Sling to impact, from the engine's own timing. */
+  impact: 700,
 }
+
+/**
+ * How often the engines shoot.
+ *
+ * Every attempt was too much: a stone in the air behind every single climb is
+ * noise, and making the climb wait for it each time would add most of a second
+ * to twenty-four resolutions. On the first attempt and every third after it,
+ * the machines loose and the man waits on the ladder foot until the stone has
+ * struck — which is the only version where the shot and the climb are
+ * obviously connected. The other two attempts in three run at full speed with
+ * no engine at all.
+ */
+const ENGINE_EVERY = 3
+const firesOn = (attempt) => (attempt - 1) % ENGINE_EVERY === 0
 
 /* -------------------------------------------------------------- geometry */
 
@@ -239,11 +251,11 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, round, engine
           dissolving={p.dissolving}
           plateLift={p.lift}
           plateHeight={p.height}
-          // A little slower up the ladder than the default, so the engines'
-          // stone arrives while he is still climbing rather than after he has
-          // arrived. The sea lane keeps its own rate: crew there have to move
-          // at the ship's, or they slide off it.
-          travelSpeed={1.9}
+          // Deliberately unhurried. A crusader in mail going up a ladder under
+          // shot is not quick, and at the old rate he arrived at the parapet
+          // almost as soon as he left the ground. The sea lane keeps its own
+          // rate: crew there have to move at their ship's, or they slide off.
+          travelSpeed={1.15}
           faction={p.faction}
           bearer={p.bearer}
           onClick={() => onPawnClick(p.id)}
@@ -383,6 +395,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
   // alongside the die rather than before it: an extra beat per crusader would
   // add a couple of minutes across a class of twenty-four.
   const [engineFire, setEngineFire] = useState(0)
+  const attempts = useRef(0)
 
   const handlePawnClick = useCallback(
     (playerId) => {
@@ -393,6 +406,12 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
       if (!entry) return
 
       setBusy(true)
+
+      // The engines shoot on the first attempt and every third after it. When
+      // they do, the climb holds until the stone has landed.
+      attempts.current += 1
+      const shooting = firesOn(attempts.current)
+      const climbAt = BEAT.tumble + BEAT.hold + (shooting ? BEAT.impact : 0)
 
       const level = levels[playerId] ?? LEVELS.camp
       const pawnPos = positionFor(level, slots.get(playerId) ?? 0, stageIds.length)
@@ -416,12 +435,13 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
         setActiveRoll((r) => (r ? { ...r, phase: 'settled' } : r))
       }, BEAT.tumble)
 
-      setTimeout(() => {
-        // The engines loose as the man starts up the ladder, so the stone is
-        // over the wall while he is on it. Fired on the click instead, it
-        // landed during the dice and was long forgotten by the time he moved.
-        setEngineFire((n) => n + 1)
+      // Loose as the die settles, so the stone is in the air through the beat
+      // between the number and the man moving.
+      if (shooting) {
+        setTimeout(() => setEngineFire((n) => n + 1), BEAT.tumble + BEAT.hold)
+      }
 
+      setTimeout(() => {
         if (entry.success) {
           setLevels((l) => ({ ...l, [playerId]: level + 1 }))
           setLadders((l) =>
@@ -437,7 +457,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
           )
         }
         setResolvedIds((r) => new Set(r).add(playerId))
-      }, BEAT.tumble + BEAT.hold)
+      }, climbAt)
 
       setTimeout(() => {
         if (!entry.success) {
@@ -463,7 +483,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
             1400
           )
         }
-      }, BEAT.tumble + BEAT.hold + BEAT.resolve)
+      }, climbAt + BEAT.resolve)
     },
     [stage, busy, resolvedIds, levels, slots, stageIds, advanceStage]
   )
