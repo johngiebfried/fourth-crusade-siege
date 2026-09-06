@@ -105,19 +105,115 @@ export const MANGONEL = {
    * The axle is higher and the cock shallower than they were, because the
    * machine was standing in its own hole: at an axle of 1.95 and a cock of
    * −0.66 the head of a 3.5 arm sits at −0.20 and the stone in its sling at
-   * −1.13. Both were underground, so the business end of the engine was buried
-   * in the grass.
+   * −1.13. Both were underground.
    *
    * A cocked traction trebuchet rests its stone *on* the ground, which is what
-   * these numbers give: head at 0.86, stone at 0.22.
+   * these numbers give: head at 0.86, stone at 0.23.
    */
   axleY: 2.35,
   /** Beam angle when cocked: long arm hauled down behind the machine. */
   cocked: -0.44,
-  /** Where the beam finishes, having swung up and over toward the wall. */
+  /** Where the beam finishes, resting against the padded stop. */
   loosed: 2.42,
   longArm: 3.5,
+  /** Sling length below the head, and how far the stone hangs. */
+  slingDrop: 0.7,
+  /** Where the padded crossbeam sits, so the beam actually strikes it. */
+  stopX: 1.15,
+
+  /* ----------------------------------------------------------- timing */
+  swing: 0.26,
+  recoil: 0.22,
+  /** Fraction of the swing at which the sling lets go. */
+  release: 0.86,
+  flight: 0.46,
+  /** Beam rests loosed before the crew start hauling. */
+  rest: 1.1,
+  winch: 3.2,
 }
+
+/** Cubic ease-in: a hauled beam is slowest at the start and fastest at the top. */
+const easeIn = (k) => k * k * k
+
+/**
+ * The whole firing cycle as a pure function of time.
+ *
+ * This lives outside the component on purpose. It was written inside a
+ * `useFrame`, where nothing can assert on it — and every error in it was found
+ * by squinting at a still, which is how the beam came to stop half a unit above
+ * the crossbeam it is supposed to strike, and how the stone came to launch from
+ * the wrong side of the axle. `scripts/check-engines.mjs` now samples this
+ * across the cycle and checks the things a screenshot cannot: that nothing
+ * dips below ground, that the swing accelerates, that the stone leaves from the
+ * head of the arm and arrives on the target.
+ *
+ * @param t seconds since the engine was loosed
+ * @returns { angle, released, stone, puff, done }
+ */
+export function mangonelMotion(t, { facing = -1, origin = [0, 0, 0], target } = {}) {
+  const M = MANGONEL
+  const releaseAt = M.swing * M.release
+  const releaseAngle = M.cocked + (M.loosed - M.cocked) * easeIn(M.release)
+
+  let angle
+  let done = false
+  if (t < 0) {
+    angle = M.cocked
+  } else if (t < M.swing) {
+    angle = M.cocked + (M.loosed - M.cocked) * easeIn(t / M.swing)
+  } else if (t < M.swing + M.recoil) {
+    // Caught at the stop, with one damped rebound. Without it the beam arrives
+    // at its limit and simply freezes, which looks like a dropped frame rather
+    // than like timber hitting a padded beam.
+    const k = (t - M.swing) / M.recoil
+    angle = M.loosed - (M.loosed - M.cocked) * 0.06 * Math.sin(Math.PI * k) * (1 - k)
+  } else if (t < M.swing + M.rest) {
+    angle = M.loosed
+  } else if (t < M.swing + M.rest + M.winch) {
+    // The crew hauling it back down: near enough a constant rate, which is
+    // what a windlass gives.
+    const k = (t - M.swing - M.rest) / M.winch
+    angle = M.loosed + (M.cocked - M.loosed) * k
+  } else {
+    angle = M.cocked
+    done = true
+  }
+
+  // The head of the long arm. The group is turned about Y, so the beam's local
+  // +x points along world −x when facing is −1 — which is why this multiplies
+  // by `facing` rather than adding.
+  const head = (a) => [
+    origin[0] + facing * Math.cos(a) * M.longArm,
+    origin[1] + M.axleY + Math.sin(a) * M.longArm,
+    origin[2],
+  ]
+
+  const released = t >= releaseAt
+  let stone = null
+  let puff = null
+
+  if (target) {
+    const ft = (t - releaseAt) / M.flight
+    if (ft >= 0 && ft <= 1) {
+      const from = head(releaseAngle)
+      stone = [
+        from[0] + (target[0] - from[0]) * ft,
+        from[1] + (target[1] - from[1]) * ft + Math.sin(Math.PI * ft) * 2.6,
+        from[2] + (target[2] - from[2]) * ft,
+      ]
+    }
+    const pt = (t - releaseAt - M.flight) / 0.6
+    if (pt >= 0 && pt <= 1) puff = pt
+  }
+
+  return { angle, released, stone, puff, done, head: head(angle) }
+}
+
+/** Total length of one firing cycle, in seconds. */
+export const MANGONEL_CYCLE = MANGONEL.swing + MANGONEL.rest + MANGONEL.winch
+
+/** When the stone strikes, in seconds after loosing. */
+export const MANGONEL_IMPACT = MANGONEL.swing * MANGONEL.release + MANGONEL.flight
 
 /** The parts that never move: sills, A-frames, axle, stop, windlass. */
 function mangonelFrameParts({ x, z, facing = 1 }) {
@@ -162,11 +258,18 @@ function mangonelFrameParts({ x, z, facing = 1 }) {
   add(axle, '#6d7178')
 
   // The padded crossbeam the beam strikes, on the target side.
+  //
+  // Its height is solved from where the long arm actually finishes rather than
+  // guessed: it sat half a unit below the arm, so the beam swung up and froze
+  // in mid-air with nothing arresting it.
+  const dir = Math.tan(MANGONEL.loosed)
+  const restY = axleY + MANGONEL.stopX * Math.abs(Math.tan(Math.PI - MANGONEL.loosed))
+  void dir
   const stop = new THREE.BoxGeometry(0.3, 0.3, 2.3)
-  stop.translate(-1.15, axleY + 0.5, 0)
+  stop.translate(-MANGONEL.stopX, restY - 0.24, 0)
   add(stop, PALETTE.hullTimberDark)
   const padding = new THREE.BoxGeometry(0.34, 0.2, 2.0)
-  padding.translate(-1.15, axleY + 0.68, 0)
+  padding.translate(-MANGONEL.stopX, restY - 0.09, 0)
   add(padding, '#6f5f4a')
 
   // Windlass for cocking the arm back down.

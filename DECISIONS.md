@@ -1802,6 +1802,61 @@ Putting it back is a `pickLore('siegecraft', { lane })` and a block in
 `RollReadout` — but it should go somewhere a reader can finish it. Scheme B's
 waiting beats are unaffected and still carry their passages.
 
+## Revision: testing the engines instead of squinting at them
+
+Three passes at the mangonel, three sets of faults, and every one of them found
+by looking at a still frame. That was the actual problem. The preview harness
+throttles animation to roughly a frame a second, so the swing, the release and
+the winch were never *watched* — they were inferred, badly:
+
+- the beam launched its stone from the wrong side of the axle,
+- it eased *out*, so it read as being lowered rather than thrown,
+- it came to rest half a unit above the crossbeam it is meant to strike,
+- and it stood in a hole with its sling buried in the turf.
+
+None of that is visible in a screenshot, and all of it is trivially checkable
+in numbers. So the motion was pulled out of the `useFrame` into
+**`mangonelMotion(t)`**, a pure function of time, and `scripts/check-engines.mjs`
+samples the whole 4.56-second cycle at 4-millisecond steps and asserts twenty
+things a picture cannot:
+
+nothing dips below ground · the swing travels one way and *accelerates* · the
+beam reaches its stop, meets timber, and rebounds rather than freezing · the
+stone leaves from the head of the arm · it arcs rather than flying flat · it
+clears the ditch · it lands on the wall · the crew wind it back without it
+climbing again · it is cocked before the next volley · and the impact falls
+inside the climb the app waits for.
+
+### The mutation test, and two checks that were worthless
+
+The suite was then run against the four faults that actually shipped. Two were
+caught; **two passed happily**, and both for the same reason: they recomputed
+the implementation instead of checking it.
+
+- *"It leaves from the head of the arm"* asked `mangonelMotion` where the head
+  was — so when the sign flipped, both sides moved together. It now works the
+  head out from first principles: the beam's local +x maps to world −x under
+  the quarter turn the machine is built with, so the head is at `origin.x`
+  **minus** the cosine, written out in the test with no reference to the
+  module.
+- *"It rests against the crossbeam"* derived the stop's height from the same
+  constant the builder uses. It now walks the **built frame geometry** and
+  measures the vertical gap between the arm's resting line and the timber
+  beneath it. A straight-line distance was still too forgiving — the misplaced
+  stop clipped a corner diagonally at 0.265 and squeaked past a 0.28 threshold
+   — so it measures straight down, and only beyond x = 0.7, because closer in
+  the A-frame collar sits near the line by coincidence and would pass for a
+  crossbeam.
+
+With those two rewritten, all four historical faults fail the suite.
+
+### And the stop was solved rather than guessed
+
+Its height comes from where the long arm actually finishes, not from a
+hard-coded `axleY + 0.5`. That number was the original error: it put the padded
+crossbeam half a unit below the beam, so the arm swung up and stopped in
+mid-air with nothing arresting it.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

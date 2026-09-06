@@ -339,9 +339,6 @@ function Mangonels({ fire = 0 }) {
           target={[LANE.outerWallX, HEIGHTS.outerWall + 0.3, z + (i ? 2.5 : -2.5)]}
           beamGeometry={beam}
           beamEmptyGeometry={beamEmpty}
-          cocked={MANGONEL.cocked}
-          loosed={MANGONEL.loosed}
-          longArm={MANGONEL.longArm}
           axleY={MANGONEL.axleY}
         />
       ))}

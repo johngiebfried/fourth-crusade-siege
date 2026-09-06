@@ -11,6 +11,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
+import { mangonelMotion } from './siegeCamp.js'
 
 /** A tuft of a few crossed blades. */
 function buildTuft() {
@@ -375,9 +376,6 @@ export function Mangonel({
   target,
   beamGeometry,
   beamEmptyGeometry,
-  cocked,
-  loosed,
-  longArm,
   axleY,
 }) {
   const beam = useRef()
@@ -386,7 +384,7 @@ export function Mangonel({
   const clock = useRef(null)
   const [loaded, setLoaded] = useState(true)
 
-  // A change of `fire` starts a shot. The counter rather than a boolean means
+  // A change of `fire` starts a shot. A counter rather than a boolean means
   // repeated shots re-trigger cleanly without a reset in between.
   useEffect(() => {
     if (fire > 0) {
@@ -395,98 +393,35 @@ export function Mangonel({
     }
   }, [fire])
 
-  /*
-   * Timing, and why it is shaped like this.
-   *
-   * A hauled beam *accelerates*: the crew take up the slack, the arm comes
-   * round slowly and then very fast, and it is arrested hard at the top. The
-   * first version eased *out* — quick at the start, crawling into the finish —
-   * which is the motion of something being lowered, not thrown, and read as
-   * the machine firing in slow motion.
-   *
-   * So: cubic ease-in over a quarter of a second, release near the end of the
-   * travel where the head is quickest and pointing at the wall, a short recoil
-   * off the stop, and then a long slow winch back down. The winch is the only
-   * part that is meant to be slow, and it is deliberately unhurried — that is
-   * a crew of men on a rope, and it should not compete with the climb.
-   */
-  const SWING = 0.26
-  const RECOIL = 0.22
-  const RELEASE = 0.86 // fraction of the swing; near the top, moving fastest
-  const FLIGHT = 0.46
-  const REST = 1.1 // beam sits loosed before the crew start hauling
-  const WINCH = 3.2
-
-  const easeIn = (k) => k * k * k
-  const releaseEased = easeIn(RELEASE)
-  const releaseAt = SWING * RELEASE
-  const releaseAngle = cocked + (loosed - cocked) * releaseEased
-
   useFrame((_, delta) => {
     if (clock.current === null) return
     clock.current += delta
-    const t = clock.current
 
-    let angle = cocked
-    if (t < SWING) {
-      angle = cocked + (loosed - cocked) * easeIn(t / SWING)
-    } else if (t < SWING + RECOIL) {
-      // Caught at the stop, with one damped rebound. Without it the beam
-      // arrives at its limit and simply freezes, which looks like a dropped
-      // frame rather than like timber hitting a padded beam.
-      const k = (t - SWING) / RECOIL
-      angle = loosed - (loosed - cocked) * 0.06 * Math.sin(Math.PI * k) * (1 - k)
-    } else if (t < SWING + REST) {
-      angle = loosed
-    } else if (t < SWING + REST + WINCH) {
-      // The crew hauling it back down: near enough constant rate, which is
-      // what a windlass gives, with the corners taken off.
-      const k = (t - SWING - REST) / WINCH
-      const eased = k < 0.15 ? (k / 0.15) * 0.15 * 0.5 + 0 : k
-      angle = loosed + (cocked - loosed) * Math.min(1, eased)
-    } else {
-      angle = cocked
+    // All of the motion lives in `mangonelMotion`, outside this component,
+    // so that it can be sampled and asserted on. See check-engines.mjs.
+    const m = mangonelMotion(clock.current, { facing, origin: position, target })
+
+    if (beam.current) beam.current.rotation.z = m.angle
+    if (loaded && m.released) setLoaded(false)
+
+    if (stone.current) {
+      stone.current.visible = Boolean(m.stone)
+      if (m.stone) stone.current.position.set(...m.stone)
+    }
+
+    if (puff.current) {
+      puff.current.visible = m.puff !== null
+      if (m.puff !== null) {
+        puff.current.position.set(...target)
+        const sc = 0.35 + m.puff * 1.9
+        puff.current.scale.set(sc, sc * 0.8, sc)
+        puff.current.material.opacity = 0.55 * (1 - m.puff)
+      }
+    }
+
+    if (m.done) {
       clock.current = null
       setLoaded(true)
-    }
-    if (beam.current) beam.current.rotation.z = angle
-
-    if (loaded && t >= releaseAt) setLoaded(false)
-
-    // The stone, on its solved arc.
-    if (stone.current) {
-      const ft = (t - releaseAt) / FLIGHT
-      const flying = ft >= 0 && ft <= 1
-      stone.current.visible = flying
-      if (flying) {
-        // The head of the long arm at the instant of release.
-        //
-        // The sign matters and was wrong: the group is turned about Y, so the
-        // beam's local +x points along world −x. Adding the cosine put the
-        // stone a metre out on the wrong side of the axle before it set off.
-        const sx = position[0] + facing * Math.cos(releaseAngle) * longArm
-        const sy = position[1] + axleY + Math.sin(releaseAngle) * longArm
-        const sz = position[2]
-
-        stone.current.position.set(
-          sx + (target[0] - sx) * ft,
-          sy + (target[1] - sy) * ft + Math.sin(Math.PI * ft) * 2.6,
-          sz + (target[2] - sz) * ft
-        )
-      }
-    }
-
-    // A puff of dust where it strikes.
-    if (puff.current) {
-      const pt = (t - releaseAt - FLIGHT) / 0.6
-      const showing = pt >= 0 && pt <= 1
-      puff.current.visible = showing
-      if (showing) {
-        puff.current.position.set(...target)
-        const sc = 0.35 + pt * 1.9
-        puff.current.scale.set(sc, sc * 0.8, sc)
-        puff.current.material.opacity = 0.55 * (1 - pt)
-      }
     }
   })
 
