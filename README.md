@@ -5,6 +5,51 @@ zero-asset procedural 3D. No image files, no model files, nothing fetched over
 the network: every wall, ship, figure and label is generated at runtime from
 primitives, vertex colours and canvas-drawn textures.
 
+## Two sieges, one link
+
+The first screen asks which siege to play.
+
+- **The visual siege** — this project: the city in 3D, every attempt played out.
+- **The text siege** — the original app this was rebuilt from, served from
+  `public/text/`. Same dice, same rules, same outcomes, reported as text.
+
+The reason to ask is not to spare a weak machine the cost of the 3D, because
+an unchosen visual siege costs nothing: `Shell.jsx` reaches `App.jsx` through a
+dynamic import, so three.js is in a chunk of its own that is never fetched
+until someone asks for it. The first load is about 63 kB gzipped.
+
+The reason to ask is that there is now somewhere to go when the visual siege
+will not run — a machine with no WebGL, a room with no projector, a laptop that
+turns the whole thing into a slideshow. All of those used to end at an apology.
+The error page offers the text siege too, for a machine that fails the WebGL
+check outright.
+
+`scripts/check-bundle.mjs` guards the split, because it is a property of the
+build rather than of the source: one careless static import in the chooser
+would pull the whole engine into the entry chunk and nothing would look wrong.
+It runs after `npm run build`, in CI and locally:
+
+```bash
+npm run build && npm run check:bundle
+```
+
+### The text siege is the heavier one
+
+Worth knowing before assuming it is the lightweight option. It loads React,
+ReactDOM, `@babel/standalone` and Tailwind — about 730 kB over the wire, more
+than the visual siege's 427 kB — and compiles its own JSX in the browser on
+every load.
+
+It used to fetch all four from unpkg and the Tailwind CDN, which meant a
+classroom without wi-fi got a blank page: exactly the failure the font file was
+brought in-repo to avoid. They are vendored in `public/text/vendor/` now, so
+nothing on either side of the chooser touches the network.
+
+`reference/original-index.html` stays untouched — it is the authority the dice
+are tested against. `public/text/index.html` is a copy whose only difference is
+those four script sources, and `scripts/check-text-version.mjs` asserts that
+nothing else has drifted.
+
 ## Sharing it — the classroom link
 
 The siege is published to GitHub Pages by `.github/workflows/pages.yml`. Every

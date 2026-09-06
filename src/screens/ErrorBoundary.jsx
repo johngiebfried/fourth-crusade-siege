@@ -27,6 +27,14 @@
 
 import { Component } from 'react'
 
+/**
+ * The text siege, which is the useful thing to offer someone whose machine
+ * has just failed to draw the visual one. `BASE_URL` because GitHub Pages
+ * serves the app from /<repo>/ and a hard-coded path would 404 there while
+ * working perfectly in local dev.
+ */
+const TEXT_URL = `${import.meta.env.BASE_URL}text/`
+
 /** Stamped in at build time. See `vite.config.js`. */
 const BUILD = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev'
 
@@ -59,10 +67,17 @@ function Frame({ title, children }) {
           {title}
         </h1>
         {children}
-        <div className="mt-6 flex items-center justify-between gap-4">
-          <button className="quill-button" onClick={() => window.location.reload()}>
-            Begin again
-          </button>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap gap-3">
+            <button className="quill-button" onClick={() => window.location.reload()}>
+              Begin again
+            </button>
+            {/* The whole reason the text siege ships alongside: a machine that
+                cannot draw the city can still play the game. */}
+            <button className="quill-button" onClick={() => window.location.assign(TEXT_URL)}>
+              Play the text siege
+            </button>
+          </div>
           <span className="text-xs" style={{ color: 'var(--ink-soft)' }}>
             build {BUILD}
           </span>
@@ -117,10 +132,15 @@ export default class ErrorBoundary extends Component {
             there is nothing it can put on screen. This is a setting on the machine
             rather than a fault in the game.
           </p>
+          <p className="mt-3" style={{ color: 'var(--ink)' }}>
+            The text siege will run here. It is the same game — the same dice, the same
+            rules, the same outcomes — reported as text rather than drawn.
+          </p>
           <p className="mt-3" style={{ color: 'var(--ink-soft)' }}>
-            The usual cause is hardware acceleration being switched off. In Chrome it is
-            under Settings → System; in Safari, Develop → Experimental Features. A remote
-            desktop or virtual machine will often not have it at all.
+            If you would rather fix the machine: the usual cause is hardware acceleration
+            being switched off. In Chrome that is under Settings → System; in Safari,
+            Develop → Experimental Features. A remote desktop or virtual machine will
+            often not have it at all.
           </p>
         </Frame>
       )

@@ -50,6 +50,12 @@ jobs:
           # it stays right if the repo is ever renamed.
           VITE_BASE: /${{ github.event.repository.name }}/
 
+      # Inspects the built output, so it has to come after the build: that the
+      # chooser does not drag three.js in with it is a property of the bundle,
+      # not of the source, and one careless import would make it untrue while
+      # every source-level suite stayed green.
+      - run: npm run check:bundle
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

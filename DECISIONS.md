@@ -2141,6 +2141,76 @@ the count screen says "Step 1 of 3" in a round that has four steps; the split
 screen still carries two emoji, which the ink icons were meant to end; and the
 space bar resolves the next attempt but only the mouse is mentioned on screen.
 
+## Both sieges ship together
+
+### The premise was backwards
+
+The worry was that carrying the 3D would burden a machine that never chose it.
+Measured, it inverts. The visual siege is 345 kB of JavaScript gzipped plus a
+75 kB font. The text siege is 50 kB of HTML — and then React, ReactDOM,
+`@babel/standalone` and Tailwind from two CDNs, 730 kB over the wire from three
+third-party hosts, with Babel compiling the app's JSX in the browser on every
+single load. The old version is the heavier one, and the one that does real CPU
+work before it can draw a button.
+
+Bytes were never the risk anyway. What costs a weak machine is what executes: a
+WebGL context, two hundred thousand triangles, a few hundred draw calls, a
+shadow map. And none of that ran for an unchosen visual siege even before this
+work, because the geometry is all built inside `useMemo` in components that
+never mounted.
+
+### So the chooser is a fallback, not a shield
+
+That is the honest reason to have it. A machine with no WebGL, a seminar room
+with no projector, a laptop that turns the panorama into a slideshow — all of
+those used to end at an apology. Now they end at a working game with the same
+dice. The error page offers it too, on the WebGL check.
+
+`Shell.jsx` reaches `App.jsx` through a dynamic import, so the engine is a
+chunk of its own and the first load is 63 kB gzipped rather than 345. Confirmed
+in the browser rather than assumed: three requests on the chooser, none of them
+three.js, and the engine chunk fetched only on the click.
+
+### The split is a property of the build, so it is checked there
+
+One careless static import in `Chooser.jsx` — or anywhere the chooser can
+reach — pulls the whole engine back into the entry chunk, and nothing looks
+wrong. The chooser still renders, the siege still plays, every source-level
+suite stays green, and a classroom laptop downloads a megabyte of WebGL in
+order to be offered a text game.
+
+`check-bundle.mjs` reads `dist/` instead of the source and asserts three.js is
+absent from the entry chunk, that the first load fits a budget, and that the
+engine is in a chunk of its own. Mutation-checked: adding one import of
+`landmarks.js` to the chooser took the entry from 63 kB to 171 kB gzipped and
+failed both assertions.
+
+### The original file is still untouched
+
+`reference/original-index.html` is the authority `check-oracle.mjs` proves the
+dice against, and nothing is allowed to edit it. But it cannot be served as it
+stands, because those four CDN scripts mean no wi-fi, no game — the same
+failure the font file was brought in-repo to avoid.
+
+So `public/text/index.html` is a copy with the four URLs pointed at local
+copies and nothing else changed. "Nothing else changed" is a claim, and an
+unchecked claim about two copies of a file is a promise to let them drift:
+`check-text-version.mjs` undoes the four swaps, strips the added comment, and
+requires the result to be byte-identical to the original. It also refuses any
+`http://` left anywhere in the shipped copy.
+
+A pleasing consequence: the version the class plays is now literally the version
+the tests validate the port against.
+
+### A note on a phantom
+
+Twice during this work the chooser advanced on its own — once all the way to
+the text siege. There was no click: a capture-phase probe on `click` and
+`keydown` recorded nothing, and three clean loads afterwards were stable. It
+was a stale bundle served mid-rebuild, which has cost time in this project
+before. Worth writing down so the next person does not go hunting for a fault
+in the chooser.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be
