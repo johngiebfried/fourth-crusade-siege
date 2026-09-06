@@ -52,6 +52,29 @@ function buildContactShadow(radius = 0.72, segments = 24) {
 
 const CONTACT_SHADOW = buildContactShadow()
 
+/**
+ * How high a given token's plate floats, and how big it is drawn.
+ *
+ * Plates are about 3.6 units wide for a long name; at twenty-four crusaders
+ * the tokens stand 1.1 units apart. A plate is therefore three times wider
+ * than the gap between the men wearing it, and with the three lift levels this
+ * started with, every third neighbour collided — the line came out unreadable
+ * at exactly the class sizes this is built for.
+ *
+ * Five levels puts five consecutive tokens at five different heights, which is
+ * enough for a plate to clear both its neighbours and their neighbours. Small
+ * groups do not need the full ladder and look better without it.
+ */
+export function plateLayout(slot, count) {
+  const levels = count <= 6 ? 2 : count <= 12 ? 4 : 5
+  return {
+    lift: (slot % levels) * 0.52,
+    // Crowded lines also get slightly smaller plates: past about sixteen the
+    // width is doing more damage than the legibility is buying.
+    height: count > 16 ? 0.52 : 0.6,
+  }
+}
+
 function NamePlate({ name, y, height = 0.6 }) {
   const { texture, aspect } = useMemo(() => nameLabelTexture(name), [name])
   return (
@@ -84,6 +107,7 @@ export function Pawn({
   showName = true,
   travelSpeed = 2.6,
   plateLift = 0,
+  plateHeight = 0.6,
   faction = 'Indeterminate',
   showFlag = true,
   bearer = false,
@@ -232,7 +256,9 @@ export function Pawn({
       </group>
 
       {/* Plate sits outside the scaled group so it keeps a readable world size. */}
-      <group ref={plate}>{showName && <NamePlate name={name} y={2.15 + plateLift} />}</group>
+      <group ref={plate}>
+        {showName && <NamePlate name={name} y={2.15 + plateLift} height={plateHeight} />}
+      </group>
     </group>
   )
 }

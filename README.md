@@ -24,6 +24,18 @@ npm run build
 
 Requires Node. If the machine has none, `brew install node`.
 
+## Rehearsing a screen
+
+Any of these can be opened directly, which saves playing a siege to reach one:
+
+```
+?screen=bribery   ?screen=gate-opening   ?screen=first-to-enter   ?screen=results
+```
+
+They land with no round behind them, so they show empty state — enough to
+check wording and layout before a class. Nothing links to them, and starting
+the siege from the title always begins a real one.
+
 ## Where things are
 
 | Path | What it holds |
@@ -44,7 +56,17 @@ queue of decided outcomes the old modal stepped through. The 3D layer only
 *reveals* those outcomes: clicking a token animates a die onto the face that was
 already rolled. Nothing in `src/three/` or `src/screens/` ever rolls a die.
 
-A stress test over 4,000 randomised rounds checks the invariants — thresholds of
+The strongest guarantee is a **differential test against the original itself**.
+`reference/original-index.html` is the original game, vendored unchanged.
+`scripts/check-oracle.mjs` extracts `addLandAttackRolls` and
+`addSeaAttackRolls` from *both* the original and this port, evaluates them in
+one sandbox sharing a single seeded `rollDice`, and compares the resulting roll
+queues item by item across 6,000 rounds. It currently compares about 52,000
+rolls with no divergence. If it ever fails, the port is wrong and the original
+is right.
+
+That test is what proves the rules; the suites below test the reshaping around
+them. A stress test over 4,000 randomised rounds checks the invariants — thresholds of
 5, then 6, then `max(3, 6 − survivors)`; each stage's cohort equal to the
 previous stage's successes; captains never rolling to board; ships never over
 capacity; sunk ships never boarding:

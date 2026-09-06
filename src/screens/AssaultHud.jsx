@@ -62,6 +62,10 @@ const stripMarker = (message) =>
   message
     .replace(/^[✓✗]\s*/, '')
     .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '')
+    // The exclamation mark in this hand is a near-vertical stroke that reads
+    // as an l or an I: "Crusade!" comes out "Crusadel". The emphasis is
+    // carried by the rubric colour anyway.
+    .replace(/!+/g, '')
     .trim()
 
 /**

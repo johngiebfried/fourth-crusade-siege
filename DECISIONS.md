@@ -1151,6 +1151,98 @@ Left as they are, faithful to the code, and recorded so the choice is visible:
 | Final roll | 5+, reduced 1 per additional man, no floor | `max(3, 6 − n)` |
 | Round-one penalty | attackers who fail lose 1 fama | those who sit out lose 1 fama |
 
+## Revision: the fix list, worked through
+
+### The differential test against the original
+
+The most valuable thing in this pass. Every suite here tested *my reading* of
+the rules, which is the wrong thing to test — a misreading would be enshrined
+by its own test rather than caught by it. The original file was not in the
+repo, so there was nothing to compare against.
+
+It is now: `reference/original-index.html`, vendored unchanged, and
+`scripts/check-oracle.mjs`. Neither implementation can be monkey-patched from
+outside — `rollDice` is a closure variable in the original and an ESM binding
+in the port — so both function *sources* are extracted as text by brace
+matching and evaluated in one sandbox that supplies a single seeded
+`rollDice`. Same dice into both, then the roll queues are compared field by
+field.
+
+**6,000 rounds, ~52,000 rolls, no divergence.** The test was then mutation
+checked: changing `Math.max(3, ...)` to `Math.max(2, ...)` in the port makes it
+fail on seed 1454 and print the offending pair, which is what proves the test
+can fail at all.
+
+### The author's rulings, recorded
+
+Four divergences between the original code and the printed manual were put to
+the author and settled. All four keep the code's behaviour, so nothing changed
+— but the choices are now deliberate rather than accidental:
+
+- **Ship capacity is 3 passengers**, not the manual's 2.
+- **The final roll keeps its floor** of `max(3, 6 − n)`.
+- **The round-one fama penalty falls on those who sit out**, not on attackers
+  who fail.
+- **Characters the gamebook places inside the city** — Empress Anna, King
+  Lalibela, Domenico of Constantinople, Theodore Branas — are outside it for
+  the purposes of this module, and may attack the walls like anyone else.
+
+### Numerals go back to a serif, having been wrong twice
+
+The textura's numerals were unreadable, so `.tally` used a serif. On the swap
+to MedievalSharp I decided its numerals were clear and put them back in the
+hand. They are not clear: at body size its **6 and 8 are near identical**, so
+"Roll 6+" reads as "Roll 8+" — and the whole game is 5+ against 6+. Its 4 can
+be taken for a 2; I misread one in a screenshot of this interface, which is
+what sent me looking. A misread threshold is a rules dispute in front of a
+class. Numbers are in a serif and will stay there.
+
+The same font's exclamation mark is a near-vertical stroke that reads as an l,
+so "Crusade!" came out "Crusadel". Exclamation marks are stripped at display
+time along with the emoji; the rubric colour was carrying the emphasis anyway.
+
+### Name plates, staggered properly
+
+At twenty-four crusaders the tokens stand about 1.1 units apart and a plate is
+about 3.6 units wide — a plate is three times wider than the gap between the
+men wearing it. Three lift levels meant every third neighbour collided, and the
+line was unreadable at exactly the class sizes this is built for. Five levels
+puts five consecutive tokens at five different heights, which clears both
+neighbours and their neighbours; crowded lines also get slightly smaller
+plates. Not perfect in the densest corner of the camp, but legible.
+
+### The rest
+
+- **The later stages are framed tighter.** Stage one has the whole army and
+  needs the width; by stage two only survivors remain and the frame was still
+  sized for the crowd, so a handful of men stood tiny in a lot of masonry.
+- **The vine border runs down one edge, not two.** Two vines ate eight rems of
+  a page whose whole job is a list of names, and the sack order came out as
+  "Conrad of H…".
+- **The first-to-enter gloss knows which wall he came over.** Unfiltered it
+  handed a man who went up a ladder a fact about undermining.
+- **Pixel ratio is capped at 1.5 and shadow maps step down to 1024** on
+  machines reporting four cores or less, or 4GB or less. The cap is confirmed
+  working: the canvas renders 721×1242 on a dpr-2 display where it would
+  otherwise be 962×1656.
+- **Space or Enter resolves the next token** in both lanes, in the stage's own
+  fama order — for a teacher running this from the back of a room with a
+  clicker. Deliberately not a way to choose *who*: a shortcut that silently
+  picked the wrong student would be worse than none.
+- **`?screen=` jumps to a screen for rehearsal**, documented in the README.
+- **Round two is later in the day** — lower, redder sun, flatter light, a
+  dustier sky and two more fires standing over the city. The two rounds looked
+  identical, which undercut the manual's own framing that a second assault is
+  the army's last chance.
+
+### Not done, and why
+
+**Bundle parse cost on the target machine.** The browser pane reports the page
+as `hidden`, which throttles both `requestAnimationFrame` and `setInterval`, so
+framerate is not measurable from this harness at all. The bundle is 1.2MB raw
+and 328KB gzipped, essentially all three.js. This still needs half an hour on
+the actual classroom laptop, and nothing here substitutes for that.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

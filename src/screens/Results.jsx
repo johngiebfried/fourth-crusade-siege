@@ -68,17 +68,19 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
                 {sackOrder.map((entry) => {
                   const status = STATUS[entry.status] ?? STATUS.ready
                   return (
-                    <li key={entry.position} className="flex items-center gap-4 px-4 py-2.5">
+                    <li key={entry.position} className="flex items-center gap-3 px-3 py-2.5">
                       <span className="tally w-9 shrink-0 text-right text-xl font-bold text-red-900">
                         {entry.position}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-lg font-medium text-stone-900">
+                        <span className="block text-lg font-medium leading-snug text-stone-900">
                           {entry.name}
                         </span>
                         <span className="text-sm text-stone-600">{entry.faction}</span>
                       </span>
-                      <span className={`shrink-0 text-sm ${status.tone}`}>{status.label}</span>
+                      <span className={`shrink-0 text-right text-sm leading-tight ${status.tone}`}>
+                        {status.label}
+                      </span>
                     </li>
                   )
                 })}

@@ -21,10 +21,10 @@ import {
   cameraFor,
   ladderFor,
 } from '../three/lane.js'
-import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
+import { Pawn, DissolveBurst, plateLayout } from '../three/geometry/Pawn.jsx'
 import { SiegeLadder } from '../three/geometry/SiegeLadder.jsx'
 import { Die } from '../three/geometry/Die.jsx'
-import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
+import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
 
 /* ---------------------------------------------------------------- timing */
@@ -46,6 +46,33 @@ const LEVELS = {
 }
 
 /** Where a pawn stands, given how far it has got and its slot in the line. */
+/**
+ * Resolve the next unresolved token from the keyboard.
+ *
+ * A teacher runs this while talking to a room, often from the back of it with
+ * a clicker rather than a mouse. Space or Enter takes the next man in fama
+ * order — which is the order the manual has them attack in anyway — so the
+ * whole stage can be played without ever finding a two-centimetre figure on a
+ * projected image.
+ *
+ * Deliberately not a way to choose *who*: picking a specific crusader is what
+ * the mouse is for, and a keyboard shortcut that silently picked the wrong
+ * student would be worse than no shortcut.
+ */
+export function useResolveNextKey(nextId, resolve, enabled) {
+  useEffect(() => {
+    if (!enabled) return undefined
+    const onKey = (e) => {
+      if (e.key !== ' ' && e.key !== 'Enter') return
+      if (e.target instanceof HTMLElement && /input|textarea|button/i.test(e.target.tagName)) return
+      e.preventDefault()
+      if (nextId !== null && nextId !== undefined) resolve(nextId)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [nextId, resolve, enabled])
+}
+
 function positionFor(level, index, count) {
   // Spread along the wall line. Looking down the line, this reads as real
   // separation across the frame rather than a stack of overlapping tokens.
@@ -147,16 +174,28 @@ function CameraRig({ focus }) {
   )
 }
 
-function Lighting() {
+/**
+ * Round two is later in the day, and over ground the army has already been
+ * thrown off once.
+ *
+ * The two rounds looked identical, which quietly undercut the thing the phase
+ * is for: the manual has students told that if the first attack fails they
+ * *must* attack again "or risk the total failure of the crusade", and the
+ * screen should carry some of that. The sun is lower and redder, the shadows
+ * longer, the light flatter.
+ */
+function Lighting({ round = 1 }) {
+  const late = round > 1
   return (
     <>
-      {/* A low April sun coming over the Golden Horn. */}
+      {/* A low April sun coming over the Golden Horn; lower still on a second
+          assault, when the day has worn on. */}
       <directionalLight
-        position={[-34, 30, 16]}
-        intensity={1.65}
-        color="#fff2d8"
+        position={late ? [-40, 17, 22] : [-34, 30, 16]}
+        intensity={late ? 1.35 : 1.65}
+        color={late ? '#ffd9a8' : '#fff2d8'}
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowMapSize(), shadowMapSize()]}
         shadow-camera-left={-46}
         shadow-camera-right={46}
         shadow-camera-top={46}
@@ -164,21 +203,21 @@ function Lighting() {
         shadow-camera-near={1}
         shadow-camera-far={160}
       />
-      <hemisphereLight args={['#c4d6ea', '#7b7256', 0.68]} />
-      <ambientLight intensity={0.22} />
+      <hemisphereLight args={late ? ['#b9bcc6', '#6d6448', 0.55] : ['#c4d6ea', '#7b7256', 0.68]} />
+      <ambientLight intensity={late ? 0.3 : 0.22} />
       <fog attach="fog" args={['#c9c1ac', 60, 170]} />
-      <color attach="background" args={['#b9c6d4']} />
+      <color attach="background" args={[round > 1 ? '#c6bcae' : '#b9c6d4']} />
     </>
   )
 }
 
 /* ------------------------------------------------------------------ scene */
 
-function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }) {
+function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, round, onPawnClick }) {
   return (
     <>
       <CameraRig focus={focus} />
-      <Lighting />
+      <Lighting round={round} />
       <LandTerrain />
 
       {pawns.map((p) => (
@@ -188,7 +227,8 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }
           position={p.position}
           clickable={p.clickable}
           dissolving={p.dissolving}
-          plateLift={p.plateLift}
+          plateLift={p.lift}
+          plateHeight={p.height}
           faction={p.faction}
           bearer={p.bearer}
           onClick={() => onPawnClick(p.id)}
@@ -224,7 +264,7 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, onPawnClick }
 
 /* ------------------------------------------------------------- the screen */
 
-export default function LandAssault({ stages, onComplete }) {
+export default function LandAssault({ stages, round = 1, onComplete }) {
   const [stageIndex, setStageIndex] = useState(0)
   const [levels, setLevels] = useState({}) // playerId -> LEVELS.*
   const [resolvedIds, setResolvedIds] = useState(() => new Set())
@@ -300,12 +340,13 @@ export default function LandAssault({ stages, onComplete }) {
           faction: whoById.get(id)?.faction ?? 'Indeterminate',
           bearer: bannerBearers.has(id),
           position: positionFor(level, slots.get(id) ?? 0, count),
-          plateLift: ((slots.get(id) ?? 0) % 3) * 0.55,
+          ...plateLayout(slots.get(id) ?? 0, count),
           clickable: !busy && !resolvedIds.has(id),
           dissolving: dissolvingIds.has(id),
         }
       })
   }, [stageIds, goneIds, levels, resolvedIds, dissolvingIds, slots, busy, whoById, bannerBearers])
+
 
   const advanceStage = useCallback(() => {
     if (stageIndex + 1 >= stages.length) {
@@ -316,6 +357,12 @@ export default function LandAssault({ stages, onComplete }) {
     setResolvedIds(new Set())
     setStageIndex(stageIndex + 1)
   }, [stageIndex, stages.length, onComplete])
+
+  // The next man in the stage's own order, which is fama order.
+  const nextUnresolved = useMemo(
+    () => stage?.entries.find((e) => !resolvedIds.has(e.playerId))?.playerId ?? null,
+    [stage, resolvedIds]
+  )
 
   const handlePawnClick = useCallback(
     (playerId) => {
@@ -396,6 +443,8 @@ export default function LandAssault({ stages, onComplete }) {
     [stage, busy, resolvedIds, levels, slots, stageIds, advanceStage]
   )
 
+  useResolveNextKey(nextUnresolved, handlePawnClick, !busy && Boolean(stage))
+
   // Retire spent bursts so the particle list cannot grow without bound.
   useEffect(() => {
     if (bursts.length === 0) return
@@ -408,6 +457,7 @@ export default function LandAssault({ stages, onComplete }) {
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-stone-800">
       <Canvas
+        dpr={DPR}
         shadows
         gl={RENDERER_PROPS}
         onCreated={configureRenderer}
@@ -418,6 +468,7 @@ export default function LandAssault({ stages, onComplete }) {
           activeRoll={activeRoll}
           bursts={bursts}
           focus={stage?.key}
+          round={round}
           onPawnClick={handlePawnClick}
         />
       </Canvas>

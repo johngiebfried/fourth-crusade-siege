@@ -63,10 +63,20 @@ export const LAND_OFFSET = [-0.62, 0.5, 0.6]
  * must be in frame. Height rather than width, because the wall chain stacks up
  * the screen; solving from width crops it on the wide displays a projector is.
  */
+/**
+ * `height` is the vertical extent the frame must contain; the camera distance
+ * is solved from it.
+ *
+ * The later stages are pulled in. Stage one has the whole army on the ground
+ * and needs the width, but by stage two only the survivors are left and the
+ * frame was still sized for the crowd — so a handful of men stood tiny in the
+ * middle of a lot of masonry and sky, at exactly the point where the class is
+ * watching individuals rather than an army.
+ */
 export const LAND_FRAMINGS = {
   'first-wall': { at: [-10.5, 3.0, 0], height: 29 },
-  'second-wall': { at: [-3.5, 4.6, 0], height: 31 },
-  'city-gates': { at: [5.0, 4.4, 0], height: 33 },
+  'second-wall': { at: [-3.0, 4.4, 0], height: 25 },
+  'city-gates': { at: [5.0, 4.2, 0], height: 26 },
   wide: { at: [-4, 4.0, 0], height: 42 },
 }
 

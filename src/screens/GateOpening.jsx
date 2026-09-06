@@ -10,7 +10,7 @@ import * as THREE from 'three'
 import { LandTerrain } from '../three/LandScene.jsx'
 import { LANE, GATE_CAMERA } from '../three/lane.js'
 import { Pawn } from '../three/geometry/Pawn.jsx'
-import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
+import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
 
@@ -109,6 +109,7 @@ export default function GateOpening({ onDone }) {
   return (
     <div className="relative h-screen w-screen overflow-hidden" style={{ background: '#1c1512' }}>
       <Canvas
+        dpr={DPR}
         shadows
         gl={RENDERER_PROPS}
         onCreated={configureRenderer}
@@ -119,7 +120,7 @@ export default function GateOpening({ onDone }) {
           intensity={1.55}
           color="#ffe9c4"
           castShadow
-          shadow-mapSize={[2048, 2048]}
+          shadow-mapSize={[shadowMapSize(), shadowMapSize()]}
           shadow-camera-left={-30}
           shadow-camera-right={30}
           shadow-camera-top={30}

@@ -18,7 +18,7 @@ import { rng } from '../three/geometry/cityBuilder.js'
 import { buildSiegeCamp } from '../three/geometry/siegeCamp.js'
 import { RippleWater } from '../three/geometry/Field.jsx'
 import { Pawn } from '../three/geometry/Pawn.jsx'
-import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
+import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 
 /** World units the shot must span, so the whole peninsula stays in frame. */
 const CITY_SPAN = 74
@@ -60,7 +60,7 @@ function CityLighting() {
         intensity={1.5}
         color="#fff3dc"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowMapSize(), shadowMapSize()]}
         shadow-camera-left={-80}
         shadow-camera-right={80}
         shadow-camera-top={80}
@@ -80,7 +80,7 @@ function CityLighting() {
 export function CityBackdrop() {
   return (
     <div className="absolute inset-0">
-      <Canvas shadows gl={RENDERER_PROPS} onCreated={configureRenderer}>
+      <Canvas shadows dpr={DPR} gl={RENDERER_PROPS} onCreated={configureRenderer}>
         <IsoCamera />
         <CityLighting />
         <CityPanorama />

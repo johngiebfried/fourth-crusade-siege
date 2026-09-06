@@ -97,18 +97,20 @@ body {
 
 /*
  * `.tally` marks the numbers the game is actually played on — dice results,
- * thresholds, fama counts — which have to be read correctly at a glance from
- * across a room, because a misread roll is a rules dispute.
+ * thresholds, fama counts, positions in the sack order — and sets them in a
+ * plain face.
  *
- * Under the textura these had to revert to a serif outright: its numerals are
- * quirky by design and several are unrecognisable. This hand's numerals are
- * clear, so they stay in it and are merely set a touch heavier. The rule is
- * kept because the *reason* for it has not gone away, and the next font swap
- * may need it again.
+ * This was tried the other way, on the reasoning that this hand's numerals
+ * were clear enough. They are not. At body size its 6 and 8 are near
+ * identical, so "Roll 6+" reads as "Roll 8+" — and the whole game is 5+
+ * against 6+. Its 4 can be taken for a 2; I misread one in a screenshot of
+ * this very interface. A misread threshold is a rules dispute in front of a
+ * class, which is a steep price for consistent lettering on a number.
  */
 .tally {
+  font-family: 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 /* Typed input stays in a plain face: it is data entry, not text. */

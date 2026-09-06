@@ -34,12 +34,13 @@ function RunRound({ players, onRun }) {
 }
 
 export default function App() {
-  const [gameState, setGameState] = useState('opening')
+  const [gameState, setGameState] = useState(rehearsalScreen() ?? 'opening')
   const [players, setPlayers] = useState([])
   const [roster, setRoster] = useState(null)
   const [currentRound, setCurrentRound] = useState(1)
   const [cityFallen, setCityFallen] = useState(false)
   const [firstToEnter, setFirstToEnter] = useState(null)
+  const [pendingEntrantLane, setPendingEntrantLane] = useState('land')
   const [sackOrder, setSackOrder] = useState([])
   const [finalSummary, setFinalSummary] = useState([])
 
@@ -64,7 +65,30 @@ export default function App() {
     setGameState('execute')
   }, [])
 
-  /* ------------------------------------------------- round resolution */
+  /**
+ * A rehearsal jump: `?screen=bribery`, `?screen=results`, and so on.
+ *
+ * For an instructor setting up before a class, and for anyone working on a
+ * screen that sits four minutes of dice behind the title. It has to be typed
+ * into the address bar deliberately — no link reaches it — and the screens it
+ * lands on have no round behind them, so they show empty state. It cannot be
+ * used to skip a real siege: `Begin the Siege` starts a fresh one either way.
+ */
+const REHEARSAL_SCREENS = new Set([
+  'opening',
+  'bribery',
+  'gate-opening',
+  'first-to-enter',
+  'results',
+])
+
+function rehearsalScreen() {
+  if (typeof location === 'undefined') return null
+  const want = new URLSearchParams(location.search).get('screen')
+  return want && REHEARSAL_SCREENS.has(want) ? want : null
+}
+
+/* ------------------------------------------------- round resolution */
 
 /**
  * The final stage of each lane, by the label `rules.js` stamps on its rolls.
@@ -120,6 +144,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
     (queue) => {
       const updatedPlayers = players.map((p) => ({ ...p }))
       let firstName = firstToEnter
+      let firstLane = 'land'
 
       queue.forEach((item) => {
         if (item.type === 'roll' && item.playerId) {
@@ -129,7 +154,10 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
 
           if (item.enteredCity) {
             updatedPlayers[idx].status = 'inside'
-            if (!firstName) firstName = updatedPlayers[idx].name
+            if (!firstName) {
+              firstName = updatedPlayers[idx].name
+              firstLane = item.stage === 'Breaking Through' ? 'sea' : 'land'
+            }
           } else if (item.shipSunk) {
             updatedPlayers[idx].status = 'shipwrecked'
             updatedPlayers[idx].fama = Math.max(0, updatedPlayers[idx].fama - 1)
@@ -153,10 +181,11 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
         calculateSackOrder(updatedPlayers)
         setFinalSummary([
           `${insiders.length} crusader${insiders.length === 1 ? '' : 's'} entered the city`,
-          'Constantinople has fallen to the Fourth Crusade!',
+          'Constantinople has fallen to the Fourth Crusade.',
         ])
         setPlayers(updatedPlayers)
         setPendingEntrant(firstName)
+        setPendingEntrantLane(firstLane)
         setGameState('first-to-enter')
         return
       }
@@ -280,7 +309,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
   const declineBribe = useCallback(() => {
     setFinalSummary([
       'Two attacks have failed and no one would pay.',
-      'The crusade faces disaster!',
+      'The crusade faces disaster.',
     ])
     setGameState('results')
   }, [])
@@ -321,10 +350,17 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
       return <RunRound players={players} onRun={executeAttack} />
 
     case 'land-assault':
-      return <LandAssault stages={landStages} onComplete={nextSequence} />
+      return <LandAssault stages={landStages} round={currentRound} onComplete={nextSequence} />
 
     case 'sea-assault':
-      return <SeaAssault sea={seaAssault} stages={seaStages} onComplete={nextSequence} />
+      return (
+        <SeaAssault
+          sea={seaAssault}
+          stages={seaStages}
+          round={currentRound}
+          onComplete={nextSequence}
+        />
+      )
 
     case 'sea-cancelled':
       return (
@@ -339,7 +375,11 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
 
     case 'first-to-enter':
       return (
-        <FirstToEnter name={pendingEntrant} onContinue={() => setGameState('results')} />
+        <FirstToEnter
+          name={pendingEntrant}
+          lane={pendingEntrantLane}
+          onContinue={() => setGameState('results')}
+        />
       )
 
     case 'bribery':

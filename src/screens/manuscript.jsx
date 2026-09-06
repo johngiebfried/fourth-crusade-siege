@@ -419,10 +419,12 @@ export function ManuscriptBordered({
         wide ? 'max-w-3xl' : 'max-w-2xl'
       } ${className}`}
     >
+      {/* One edge, not two. Two vines ate eight rems of a page whose whole job
+          is a list of names, and the sack order came out as "Conrad of H…". A
+          border is decoration; the list is the handoff to the next session. */}
       <VineBorder side="left" />
-      <VineBorder side="right" />
 
-      <div className="relative px-16 py-10">
+      <div className="relative py-10 pl-14 pr-8">
         {eyebrow && (
           <div className="rubric mb-3 text-center">
             {eyebrow}

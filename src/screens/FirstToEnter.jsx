@@ -11,10 +11,12 @@ import { PrimaryButton } from './ui.jsx'
 import { ManuscriptLeaf, Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
 
-export default function FirstToEnter({ name, onContinue }) {
+export default function FirstToEnter({ name, lane = 'land', onContinue }) {
   // The honour of being first is the thing this screen is about, and the
   // siegecraft set is where that is explained.
-  const gloss = useMemo(() => pickLore('siegecraft'), [])
+  // Keyed to the lane he actually came over. Unfiltered, this screen handed a
+  // man who went up a ladder a fact about undermining.
+  const gloss = useMemo(() => pickLore('siegecraft', { lane }), [lane])
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#1c1512]">

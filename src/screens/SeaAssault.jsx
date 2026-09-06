@@ -35,12 +35,13 @@ import {
 } from '../three/lane.js'
 import { Ship, SplashBurst } from '../three/geometry/Ship.jsx'
 import { SinkRing, Smoke } from '../three/geometry/Field.jsx'
-import { Pawn, DissolveBurst } from '../three/geometry/Pawn.jsx'
+import { Pawn, DissolveBurst, plateLayout } from '../three/geometry/Pawn.jsx'
 import { Die } from '../three/geometry/Die.jsx'
 import { PALETTE } from '../three/palette.js'
 import { factionFlagTexture } from '../three/factions.js'
-import { RENDERER_PROPS, configureRenderer } from '../three/renderer.js'
+import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
+import { useResolveNextKey } from './LandAssault.jsx'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
 
@@ -221,7 +222,7 @@ function Lighting() {
         intensity={1.6}
         color="#fff1d6"
         castShadow
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={[shadowMapSize(), shadowMapSize()]}
         shadow-camera-left={-52}
         shadow-camera-right={52}
         shadow-camera-top={52}
@@ -330,7 +331,8 @@ function SeaScene({
           clickable={c.clickable}
           dissolving={c.dissolving}
           showName={c.showName !== false}
-          plateLift={c.plateLift}
+          plateLift={c.lift}
+          plateHeight={c.height}
           faction={c.faction}
           bearer={c.bearer}
           travelSpeed={c.onBridge ? 1.5 : SHIP_DAMP}
@@ -554,7 +556,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
           dissolving: dissolvingIds.has(r.id),
           onBridge: level === 'bridge' || level === 'wall',
           showName: !going,
-          plateLift: (Math.max(0, overall.indexOf(r.id)) % 4) * 0.62,
+          ...plateLayout(Math.max(0, overall.indexOf(r.id)), overall.length),
         }
       })
   }, [
@@ -708,6 +710,19 @@ export default function SeaAssault({ sea, stages, onComplete }) {
     [busy, stage, resolvedIds, crewViews, finishIfStageDone]
   )
 
+  // Space or Enter takes the next in the stage's own order. During the
+  // piloting stage that is the next ship; afterwards, the next man.
+  const nextUnresolved = useMemo(() => {
+    const id = stageIds.find((x) => !resolvedIds.has(x))
+    return id ?? null
+  }, [stageIds, resolvedIds])
+
+  useResolveNextKey(
+    nextUnresolved,
+    stage?.key === 'piloting' ? resolvePiloting : resolveCrew,
+    !busy && sailedIn === 'done' && Boolean(stage)
+  )
+
   // Retire spent particle effects.
   useEffect(() => {
     if (bursts.length === 0) return
@@ -735,7 +750,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden" style={{ background: '#1c1512' }}>
-      <Canvas shadows gl={RENDERER_PROPS} onCreated={configureRenderer}>
+      <Canvas shadows dpr={DPR} gl={RENDERER_PROPS} onCreated={configureRenderer}>
         <SeaScene
           ships={shipViews}
           crew={crewViews}
