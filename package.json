@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check": "node scripts/check-oracle.mjs && node scripts/check-rules.mjs && node scripts/check-scene.mjs && node scripts/check-engines.mjs && node scripts/check-lore.mjs"
+    "check": "node scripts/check-oracle.mjs && node scripts/check-rules.mjs && node scripts/check-rounds.mjs && node scripts/check-scene.mjs && node scripts/check-engines.mjs && node scripts/check-lore.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

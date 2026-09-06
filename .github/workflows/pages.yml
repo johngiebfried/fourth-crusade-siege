@@ -1,0 +1,65 @@
+# Build the siege and publish it to GitHub Pages.
+#
+# The point of this file is that a co-author gets a link and nothing else to
+# do: no Node, no terminal, no install. Every push to `main` rebuilds and
+# republishes, so "try it again now" costs a commit rather than an email with
+# a zip attached.
+#
+# The checks run before the build, so a deploy cannot go out with the dice
+# logic diverging from the original game or the city falling out of frame.
+
+name: Publish to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # So a deploy can also be re-run by hand from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push supersedes one still running.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # The five suites. A red check here means no deploy, which is the point.
+      - run: npm run check
+
+      - run: npm run build
+        env:
+          # A project site is served from /<repo>/, not from the domain root,
+          # so every asset URL needs that prefix or the page loads a blank
+          # screen with four 404s behind it. Taken from the repository name so
+          # it stays right if the repo is ever renamed.
+          VITE_BASE: /${{ github.event.repository.name }}/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -5,6 +5,31 @@ zero-asset procedural 3D. No image files, no model files, nothing fetched over
 the network: every wall, ship, figure and label is generated at runtime from
 primitives, vertex colours and canvas-drawn textures.
 
+## Sharing it — the classroom link
+
+The siege is published to GitHub Pages by `.github/workflows/pages.yml`. Every
+push to `main` runs the five check suites, and if they pass, rebuilds and
+republishes. A reader needs nothing but the link: no Node, no terminal, no
+install.
+
+Setting it up once:
+
+1. Create an empty repository on GitHub. Do not add a README, `.gitignore` or
+   licence — this repository already has its own history.
+2. Point this checkout at it and push:
+
+```bash
+git remote add origin https://github.com/YOUR-NAME/YOUR-REPO.git && git push -u origin main
+```
+
+3. In the repository, open **Settings → Pages** and set **Source** to
+   **GitHub Actions**. Nothing else needs configuring — the workflow reads the
+   repository name and builds the asset paths to match, so renaming the repo
+   later does not break the link.
+
+The link is then `https://YOUR-NAME.github.io/YOUR-REPO/`, and the Actions tab
+shows each deploy. The first one takes a couple of minutes.
+
 ## Running it
 
 ```bash
@@ -22,7 +47,21 @@ output — it needs no server of its own:
 npm run build
 ```
 
-Requires Node. If the machine has none, `brew install node`.
+Requires Node. If the machine has none, `brew install node`. This is for
+working on the game — anyone who only wants to *play* it should be sent the
+Pages link instead.
+
+## When something goes wrong
+
+Every screen sits inside an error boundary, so a fault shows a page saying so
+rather than a blank white screen. That page carries the error and the build it
+happened on, and a screenshot of it is a complete bug report. It also catches
+faults on timers and in promises, which is where most of this game's work
+happens and which a React error boundary alone would miss.
+
+A machine with no WebGL at all — hardware acceleration switched off, or a
+remote desktop — gets its own page saying so, because that is a setting on the
+machine rather than a fault in the game.
 
 ## Rehearsing a screen
 

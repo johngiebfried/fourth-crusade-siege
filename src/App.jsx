@@ -9,7 +9,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { buildLandAssault, buildSeaAssault, buildSeaStages } from './game/stages.js'
+import { buildLandAssault, buildSeaAssault, buildSeaStages, carryRound } from './game/stages.js'
 import Opening from './screens/Opening.jsx'
 import LandAssault from './screens/LandAssault.jsx'
 import SeaAssault from './screens/SeaAssault.jsx'
@@ -191,13 +191,21 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
       }
 
       if (currentRound < 2) {
-        const penalizedPlayers = updatedPlayers.map((p) => {
-          if (p.attackChoice === 'sit_out') {
-            return { ...p, fama: Math.max(0, p.fama - 1), attackChoice: null }
-          }
-          return { ...p, attackChoice: null }
-        })
+        const penalizedPlayers = carryRound(updatedPlayers)
         setPlayers(penalizedPlayers)
+        /*
+         * The roster has to carry round one forward, not just the boon.
+         *
+         * Round two goes back through `Opening`, which rebuilds the player
+         * list from whatever roster it is handed. That roster was last set
+         * before round one rolled a single die, so everything round one
+         * decided — who reached the walls, who was shipwrecked, the fama lost
+         * for sitting out or for losing a ship — was thrown away the moment
+         * round two began. Every crusader arrived at the sack order marked
+         * "Outside the walls", which is the one thing the sack order exists to
+         * distinguish, and the two fama penalties were quietly refunded.
+         */
+        setRoster(penalizedPlayers)
         setCurrentRound((r) => r + 1)
         setGameState('opening')
       } else {

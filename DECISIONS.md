@@ -2079,6 +2079,68 @@ derived independently; a check that calls the function under test only ever
 proves that function agrees with itself, which is how two of the engine checks
 once came to pass on mutants.
 
+## Before the beta
+
+### A playthrough found what none of the suites could
+
+Five suites, several thousand assertions, and all of them green — while every
+crusader in the game arrived at the sack order marked "Outside the walls".
+
+A siege runs up to two assaults, and round two goes back through the setup
+screens, which rebuild the player list from the roster. That roster was last
+written before round one had rolled a single die. So the round boundary threw
+away everything round one decided: `status` and `wallRoll` were blanked, the
+shipwrecked were no longer shipwrecked, and the fama lost for sitting out or
+for losing a ship was quietly refunded.
+
+The sack order is the handoff to the rest of the class game, and the walls
+credit is a feature that was specifically asked for. It had never once worked
+past round one.
+
+Nothing caught it because every suite tested a screen or a die in isolation and
+the fault was in the seam between two rounds. It took playing a whole siege to
+the end and reading the final list — which is an argument for playthroughs, not
+against checks, and the answer was both: the seam is now two pure functions,
+`carryRound` and `enlist` in `game/stages.js`, and `check-rounds.mjs` asserts
+what each is for. Restoring the original blanking fails it.
+
+The split those two functions name is the thing that was not obvious from
+either call site:
+
+- **Per-round**: where a man is attacking, which ship he is on, how far up the
+  stages he climbed *this* round. Reset.
+- **The siege's memory**: fama, and how far he ever got. Kept.
+
+One ruling is still open. A man shipwrecked in round one now keeps that status
+into round two, so if he then reaches the sea wall he is still ranked last.
+Reaching the walls arguably ought to win — being shipwrecked is a past
+misfortune already paid for in fama. Left as it is, because it is a reading of
+the manual and not mine to make.
+
+### The last page before a white screen
+
+A React error boundary catches render errors and nothing else. This game does
+almost all of its work on timers — the tumble, the hold, the resolve, the
+mangonel's whole cycle — so a boundary alone would have been watching the one
+place a fault was least likely to appear. `ErrorBoundary` listens for `error`
+and `unhandledrejection` on the window as well.
+
+It also checks for WebGL before rendering anything, because a machine that
+cannot draw is not an exception, it is a plausible laptop.
+
+What it shows is a page of the same book rather than a stack trace, carrying
+the message and the build id — a screenshot of it is a complete bug report from
+a reader who has no console to open.
+
+### Found in the playthrough and left alone
+
+Reported rather than fixed, because they are art and copy rather than defects:
+the gate close-up shows the opened gate as a flat black void with no passage
+behind it, and the chronicle passage on that screen is about ladders on ships;
+the count screen says "Step 1 of 3" in a round that has four steps; the split
+screen still carries two emoji, which the ink icons were meant to end; and the
+space bar resolves the next attempt but only the mouse is mentioned on screen.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

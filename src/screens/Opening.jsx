@@ -20,6 +20,7 @@ import { canCaptain } from '../game/rules.js'
 import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
 import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton, InkIcon } from './ui.jsx'
 import { FACTIONS } from '../three/factions.js'
+import { enlist } from '../game/stages.js'
 
 /** The five factions, in the order the boon step lists them. */
 const FACTION_ORDER = Object.keys(FACTIONS)
@@ -186,14 +187,11 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
         ...char,
         bonus: boonFaction !== 'none' && char.faction === boonFaction ? 1 : 0,
       }))
-      const players = withBoon.map((char) => ({
-        ...char,
-        attackChoice: refuserIds.includes(char.id) ? 'sit_out' : assign(char),
-        shipId: null,
-        stage: 0,
-        status: 'ready',
-        rollHistory: [],
-      }))
+      // `enlist` decides what a new round keeps and what it clears. See
+      // `game/stages.js` — getting that split wrong is what lost round one.
+      const players = withBoon.map((char) =>
+        enlist(char, refuserIds.includes(char.id) ? 'sit_out' : assign(char))
+      )
       onComplete(players, withBoon)
     },
     [roster, refuserIds, boonFaction, onComplete]
