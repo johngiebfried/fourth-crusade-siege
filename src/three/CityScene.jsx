@@ -26,9 +26,17 @@ import {
   buildGalataTown,
   buildLandmass,
   buildTownscape,
+  LANDMARK_KEEP_OFF,
   groundHeight,
+  insidePeninsula,
   rng,
 } from './geometry/cityBuilder.js'
+import {
+  buildHagiaSophia,
+  buildHippodrome,
+  buildGreatPalace,
+  buildCypresses,
+} from './geometry/landmarks.js'
 
 /* ------------------------------------------------------------------ water */
 
@@ -206,68 +214,46 @@ function SeaWalls() {
  * domed rather than spired. No minarets — those arrive with the Ottoman
  * conquest in 1453, two and a half centuries after this scene.
  */
+/**
+ * Cypresses through the city. Placed on the peninsula only, and kept clear of
+ * the four landmarks so none grows out of the Hagia Sophia's dome.
+ */
+function Cypresses({ count = 260, seed = 61 }) {
+  const geometry = useMemo(() => {
+    const rand = rng(seed)
+    const keepOff = LANDMARK_KEEP_OFF
+    const spots = []
+    for (let i = 0; i < count * 8 && spots.length < count; i++) {
+      const x = -31 + rand() * 68
+      const z = -22 + rand() * 48
+      if (!insidePeninsula(x, z, 1.6)) continue
+      if (keepOff.some(([cx, cz, r]) => Math.hypot(x - cx, z - cz) < r)) continue
+      spots.push({
+        x,
+        z,
+        y: groundHeight(x, z),
+        h: 1.1 + rand() * 0.9,
+        tone: 0.86 + rand() * 0.3,
+      })
+    }
+    return buildCypresses(spots)
+  }, [count, seed])
+
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
 function HagiaSophia({ position = [23, -1] }) {
   const [px, pz] = position
   const y = groundHeight(px, pz)
-  const windows = useMemo(() => {
-    const out = []
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2
-      out.push([Math.cos(a) * 2.34, Math.sin(a) * 2.34, a])
-    }
-    return out
-  }, [])
-
+  const geometry = useMemo(() => buildHagiaSophia(), [])
   return (
-    <group position={[px, y, pz]}>
-      <mesh position={[0, 1.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[6.4, 3.0, 5.6]} />
-        <meshLambertMaterial color="#e6dcc4" flatShading />
-      </mesh>
-      <mesh position={[0, 0.7, 0]} castShadow>
-        <boxGeometry args={[8.2, 1.4, 7.4]} />
-        <meshLambertMaterial color="#dcd1b6" flatShading />
-      </mesh>
-
-      {[-2.6, 2.6].map((dx, i) => (
-        <mesh key={i} position={[dx, 3.0, 0]} scale={[1, 0.62, 1]} castShadow>
-          <sphereGeometry args={[2.0, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />
-          <meshLambertMaterial color={PALETTE.hagiaDome} flatShading />
-        </mesh>
-      ))}
-
-      <mesh position={[0, 3.6, 0]} castShadow>
-        <cylinderGeometry args={[2.3, 2.4, 1.2, 24]} />
-        <meshLambertMaterial color="#e8dfc8" flatShading />
-      </mesh>
-      {windows.map(([wx, wz, a], i) => (
-        <mesh key={i} position={[wx, 3.7, wz]} rotation={[0, -a, 0]}>
-          <boxGeometry args={[0.1, 0.6, 0.22]} />
-          <meshBasicMaterial color="#4a4433" />
-        </mesh>
-      ))}
-
-      <mesh position={[0, 4.2, 0]} scale={[1, 0.52, 1]} castShadow>
-        <sphereGeometry args={[2.62, 24, 14, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshLambertMaterial color={PALETTE.hagiaDome} flatShading />
-      </mesh>
-      <mesh position={[0, 5.6, 0]}>
-        <sphereGeometry args={[0.16, 8, 6]} />
-        <meshLambertMaterial color={PALETTE.imperialGold} />
-      </mesh>
-
-      {[
-        [-3.5, -3.2],
-        [3.5, -3.2],
-        [-3.5, 3.2],
-        [3.5, 3.2],
-      ].map(([bx, bz], i) => (
-        <mesh key={i} position={[bx, 1.2, bz]} castShadow>
-          <boxGeometry args={[1.0, 2.4, 1.0]} />
-          <meshLambertMaterial color="#d8ccb0" flatShading />
-        </mesh>
-      ))}
-    </group>
+    <mesh geometry={geometry} position={[px, y, pz]} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 
@@ -275,53 +261,17 @@ function HagiaSophia({ position = [23, -1] }) {
 function Hippodrome({ position = [8, 5] }) {
   const [px, pz] = position
   const y = groundHeight(px, pz)
+  const geometry = useMemo(() => buildHippodrome(), [])
   return (
-    <group position={[px, y, pz]} rotation={[0, 0.42, 0]}>
-      <mesh position={[0, 0.45, 0]} receiveShadow>
-        <boxGeometry args={[9.5, 0.9, 4.0]} />
-        <meshLambertMaterial color="#cfc3a6" flatShading />
-      </mesh>
-      <mesh position={[-4.75, 0.45, 0]}>
-        <cylinderGeometry args={[2.0, 2.0, 0.9, 16, 1, false, Math.PI / 2, Math.PI]} />
-        <meshLambertMaterial color="#cfc3a6" flatShading />
-      </mesh>
-      <mesh position={[0, 0.92, 0]}>
-        <boxGeometry args={[8.4, 0.1, 2.9]} />
-        <meshLambertMaterial color="#b3a684" flatShading />
-      </mesh>
-      <mesh position={[0, 1.05, 0]}>
-        <boxGeometry args={[6.4, 0.2, 0.5]} />
-        <meshLambertMaterial color="#c2b592" flatShading />
-      </mesh>
-
-      {/* Obelisk of Theodosius: Egyptian granite, tapered, pyramidion on top */}
-      <group position={[1.6, 1.15, 0]}>
-        <mesh position={[0, 0.2, 0]}>
-          <boxGeometry args={[0.62, 0.4, 0.62]} />
-          <meshLambertMaterial color="#b9ac8b" flatShading />
-        </mesh>
-        <mesh position={[0, 1.5, 0]} castShadow>
-          <cylinderGeometry args={[0.16, 0.26, 2.2, 4]} />
-          <meshLambertMaterial color="#a4785f" flatShading />
-        </mesh>
-        <mesh position={[0, 2.75, 0]}>
-          <coneGeometry args={[0.2, 0.32, 4]} />
-          <meshLambertMaterial color="#a4785f" flatShading />
-        </mesh>
-      </group>
-
-      {/* The Walled Obelisk: rougher masonry, a little shorter */}
-      <mesh position={[-2.0, 2.35, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.34, 2.4, 4]} />
-        <meshLambertMaterial color="#c8bda0" flatShading />
-      </mesh>
-
-      {/* Serpent Column, between them */}
-      <mesh position={[-0.2, 1.6, 0]}>
-        <cylinderGeometry args={[0.1, 0.13, 0.9, 6]} />
-        <meshLambertMaterial color="#6f7d63" flatShading />
-      </mesh>
-    </group>
+    <mesh
+      geometry={geometry}
+      position={[px, y, pz]}
+      rotation={[0, 0.42, 0]}
+      castShadow
+      receiveShadow
+    >
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 
@@ -329,21 +279,11 @@ function Hippodrome({ position = [8, 5] }) {
 function GreatPalace({ position = [17, 4.5] }) {
   const [px, pz] = position
   const y = groundHeight(px, pz)
+  const geometry = useMemo(() => buildGreatPalace(), [])
   return (
-    <group position={[px, y, pz]}>
-      <mesh position={[0, 0.8, 0]} castShadow receiveShadow>
-        <boxGeometry args={[4.6, 1.6, 3.2]} />
-        <meshLambertMaterial color="#e0d5ba" flatShading />
-      </mesh>
-      <mesh position={[1.2, 1.9, 0]} castShadow>
-        <boxGeometry args={[2.0, 1.0, 2.2]} />
-        <meshLambertMaterial color="#e6dcc4" flatShading />
-      </mesh>
-      <mesh position={[1.2, 2.6, 0]} scale={[1, 0.55, 1]}>
-        <sphereGeometry args={[1.1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshLambertMaterial color={PALETTE.domeGold} flatShading />
-      </mesh>
-    </group>
+    <mesh geometry={geometry} position={[px, y, pz]} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 
@@ -550,7 +490,7 @@ function FleetInTheHorn() {
 /* ------------------------------------------------------------------ scene */
 
 export function CityPanorama() {
-  const town = useMemo(() => buildTownscape({ seed: 7, houses: 520, churches: 60 }), [])
+  const town = useMemo(() => buildTownscape({ seed: 7, houses: 1100, churches: 90 }), [])
 
   return (
     <group>
@@ -565,6 +505,7 @@ export function CityPanorama() {
       <SeaWalls />
       <LandWalls />
 
+      <Cypresses />
       <HagiaSophia />
       <Hippodrome />
       <GreatPalace />

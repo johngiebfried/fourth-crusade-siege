@@ -1275,6 +1275,92 @@ triangle count becomes the constraint.
 Flat shading and vertex colours were chosen deliberately, and the budget for
 more detail exists whenever that choice is revisited.
 
+## Revision: toward a reconstruction
+
+Five pieces of work, aimed at Byzantium 1200 in the knowledge that we are not
+going to reach it — those are offline renders by a specialist with per-monument
+research behind them. What is reachable is the right *vocabulary* at a finish
+that reads correctly from across a room.
+
+### Atmosphere
+
+Every scene had a flat background fill and fog set to a colour that did not
+match it, so distant masonry faded toward a grey that was nowhere in the sky
+behind it. `geometry/Sky.jsx` now issues both from one palette entry, so they
+cannot drift apart: a gradient dome from zenith to horizon with a warm bleach
+around the sun, painted into vertex colours rather than sampled from a texture,
+and linear fog in the horizon colour. One draw call, no lighting work, no
+asset.
+
+This is the cheapest item on the list and close to the most effective. Aerial
+perspective — distance draining contrast — is the single most characteristic
+thing about the reference renders.
+
+### An architectural kit
+
+`geometry/buildingKit.js`: pitched roofs with eaves and gable ends, arcades on
+true semicircular arches, domes on windowed drums with a cornice at the
+springing, half-domes, apses, battered buttresses, columns, and complete house
+and church assemblies. Every part returns a merged, AO-baked geometry.
+
+Two constraints shaped it. Everything must be **indexed**, because
+`mergeGeometries` refuses a mix — which is why an arch here is a half-torus
+rather than an extruded shape with a hole. And light is **baked**, because flat
+shading with one directional light cannot know that a wall is under an eave.
+
+Three things were got wrong first and are worth recording:
+
+- A four-sided pyramid is a *hipped* roof, not a pitched one. The gable end is
+  half of what says "Mediterranean town" at a distance.
+- A three-segment cylinder is a triangular prism, but `rotateX` alone leaves
+  its apex pointing *down*; it needs `rotateZ(π)` after.
+- `SphereGeometry` and `CylinderGeometry` measure their start angle from
+  different axes, so a half-sphere sits ninety degrees off the half-cylinder
+  under it. The apse cap now uses a full hemisphere and buries the back half in
+  the wall — a few triangles for something that cannot be misaligned.
+
+### Landmarks
+
+The Hagia Sophia, Hippodrome and Great Palace were twenty-odd separate meshes
+each. They are now one merged geometry apiece, built from the kit — cheaper
+*and* more detailed, which is the usual result of merging.
+
+The Great Church got the sequence that makes it that building rather than a
+dome on a box: narthex, great dome on a windowed drum, two semi-domes bracing
+it along the long axis, four exedrae stepping the mass down, buttresses north
+and south, an apse closing the east end. The Hippodrome got an arcaded
+substructure round its sphendone and a row of columns down the spina.
+
+### The city is dense, and the precinct is clear
+
+At 520 houses the town read as scattered cottages once each house became
+smaller and more articulated. It is 1,100 houses and 90 churches now, packed to
+within 1.2 units of the shoreline, and it reads as a city.
+
+Housing is kept off the ceremonial quarter. That is not only so the landmarks
+can be seen: the Augustaion, the Hippodrome and the Great Palace were one
+enormous open precinct, and tenements over them would be the same mistake as
+building on the Forum in Rome.
+
+### Cypresses
+
+260 of them through the city, merged rather than instanced so each carries its
+own baked tone. Scale cues are a large part of why a reconstruction reads as a
+place — the eye needs something whose size it already knows — and the cypress
+is the right choice here: the tree of this coast, strongly vertical, and
+everywhere in period views of the city.
+
+### What it cost
+
+| | Draw calls | Triangles |
+| --- | --- | --- |
+| Before | 322 | 86,024 |
+| After | 328 | 379,110 |
+
+**4.4× the geometry for six more draw calls.** That is what the merging buys,
+and 379,000 triangles remains a light scene — the constraint on the target
+hardware is fill rate and the shadow pass, neither of which this touches.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

@@ -17,6 +17,7 @@
  */
 
 import * as THREE from 'three'
+import * as kit from './buildingKit.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PALETTE } from '../palette.js'
 
@@ -219,6 +220,18 @@ export function buildLandmass(points, { thickness = SHORE_Y, hex = '#8d8a63' } =
  * The townscape: dense housing with domed churches through it. Merged into one
  * vertex-coloured geometry, so several hundred buildings cost one draw call.
  */
+/**
+ * Ground the townscape leaves clear: the four landmarks and the open precinct
+ * around them. Shared with the cypress planting, so neither ends up growing
+ * out of the Hagia Sophia's roof.
+ */
+export const LANDMARK_KEEP_OFF = [
+  [23, -1, 6.2], // Hagia Sophia and the Augustaion
+  [8, 5, 6.4], // Hippodrome
+  [17, 4.5, 4.4], // Great Palace terraces
+  [-27, -16.5, 4.2], // Blachernae
+]
+
 export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
   const rand = rng(seed)
   const parts = []
@@ -227,11 +240,21 @@ export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
     for (let tries = 0; tries < 40; tries++) {
       const x = -31 + rand() * 68
       const z = -22 + rand() * 48
-      if (insidePeninsula(x, z, 2.0)) return [x, z]
+      if (!insidePeninsula(x, z, 1.2)) continue
+      // Keep the housing off the ceremonial quarter. This is not only so the
+      // landmarks can be seen: the Augustaion, the Hippodrome and the Great
+      // Palace were one enormous open precinct, and packing tenements over
+      // them would be the same mistake as building on the Forum in Rome.
+      if (LANDMARK_KEEP_OFF.some(([cx, cz, r]) => Math.hypot(x - cx, z - cz) < r)) continue
+      return [x, z]
     }
     return null
   }
 
+  // Houses, from the kit rather than as a box with a slab on top. Each one is
+  // walls with a band of shade under the eaves, a ridged roof that oversails,
+  // and gable ends — and the AO band along its base is what sets it on the
+  // ground instead of letting it hover there.
   for (let i = 0; i < houses; i++) {
     const spot = pick()
     if (!spot) continue
@@ -241,42 +264,42 @@ export function buildTownscape({ seed = 7, houses = 520, churches = 60 } = {}) {
     const d = 0.5 + rand() * 0.7
     const h = 0.5 + rand() * 0.9
 
-    const body = new THREE.BoxGeometry(w, h, d)
-    paint(body, rand() > 0.4 ? PALETTE.cityWall : '#d3c6ad')
-    body.translate(x, y + h / 2, z)
-    parts.push(body)
-
-    const roof = new THREE.BoxGeometry(w * 1.12, 0.16, d * 1.12)
-    paint(roof, PALETTE.cityRoof)
-    roof.translate(x, y + h + 0.08, z)
-    parts.push(roof)
+    const g = kit.house({
+      w,
+      d,
+      h,
+      wallHex: rand() > 0.4 ? PALETTE.cityWall : '#d3c6ad',
+      roofHex: PALETTE.cityRoof,
+      // Per-house tone, so a street does not read as one house repeated.
+      tone: 0.9 + rand() * 0.22,
+      roofPitch: 0.3 + rand() * 0.2,
+    })
+    g.rotateY(rand() * Math.PI)
+    g.translate(x, y, z)
+    parts.push(g)
   }
 
   // The shape that makes the skyline Byzantine rather than western European:
-  // a drum carrying a shallow dome. No spires anywhere in this city.
+  // a drum carrying a shallow dome, now with a windowed drum, a cornice at the
+  // springing, lean-to roofs over the aisles and an apse to one end. No spires
+  // anywhere in this city.
   for (let i = 0; i < churches; i++) {
     const spot = pick()
     if (!spot) continue
     const [x, z] = spot
     const y = groundHeight(x, z)
-    const r = 0.42 + rand() * 0.4
-    const h = 0.9 + rand() * 0.8
 
-    const naos = new THREE.BoxGeometry(r * 2.6, h, r * 2.6)
-    paint(naos, PALETTE.cityWall)
-    naos.translate(x, y + h / 2, z)
-    parts.push(naos)
-
-    const drum = new THREE.CylinderGeometry(r, r, 0.42, 10)
-    paint(drum, '#e2d7bd')
-    drum.translate(x, y + h + 0.21, z)
-    parts.push(drum)
-
-    const dome = new THREE.SphereGeometry(r * 1.08, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2)
-    dome.scale(1, 0.55, 1)
-    paint(dome, rand() > 0.82 ? PALETTE.domeGold : PALETTE.domeLead)
-    dome.translate(x, y + h + 0.42, z)
-    parts.push(dome)
+    const g = kit.church({
+      r: 0.42 + rand() * 0.4,
+      h: 0.9 + rand() * 0.8,
+      wallHex: PALETTE.cityWall,
+      roofHex: PALETTE.cityRoof,
+      domeHex: rand() > 0.82 ? PALETTE.domeGold : PALETTE.domeLead,
+      tone: 0.94 + rand() * 0.16,
+    })
+    g.rotateY(rand() * Math.PI * 2)
+    g.translate(x, y, z)
+    parts.push(g)
   }
 
   const merged = mergeGeometries(parts, false)
@@ -305,15 +328,18 @@ export function buildGalataTown({ seed = 41, houses = 90 } = {}) {
     const w = 0.45 + rand() * 0.6
     const h = 0.45 + rand() * 0.8
 
-    const body = new THREE.BoxGeometry(w, h, w)
-    paint(body, rand() > 0.5 ? '#cdc0a4' : '#bfb197')
-    body.translate(x, SHORE_Y + h / 2, z)
-    parts.push(body)
-
-    const roof = new THREE.BoxGeometry(w * 1.15, 0.14, w * 1.15)
-    paint(roof, '#9d6a4c')
-    roof.translate(x, SHORE_Y + h + 0.07, z)
-    parts.push(roof)
+    const g = kit.house({
+      w,
+      d: w * (0.8 + rand() * 0.5),
+      h,
+      wallHex: rand() > 0.5 ? '#cdc0a4' : '#bfb197',
+      roofHex: '#9d6a4c',
+      tone: 0.9 + rand() * 0.2,
+      roofPitch: 0.3 + rand() * 0.18,
+    })
+    g.rotateY(rand() * Math.PI)
+    g.translate(x, SHORE_Y, z)
+    parts.push(g)
   }
 
   const merged = mergeGeometries(parts, false)
