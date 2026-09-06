@@ -341,27 +341,26 @@ console.log('\nEvery figure on screen has a livery')
 /* ------------------------------------------------ the title-screen framing */
 
 /*
- * Does the opening shot actually contain the city?
+ * Does the opening shot actually contain the city, and can it ever see past
+ * the edge of the world?
  *
  * Both earlier framings were set by nudging numbers and looking at a still,
  * and both were wrong in ways a still hid: one left a third of the frame as
  * empty Marmara with the peninsula stranded behind the title panel, the other
- * ran the land walls off the left edge and cut the Galata keep in half.
+ * ran the land walls off the left edge and cut the Galata keep in half. A
+ * third fault only showed at odd window shapes — the zoom is solved from the
+ * viewport, so a letterbox strip pulled the camera back until the Asian
+ * landmass was a green slab floating in the sea with its underside showing.
  *
- * So this reproduces the camera's projection from the constants the component
- * actually uses — read out of the source, not restated here, or the check
- * would only ever agree with itself — and measures where the subject lands.
+ * The camera module owns the constants. The projection is worked out again
+ * here, from those constants, rather than by calling the module's own
+ * `groundQuad` — a check that runs the code under test can only ever prove
+ * that code agrees with itself, which is how two of the engine checks came to
+ * pass on mutants.
  */
 {
-  const src = await readFile(base + 'src/screens/CityBackdrop.jsx', 'utf8')
-  const num = (k) => Number(src.match(new RegExp(`const ${k} = ([\\d.]+)`))[1])
-  const SPAN = num('CITY_SPAN')
-  const RISE = num('CITY_RISE')
-  const AIM = JSON.parse(src.match(/const AIM = (\[[^\]]+\])/)[1])
-  const RADIUS = Number(src.match(/const radius = (\d+)/)[1])
-  const [, base_, sweep] = src.match(/Math\.PI \* ([\d.]+) \+ Math\.sin\(t\) \* ([\d.]+)/)
-  const midAngle = Math.PI * Number(base_)
-  const halfSweep = Number(sweep)
+  const cam = await import(base + 'src/three/panoramaCamera.js')
+  const { CITY_SPAN, CITY_RISE, AIM, ORBIT, WORLD, panoramaZoom } = cam
 
   // The subject: the shoreline, the tallest domes over it, and the keep at
   // Galata — the three things the shot is *of*.
@@ -373,13 +372,16 @@ console.log('\nEvery figure on screen has a livery')
   subject.push([27, 14, -24.1])
   subject.push([6, 22, 8])
 
-  /** The subject's bounding box in the camera's screen plane, at one angle. */
-  const project = (angle) => {
-    const cam = [Math.sin(angle) * RADIUS, RADIUS * 0.62, Math.cos(angle) * RADIUS]
-    const f = [AIM[0] - cam[0], AIM[1] - cam[1], AIM[2] - cam[2]]
+  /** The camera's screen basis at one point in the drift. */
+  const basis = (angle) => {
+    const eye = [
+      Math.sin(angle) * ORBIT.radius,
+      ORBIT.radius * ORBIT.lift,
+      Math.cos(angle) * ORBIT.radius,
+    ]
+    const f = [AIM[0] - eye[0], AIM[1] - eye[1], AIM[2] - eye[2]]
     const fl = Math.hypot(...f)
     for (let i = 0; i < 3; i++) f[i] /= fl
-    // right = forward × up, with up = (0, 1, 0).
     const r = [-f[2], 0, f[0]]
     const rl = Math.hypot(...r)
     for (let i = 0; i < 3; i++) r[i] /= rl
@@ -388,6 +390,12 @@ console.log('\nEvery figure on screen has a livery')
       r[2] * f[0] - r[0] * f[2],
       r[0] * f[1] - r[1] * f[0],
     ]
+    return { f, r, u }
+  }
+
+  /** The subject's bounding box in the camera's screen plane. */
+  const project = (angle) => {
+    const { r, u } = basis(angle)
     let x0 = Infinity
     let x1 = -Infinity
     let y0 = Infinity
@@ -404,54 +412,172 @@ console.log('\nEvery figure on screen has a livery')
     return { x0, x1, y0, y1 }
   }
 
+  /** Where the frame's corners land on the water. */
+  const footprint = (angle, halfW, halfH) => {
+    const { f, r, u } = basis(angle)
+    const out = []
+    for (const sx of [-halfW, halfW]) {
+      for (const sy of [-halfH, halfH]) {
+        const o = [
+          AIM[0] + sx * r[0] + sy * u[0],
+          AIM[1] + sx * r[1] + sy * u[1],
+          AIM[2] + sx * r[2] + sy * u[2],
+        ]
+        const t = -o[1] / f[1]
+        out.push([o[0] + t * f[0], o[2] + t * f[2]])
+      }
+    }
+    return out
+  }
+
   /*
-   * The visible half-extents. The zoom is solved from whichever viewport
-   * dimension is tighter, so the frame is checked at the two shapes a
-   * classroom might actually use: a projector at 16:9 and a laptop at 16:10.
-   * The narrow one binds on height, the wide one on width, and a framing that
-   * only works on the shape I happen to be screenshotting is not a framing.
+   * The shapes a classroom might actually use, and then some it will not.
+   * The wide and narrow extremes are the ones that broke: on those the zoom is
+   * clamped and the shot crops instead of pulling back, so they are checked
+   * for staying inside the world rather than for showing all of the city.
    */
   const shapes = [
-    ['16:9', 1920, 1080],
-    ['16:10', 1680, 1050],
-    ['4:3', 1024, 768],
+    ['4:3', 1024, 768, true],
+    ['16:10', 1680, 1050, true],
+    ['16:9', 1920, 1080, true],
+    ['21:9', 2560, 1080, true],
+    ['32:9', 5120, 1440, true],
+    ['a tall window', 800, 1026, true],
+    ['a portrait window', 600, 1000, false],
+    ['a letterbox strip', 1900, 300, false],
   ]
 
-  for (const [label, w, h] of shapes) {
-    const zoom = Math.max(2, Math.min(w / SPAN, h / (SPAN * RISE)))
+  for (const [label, w, h, mustFitCity] of shapes) {
+    const zoom = panoramaZoom(w, h)
     const halfW = w / zoom / 2
     const halfH = h / zoom / 2
-    let worst = Infinity
-    let worstEdge = ''
-    let lowest = Infinity
+
+    if (mustFitCity) {
+      let worst = Infinity
+      let worstEdge = ''
+      let lowest = Infinity
+      for (let k = -1; k <= 1; k++) {
+        const b = project(ORBIT.angle + k * ORBIT.sweep)
+        for (const [edge, m] of [
+          ['left', halfW + b.x0],
+          ['right', halfW - b.x1],
+          ['bottom', halfH + b.y0],
+          ['top', halfH - b.y1],
+        ]) {
+          if (m < worst) {
+            worst = m
+            worstEdge = edge
+          }
+        }
+        lowest = Math.min(lowest, (b.y0 + b.y1) / 2)
+      }
+      check(
+        `the whole city stays in frame at ${label}, across the drift`,
+        worst > 0.5,
+        `tightest margin ${worst.toFixed(1)} units at the ${worstEdge}`
+      )
+      // And sitting low, so the title panel lands on sky rather than on rooftops.
+      check(
+        `the city sits below centre at ${label}`,
+        lowest < -0.5,
+        `subject centre ${lowest.toFixed(1)} units from the middle`
+      )
+    }
+
+    // Nothing may ever be framed outside the modelled world — this is the one
+    // that has to hold at *every* shape, including the ones that crop.
+    let over = 0
+    let where = ''
     for (let k = -1; k <= 1; k++) {
-      const b = project(midAngle + k * halfSweep)
-      const margins = [
-        ['left', halfW + b.x0],
-        ['right', halfW - b.x1],
-        ['bottom', halfH + b.y0],
-        ['top', halfH - b.y1],
-      ]
-      for (const [edge, m] of margins) {
-        if (m < worst) {
-          worst = m
-          worstEdge = edge
+      for (const [x, z] of footprint(ORBIT.angle + k * ORBIT.sweep, halfW, halfH)) {
+        for (const [amount, edge] of [
+          [x - WORLD.x[1], 'east'],
+          [WORLD.x[0] - x, 'west'],
+          [z - WORLD.z[1], 'south'],
+          [WORLD.z[0] - z, 'north'],
+        ]) {
+          if (amount > over) {
+            over = amount
+            where = edge
+          }
         }
       }
-      lowest = Math.min(lowest, (b.y0 + b.y1) / 2)
     }
     check(
-      `the whole city stays in frame at ${label}, across the drift`,
-      worst > 0.5,
-      `tightest margin ${worst.toFixed(1)} units at the ${worstEdge}`
-    )
-    // And sitting low, so the title panel lands on sky rather than on rooftops.
-    check(
-      `the city sits below centre at ${label}`,
-      lowest < -0.5,
-      `subject centre ${lowest.toFixed(1)} units from the middle`
+      `the shot never sees past the world at ${label}`,
+      over <= 0.01,
+      `${over.toFixed(1)} units over the ${where} edge`
     )
   }
+
+  /*
+   * No landmass may show a cut edge inside the world.
+   *
+   * A landmass is an extruded outline, so wherever its outline runs, there is
+   * a vertical face dropping to the sea floor. Along a coast that face is the
+   * shore and it is meant to be seen. Along the straight inland lines that
+   * close the polygon it is the edge of the model, and seeing it is the whole
+   * defect this work is about.
+   *
+   * The two are easy to tell apart without hand-listing them: `refineCoast`
+   * subdivides every coast, so no coastal segment is longer than about six
+   * units, while the inland closures are ninety to two hundred and seventy.
+   * Anything long is a cut, and no cut may come inside the bounds.
+   *
+   * Checking min and max of the whole outline instead — which is what this
+   * did first — proves nothing: moving one corner of Asia back to its old
+   * slab cut left the extremes untouched and the check passed.
+   */
+  const spans = (a, b, lo, hi) => {
+    // Does the segment a→b overlap the slab lo ≤ · ≤ hi on one axis?
+    const [p, q] = a <= b ? [a, b] : [b, a]
+    return q >= lo && p <= hi
+  }
+  const crossesWorld = (a, b) => {
+    // Cheap and sufficient: the bounds are axis-aligned and the cuts are
+    // axis-aligned or nearly so, so overlapping on both axes means it is in.
+    if (!spans(a[0], b[0], WORLD.x[0], WORLD.x[1])) return false
+    if (!spans(a[1], b[1], WORLD.z[0], WORLD.z[1])) return false
+    return true
+  }
+
+  for (const [name, outline] of [
+    ['Thrace', city.EUROPE],
+    ['Asia', city.ASIA],
+  ]) {
+    let worst = null
+    for (let i = 0; i < outline.length; i++) {
+      const a = outline[i]
+      const b = outline[(i + 1) % outline.length]
+      const len = Math.hypot(b[0] - a[0], b[1] - a[1])
+      if (len < 12) continue
+      if (crossesWorld(a, b)) worst = { a, b, len }
+    }
+    check(
+      `${name} shows no cut edge inside the shot`,
+      worst === null,
+      worst
+        ? `a ${worst.len.toFixed(0)}-unit straight edge from (${worst.a}) to (${worst.b})`
+        : ''
+    )
+  }
+
+  /*
+   * The south is the exception, and deliberately so: there the land stops at
+   * the Asian shore and the Marmara runs on to the haze, which is what a sea
+   * does. What must not happen is the *water* running out, so the plane has to
+   * cover the southern bound with room to spare.
+   */
+  const backdrop = await readFile(base + 'src/three/CityScene.jsx', 'utf8')
+  const [, planeW, planeD] = backdrop.match(/planeGeometry args=\{\[(\d+), (\d+)\]\}/)
+  const [, waterZ] = backdrop.match(/position=\{\[0, 0\.25, (-?\d+)\]\}/)
+  const southEdge = Number(waterZ) + Number(planeD) / 2
+  const eastEdge = Number(planeW) / 2
+  check(
+    'the sea covers the southern bound, where there is no land to close the view',
+    southEdge > WORLD.z[1] + 20 && eastEdge > WORLD.x[1] + 20,
+    `water reaches z ${southEdge}, x ${eastEdge}`
+  )
 }
 
 console.log('')

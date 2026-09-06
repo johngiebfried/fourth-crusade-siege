@@ -1936,6 +1936,105 @@ button. The `city` lore set stays written and tested — it is the obvious sourc
 for a debrief screen — but nothing draws from it now. That is the same call
 already made for the siegecraft notes on the assault HUD.
 
+## The world has edges, and now it has a border
+
+### What was wrong
+
+The shot is framed from the viewport — the zoom is solved so the city fits
+whatever window it is given. That is right for the city and wrong for
+everything else: an unusual window shape pulls the camera back until it is
+framing more world than exists. At 1900 × 300 the Asian landmass became a green
+slab floating in the Marmara with its extruded underside showing, and the sea
+ran out into sky.
+
+This is not a bug that a wider terrain fixes. However far the ground runs,
+there is always a window shape that gets past it.
+
+### The guarantee, and the scenery, are different jobs
+
+**`WORLD` in `panoramaCamera.js`** is the rectangle the shot may never see
+past, and `panoramaZoom` enforces it: fit the city, unless that would frame
+more world than is modelled, in which case the world wins and the shot crops
+instead. Cropping the city is a real cost and it is taken deliberately — it
+only bites below about 0.78 aspect or above about 5, and on those shapes the
+alternative is not a better picture of the city but the edge of the model.
+Every shape from a tall laptop window through 32:9 still gets the full framing.
+
+The bounds also settled a question that had been guessed at twice: how far the
+landmasses have to run. They now run thirty to sixty units past the bounds, so
+that where they genuinely end — in a straight cut with the extruded side
+showing — is somewhere the camera cannot be pointed.
+
+One arithmetic trap on the way. The frame's footprint on the water shrinks as
+1/zoom, but not about the aim point: the aim sits 7.7 units in the air, so the
+centre of the frame lands on the water somewhere else entirely. Scaling the
+corners about the aim clamped shots that did not need clamping, and cost the
+tall-window shape a fifth of the city before it was caught.
+
+### Asia's south end is a coast now, not a cut
+
+It used to be a straight line at z = 66 between two inland corners. That line
+is where the land does stop — it is the right place for it, and the Marmara
+running on to the haze needs no border, because that is what a sea does. But it
+is a coastline now: the Asian shore running east-south-east away from
+Chalcedon toward the Gulf of Nicomedia, which is the direction it actually
+goes.
+
+### Thrace is farmed, and the view closes on hills
+
+Ground that runs flat to the frame edge looks like an unfinished model however
+far it runs. Two things fill it.
+
+**Fields**, in strips rather than blocks. Open-field agriculture is the right
+idiom for the period, and strips are also what reads as farmland from three
+hundred units up — a patchwork of squares reads as a quilt and a solid tone
+reads as nothing at all. They are laid west of the land walls, on the slopes
+of Pera behind Galata, and on the Asian side behind Chalcedon.
+
+The order out from the walls is deliberate and it is historical: the ditch and
+a cleared field of fire, then the cemeteries — burial was outside the walls by
+law — and only past those the market gardens, vineyards and grain land that fed
+a city of several hundred thousand. So there is a bare glacis, and the
+cultivation starts beyond it. A besieged city keeps that ground clear, and the
+whole point of this panorama is that the walls face open country.
+
+**Hills** around the rim, in two staggered lines so the edge has depth rather
+than being a single row of domes. They are flattened hemispheres, the same
+trick as the city's own ridge, because a hemisphere has no silhouette edge to
+give the geometry away. Their job is not to be looked at; it is to make the
+land rise into the haze instead of stopping.
+
+### The strips were laid on the wrong axis
+
+`rotateY` sends a box's long axis to (sin θ, cos θ), so strips have to be
+offset along the perpendicular of *that* — (cos θ, −sin θ). Offsetting along
+(cos θ, sin θ), which is the obvious thing to write and what was written, is
+only perpendicular at θ = 0. Everywhere else the strips walked diagonally
+across each other, and the first render had planks scattered over Thrace.
+
+### And the checks were sharpened twice
+
+`check-scene.mjs` now reproduces the projection at eight window shapes across
+the whole drift, and asserts three things: that the city fits at every shape
+anyone will use, that no shape at all can see past the bounds, and that no
+landmass shows a cut edge inside them.
+
+The last of those took two attempts. Checking the outlines' extreme
+coordinates proved nothing — moving one corner of Asia back to its old slab cut
+left the extremes untouched and the check passed. What separates a coast from a
+cut is not where it is but how long it runs: `refineCoast` subdivides every
+coastline, so no coastal segment exceeds about six units, while the inland
+closures are ninety to two hundred and seventy. Anything long is a cut. Both
+mutants fail the rewritten check, as does removing the zoom clamp.
+
+Also worth recording: the camera constants moved out of `CityBackdrop.jsx` into
+`panoramaCamera.js`, because three things now need to agree about them — the
+camera, the checks, and the terrain. The check used to read them back out of
+the component with regexes. The projection maths stays in the check and is
+derived independently; a check that calls the function under test only ever
+proves that function agrees with itself, which is how two of the engine checks
+once came to pass on mutants.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

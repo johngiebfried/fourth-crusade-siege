@@ -181,9 +181,21 @@ export const PENINSULA = [...HORN_SOUTH, ...MARMARA_NORTH]
  * the first version and is the single most important thing on this map.
  */
 export const EUROPE = [
-  // Marmara coast, west to the land walls.
+  /*
+   * Marmara coast, west to the land walls.
+   *
+   * It runs a long way further west than anything is meant to be looked at.
+   * The shot's bounds are 126 units west of the origin; the coast goes to 168,
+   * so that where this landmass genuinely ends — in a straight cut with its
+   * extruded side showing — is somewhere the camera cannot be pointed. See
+   * `WORLD` in `panoramaCamera.js`.
+   */
   ...refineCoast(
     [
+      [-168, 74],
+      [-150, 65],
+      [-134, 58],
+      [-118, 52],
       [-104, 48],
       [-88, 44.5],
       [-72, 41],
@@ -242,20 +254,44 @@ export const EUROPE = [
       [41, -56],
       [41, -74],
       [41, -95],
+      [42, -118],
+      [43, -142],
+      [44, -166],
     ],
     { seed: 19, amp: 2.0 }
   ),
-  // Inland.
-  [-104, -95],
+  // Inland Thrace. Off the edge of the shot in every direction.
+  [-168, -166],
 ]
 
-/** Asia, across the Bosphorus. */
+/**
+ * Asia, across the Bosphorus.
+ *
+ * Its southern end used to be a straight line at z = 66 between two inland
+ * corners, so on a wide frame the whole landmass read as a green slab floating
+ * in the Marmara with its cut side showing. That line is where the land does
+ * stop — and it stays there — but it is a coast now: the Asian shore of the
+ * Marmara, running east-south-east away from Chalcedon toward the Gulf of
+ * Nicomedia, which is the direction it actually goes.
+ */
 export const ASIA = [
-  [55, -95],
-  [112, -95],
-  [112, 66],
-  [62, 66],
-  // The Asian bank, which was four points over a hundred and thirty units.
+  [55, -166],
+  [150, -166],
+  [150, 108],
+  // The Marmara's Asian shore, running back west to Chalcedon.
+  ...refineCoast(
+    [
+      [146, 104],
+      [128, 96],
+      [112, 88],
+      [96, 80],
+      [80, 72],
+      [70, 68],
+      [62, 66],
+    ],
+    { seed: 31, amp: 2.2 }
+  ),
+  // The Bosphorus bank, which was four points over a hundred and thirty units.
   ...refineCoast(
     [
       [62, 66],
@@ -271,6 +307,9 @@ export const ASIA = [
       [55, -66],
       [55, -80],
       [55, -95],
+      [55, -120],
+      [55, -145],
+      [55, -166],
     ],
     { seed: 23, amp: 2.4 }
   ),

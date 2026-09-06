@@ -16,7 +16,6 @@ import { buildBandedWall, buildTower } from './geometry/wallBuilder.js'
 import {
   ASIA,
   EUROPE,
-  GALATA,
   LAND_WALL_FROM,
   LAND_WALL_TO,
   LAND_WALL_X,
@@ -31,6 +30,7 @@ import {
   insidePeninsula,
   rng,
 } from './geometry/cityBuilder.js'
+import { buildCountryside, buildRimHills } from './geometry/countryside.js'
 import {
   buildHagiaSophia,
   buildHippodrome,
@@ -442,6 +442,30 @@ function FleetInTheHorn() {
 
 /* ------------------------------------------------------------------ scene */
 
+/**
+ * Farmland and the hills that close the view.
+ *
+ * Two meshes, both merged, both static: about twenty-four thousand vertices
+ * for the whole surround, which is less than the townscape spends on a couple
+ * of streets.
+ */
+function Countryside() {
+  const fields = useMemo(() => buildCountryside({ seed: 91 }), [])
+  const hills = useMemo(() => buildRimHills({ seed: 137 }), [])
+  return (
+    <group>
+      {/* The hills go under everything, and take shadow but do not cast it —
+          nothing is close enough behind them for their shadows to land on. */}
+      <mesh geometry={hills} receiveShadow>
+        <meshLambertMaterial vertexColors flatShading />
+      </mesh>
+      <mesh geometry={fields} receiveShadow>
+        <meshLambertMaterial vertexColors flatShading />
+      </mesh>
+    </group>
+  )
+}
+
 export function CityPanorama() {
   const town = useMemo(() => buildTownscape({ seed: 7, houses: 1100, churches: 90 }), [])
 
@@ -449,6 +473,7 @@ export function CityPanorama() {
     <group>
       <Water />
       <Landmasses />
+      <Countryside />
       <CityRidge />
 
       <mesh geometry={town} castShadow receiveShadow>

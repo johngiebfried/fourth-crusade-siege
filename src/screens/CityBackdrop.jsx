@@ -20,55 +20,32 @@ import { RippleWater } from '../three/geometry/Field.jsx'
 import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { Atmosphere } from '../three/geometry/Sky.jsx'
+import { AIM, ORBIT, orbitAngle, panoramaZoom } from '../three/panoramaCamera.js'
 
 /**
- * The shot, solved rather than eyeballed.
- *
- * The subject is the peninsula shoreline, the domes standing over it and the
- * keep at Galata across the Horn. Projected into the camera's screen plane at
- * every point of the drift, that subject measures about 76 units across and 37
- * high, and its centre does not sit over the origin — the peninsula runs
- * north-east, so aiming at (0, 0, 0) leaves it noticeably off to one side.
- *
- * Guessing at the aim is what produced both of the earlier framings: one with
- * the city marooned in the middle of the frame under the title panel and a
- * third of the shot empty Marmara, and one that swung so far the land walls ran
- * off the left edge and the Galata keep was cut in half by the right. So these
- * three numbers come from `scripts/check-scene.mjs`, which measures the same
- * projection and fails if the subject no longer fits or drifts off centre.
+ * The isometric shot. Every number it uses — the framing, the orbit, the
+ * bounds it may not see past — comes from `panoramaCamera.js`, so the terrain
+ * builder and the checks are working from the same figures.
  */
-const CITY_SPAN = 82
-
-/** Vertical units the shot must cover — the subject's height plus margin. */
-const CITY_RISE = 0.56
-
-/**
- * Aimed above the water rather than at it. Lifting the aim point drops the
- * city down the frame, which puts the empty sky behind the title panel and the
- * shoreline near the bottom edge instead of the reverse.
- */
-const AIM = [-4.6, 7.7, -2.4]
-
 function IsoCamera() {
   const camRef = useRef()
   const size = useThree((state) => state.size)
 
-  // An orthographic camera's frustum comes from the viewport, so the zoom that
-  // fits the city has to be solved from whichever dimension is tighter.
-  const zoom = useMemo(() => {
-    const byWidth = size.width / CITY_SPAN
-    const byHeight = size.height / (CITY_SPAN * CITY_RISE)
-    return Math.max(2, Math.min(byWidth, byHeight))
-  }, [size.width, size.height])
+  // An orthographic frustum comes from the viewport, so the zoom has to be
+  // solved per viewport: fit the city, unless that would frame more world than
+  // is modelled, in which case crop instead.
+  const zoom = useMemo(() => panoramaZoom(size.width, size.height), [size.width, size.height])
 
   useFrame((state) => {
     const cam = camRef.current
     if (!cam) return
     // A very slow drift, so the shot breathes without becoming a spin.
-    const t = state.clock.elapsedTime * 0.045
-    const radius = 120
-    const angle = Math.PI * 0.22 + Math.sin(t) * 0.09
-    cam.position.set(Math.sin(angle) * radius, radius * 0.62, Math.cos(angle) * radius)
+    const angle = orbitAngle(state.clock.elapsedTime)
+    cam.position.set(
+      Math.sin(angle) * ORBIT.radius,
+      ORBIT.radius * ORBIT.lift,
+      Math.cos(angle) * ORBIT.radius
+    )
     cam.zoom = zoom
     cam.updateProjectionMatrix()
     cam.lookAt(AIM[0], AIM[1], AIM[2])
