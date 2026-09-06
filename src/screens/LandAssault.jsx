@@ -34,7 +34,11 @@ import { Atmosphere } from '../three/geometry/Sky.jsx'
 const BEAT = {
   tumble: 1250, // die in the air
   hold: 1300, // settled number held on screen
-  resolve: 1400, // climb or dissolve
+  // The climb, lengthened from 1400. The engines loose as it begins and their
+  // stone is in the air for about six-tenths of a second; a shorter ascent had
+  // the crusader on the parapet before the shot arrived, which reads as the
+  // machines firing at a wall nobody is attacking any more.
+  resolve: 1750,
 }
 
 /* -------------------------------------------------------------- geometry */
@@ -235,6 +239,11 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, round, engine
           dissolving={p.dissolving}
           plateLift={p.lift}
           plateHeight={p.height}
+          // A little slower up the ladder than the default, so the engines'
+          // stone arrives while he is still climbing rather than after he has
+          // arrived. The sea lane keeps its own rate: crew there have to move
+          // at the ship's, or they slide off it.
+          travelSpeed={1.9}
           faction={p.faction}
           bearer={p.bearer}
           onClick={() => onPawnClick(p.id)}
@@ -384,7 +393,6 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
       if (!entry) return
 
       setBusy(true)
-      setEngineFire((n) => n + 1)
 
       const level = levels[playerId] ?? LEVELS.camp
       const pawnPos = positionFor(level, slots.get(playerId) ?? 0, stageIds.length)
@@ -409,6 +417,11 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
       }, BEAT.tumble)
 
       setTimeout(() => {
+        // The engines loose as the man starts up the ladder, so the stone is
+        // over the wall while he is on it. Fired on the click instead, it
+        // landed during the dice and was long forgotten by the time he moved.
+        setEngineFire((n) => n + 1)
+
         if (entry.success) {
           setLevels((l) => ({ ...l, [playerId]: level + 1 }))
           setLadders((l) =>
@@ -465,6 +478,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
   }, [bursts])
 
   const remaining = stageIds.filter((id) => !resolvedIds.has(id)).length
+
 
 
   return (

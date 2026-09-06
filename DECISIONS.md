@@ -1681,6 +1681,54 @@ physics buys nothing here and costs control: a stone that sails over the wall
 or drops in the ditch reads as a bug rather than as a miss, and this is a
 classroom projector, not a ballistics exercise.
 
+## Revision: the engines, second pass
+
+### The swing was easing the wrong way
+
+The beam eased *out* — quick at the start, crawling into the finish. That is
+the motion of something being lowered, not thrown, and it read as the machine
+firing in slow motion.
+
+A hauled beam **accelerates**: the crew take up the slack, the arm comes round
+slowly and then very fast, and it is arrested hard at the top. It is a cubic
+ease-in now over a quarter of a second, with the sling let go at 86% of the
+travel where the head is quickest and pointing at the wall.
+
+There is also a damped rebound off the padded stop. Without it the beam arrived
+at its limit and simply froze, which looks like a dropped frame rather than
+like timber hitting a bumper.
+
+### A sign error put the stone on the wrong side of the axle
+
+The group is turned about Y so the beam's local +x points along world −x, and
+the launch point added the cosine where it should have subtracted it. The stone
+started about a metre out on the wrong side of the pivot before setting off.
+
+### The shot now lands during the climb
+
+It was loosed on the *click*, so it landed during the dice — a second and a
+half before the man moved, and long forgotten by the time he was on the ladder.
+The engines now loose as the climb begins:
+
+| | |
+| --- | --- |
+| Sling releases | 224 ms into the climb |
+| Stone strikes | 684 ms |
+| Climb lasts | 1750 ms |
+
+So the stone is over the wall at about **two-fifths of the ascent**, with the
+crusader on the ladder beneath it. The climb was lengthened from 1400 ms and
+the token's own travel slowed from 2.6 to 1.9 to make room for it — the sea
+lane keeps the old rate, because crew there have to move at their ship's or
+they slide off it.
+
+### And it finishes winching before it is wanted again
+
+Beam down at 4.56 s; that engine's next shot is 8.6 s away, since the two
+alternate. The winch is deliberately slow and near enough constant-rate, which
+is what a windlass gives — it is the only part of the cycle meant to be slow,
+and it should not compete with the climb for attention.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be
