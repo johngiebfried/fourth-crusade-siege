@@ -239,7 +239,7 @@ export function ManuscriptLeaf({
           </div>
         )}
         {heading && (
-          <h2 className="mb-4 text-3xl font-bold leading-tight md:text-4xl" style={{ color: 'var(--rubric)' }}>
+          <h2 className="display mb-4 text-3xl font-bold md:text-4xl" style={{ color: 'var(--rubric)' }}>
             {heading}
           </h2>
         )}
@@ -307,7 +307,7 @@ export function ManuscriptRuled({
 
         <div className="min-w-0 flex-1">
           {heading && (
-            <h2 className="mb-3 text-2xl font-bold leading-tight md:text-3xl" style={{ color: 'var(--rubric)' }}>
+            <h2 className="display mb-3 text-2xl font-bold md:text-3xl" style={{ color: 'var(--rubric)' }}>
               {heading}
             </h2>
           )}
@@ -431,7 +431,7 @@ export function ManuscriptBordered({
           </div>
         )}
         {heading && (
-          <h2 className="mb-5 text-center text-3xl font-bold leading-tight md:text-4xl" style={{ color: 'var(--rubric)' }}>
+          <h2 className="display mb-5 text-center text-3xl font-bold md:text-4xl" style={{ color: 'var(--rubric)' }}>
             {heading}
           </h2>
         )}

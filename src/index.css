@@ -172,6 +172,24 @@ canvas {
 }
 
 /*
+ * Display titles, set in capitals.
+ *
+ * This hand's majuscules are ornate and well drawn, and a title is the one
+ * place they can be used at length — a heading is short, it is large, and
+ * nobody has to read it at speed. Capitals also give a title the weight to
+ * hold its own against the page, which the lowercase forms did not.
+ *
+ * They need the tracking: set solid, capitals in a hand like this collide at
+ * the serifs. Line-height comes down to compensate for the missing
+ * descenders, which otherwise leave a title floating in its own block.
+ */
+.display {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  line-height: 1.12;
+}
+
+/*
  * A quill-drawn button. Ink outline on vellum, and it darkens rather than
  * lifting — nothing on a page has a drop shadow that moves.
  */

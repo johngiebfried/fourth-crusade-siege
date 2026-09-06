@@ -26,7 +26,7 @@ export function StageBanner({ stage, remaining, total }) {
   return (
     <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-3">
       <div className="manuscript-scope vellum ink-frame mx-4 max-w-2xl px-8 py-2.5 text-center">
-        <div className="text-2xl font-bold tracking-tight" style={{ color: 'var(--rubric)' }}>
+        <div className="display text-2xl font-bold" style={{ color: 'var(--rubric)' }}>
           {stage.heading}
         </div>
         <div className="mt-0.5 text-base" style={{ color: 'var(--ink-soft)' }}>
@@ -166,7 +166,7 @@ export function CancelledNotice({ lines, onContinue }) {
       {lines.map((line, i) => (
         <div
           key={i}
-          className={i === 0 ? 'text-4xl font-bold' : 'mt-4 max-w-2xl text-xl'}
+          className={i === 0 ? 'display text-4xl font-bold' : 'mt-4 max-w-2xl text-xl'}
           style={{ color: i === 0 ? 'var(--rubric)' : 'var(--ink-soft)' }}
         >
           {line}

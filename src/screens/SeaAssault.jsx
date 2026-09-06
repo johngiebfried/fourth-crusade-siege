@@ -768,7 +768,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       {sailedIn !== 'done' ? (
         <div className="pointer-events-none absolute left-0 right-0 top-0 flex justify-center pt-6">
           <div className="manuscript-scope vellum ink-frame max-w-2xl px-9 py-4 text-center">
-            <div className="text-3xl font-bold" style={{ color: 'var(--rubric)' }}>
+            <div className="display text-3xl font-bold" style={{ color: 'var(--rubric)' }}>
               The Fleet Stands In
             </div>
             <div className="mt-1 text-lg" style={{ color: 'var(--ink-soft)' }}>

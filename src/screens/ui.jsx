@@ -199,7 +199,7 @@ export function Eyebrow({ children }) {
 export function Heading({ children, className = '' }) {
   return (
     <h2
-      className={`mt-2 text-3xl font-bold leading-tight md:text-4xl ${className}`}
+      className={`display mt-2 text-3xl font-bold md:text-4xl ${className}`}
       style={{ color: 'var(--rubric)' }}
     >
       {children}

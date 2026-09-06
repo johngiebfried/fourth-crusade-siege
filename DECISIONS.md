@@ -1419,6 +1419,24 @@ The chain tower moved half a unit inland with the refined shore. It still
 stands at the water's edge, which is the entire point of a tower that anchored
 a chain across the Horn.
 
+## Titles are set in capitals
+
+A `.display` class on every heading — the title screen, the stage banners, the
+manuscript panels, the screen headings.
+
+This hand's majuscules are ornate and well drawn, and a title is the one place
+they can be used at length: a heading is short, it is large, and nobody has to
+read it at speed. Under the textura the opposite was true and rubrics had to be
+set in lowercase, because a whole line of *its* capitals was close to
+undecipherable — the change of hand is what makes this possible.
+
+Two adjustments come with it. Capitals in a hand like this collide at the
+serifs when set solid, so the tracking opens to 0.07em; and with no descenders
+the line-height comes down to 1.12, or a title floats in its own block.
+
+A side benefit: "The Siege of Constantinople" now fits on one line rather than
+wrapping to two.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

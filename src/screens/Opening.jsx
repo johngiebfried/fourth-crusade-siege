@@ -212,7 +212,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
             <div className="text-center">
               <Eyebrow>The Fourth Crusade</Eyebrow>
               <h1
-                className="mt-3 text-4xl font-bold leading-tight md:text-5xl"
+                className="display mt-3 text-4xl font-bold md:text-5xl"
                 style={{ color: 'var(--rubric)' }}
               >
                 The Siege of Constantinople
