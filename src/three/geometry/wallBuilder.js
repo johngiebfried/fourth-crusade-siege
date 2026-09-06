@@ -302,6 +302,7 @@ export function buildWallLine({
   wall,
   towers = [],
   rubble = null,
+  gate = null,
   seed = 5,
 } = {}) {
   const rand = jitterer(seed)
@@ -318,6 +319,8 @@ export function buildWallLine({
     merlonHeight: wall.merlonHeight ?? 0.55,
     rand,
   })
+
+  if (gate) parts.push(...buildGatehouse(gate))
 
   for (const t of towers) {
     parts.push(
@@ -381,4 +384,87 @@ export function buildGround({
   g.translate(x, y - 0.2, z)
   g.computeVertexNormals()
   return g
+}
+
+
+/**
+ * A gatehouse: two flanking towers, an arched opening between them, and the
+ * wall carried over the top.
+ *
+ * The arch is a half-torus. The wall runs along Z here, so the opening faces
+ * along X and its plane is ZY — a torus lies in XY as built, so it is turned a
+ * quarter about Y. An extruded shape with a hole would be the obvious way and
+ * is the wrong one: it comes out non-indexed and `mergeGeometries` will not
+ * take it alongside the boxes and cylinders everything else is made of.
+ */
+export function buildGatehouse({
+  x,
+  z,
+  halfGap,
+  wallWidth,
+  wallHeight,
+  towerRadius,
+  towerHeight,
+  seed = 31,
+  passage = true,
+}) {
+  const rand = jitterer(seed)
+  const parts = []
+
+  // Flanking towers, square and heavier than the curtain's round ones — which
+  // is how the great gates were actually built.
+  for (const side of [-1, 1]) {
+    parts.push(
+      ...towerParts({
+        radius: towerRadius,
+        height: towerHeight,
+        x: x - towerRadius * 0.55,
+        z: z + side * (halfGap + towerRadius * 0.85),
+        polygonal: false,
+        rand,
+      })
+    )
+  }
+
+  if (!passage) return parts
+
+  const archR = halfGap * 0.86
+  const springing = wallHeight * 0.34
+
+  // Jambs either side of the opening.
+  for (const side of [-1, 1]) {
+    const jamb = new THREE.BoxGeometry(wallWidth * 1.15, springing, halfGap - archR)
+    jamb.translate(x, springing / 2, z + side * (archR + (halfGap - archR) / 2))
+    parts.push(paintMasonry(jamb, PALETTE.wallStone, { tone: 0.98, aoHeight: springing }))
+  }
+
+  // The arch ring itself, turned into the plane of the wall.
+  const ring = new THREE.TorusGeometry(archR, wallWidth * 0.5, 5, 14, Math.PI)
+  ring.rotateY(Math.PI / 2)
+  ring.translate(x, springing, z)
+  parts.push(paintMasonry(ring, PALETTE.wallStoneAlt, { tone: 1.05 }))
+
+  // The spandrels beside the arch, and the wall carried over it.
+  for (const side of [-1, 1]) {
+    const sp = new THREE.BoxGeometry(wallWidth * 1.15, archR, halfGap - archR * 0.4)
+    sp.translate(x, springing + archR / 2, z + side * (archR * 0.7 + (halfGap - archR * 0.4) / 2))
+    parts.push(paintMasonry(sp, PALETTE.wallStone, { tone: 0.96 }))
+  }
+
+  const over = new THREE.BoxGeometry(wallWidth * 1.15, wallHeight - springing - archR, halfGap * 2)
+  over.translate(x, springing + archR + (wallHeight - springing - archR) / 2, z)
+  parts.push(paintMasonry(over, PALETTE.wallStone, { tone: 1.0 }))
+
+  // A machicolation over the gate — the box a defender drops things from, and
+  // the detail that says this opening was expected to be attacked.
+  const box = new THREE.BoxGeometry(wallWidth * 0.5, 0.5, halfGap * 1.5)
+  box.translate(x - wallWidth * 0.8, wallHeight * 0.78, z)
+  parts.push(paintMasonry(box, PALETTE.wallStoneAlt, { tone: 1.1 }))
+  for (let i = -2; i <= 2; i++) {
+    const corbel = new THREE.BoxGeometry(wallWidth * 0.42, 0.22, 0.22)
+    corbel.translate(x - wallWidth * 0.72, wallHeight * 0.78 - 0.34, z + i * (halfGap * 0.55))
+    parts.push(paintMasonry(corbel, PALETTE.wallStoneAlt, { tone: 1.02 }))
+  }
+
+  return parts
 }

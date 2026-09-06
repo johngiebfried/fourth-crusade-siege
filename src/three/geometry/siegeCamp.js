@@ -196,78 +196,6 @@ function mangonelParts({ x, z, facing = 1 }) {
   return parts
 }
 
-/**
- * A timber bridge thrown across the moat.
- *
- * This answers the question the lane otherwise leaves open — how does an army
- * on the near bank get at a wall on the far one — and it is what a besieger
- * actually did: fill or bridge the ditch before you can put a ladder on
- * anything. Rough trestles standing in the water, a plank deck, and a handrail
- * on one side only, because it was built in a hurry.
- */
-export function buildMoatBridge({ x, z, span, seed = 3 }) {
-  const rand = rng(seed)
-  const parts = []
-  const deckY = 0.5
-  const halfW = 0.52
-
-  // A footbridge, not a causeway. The first version was two units wide with a
-  // handrail — wider than a man is tall, and tidier than anything an army
-  // throws across a ditch under shot. This one is barely two abreast, and it
-  // is meant to look like it was knocked together in a night.
-  const bents = 3
-  const legTop = (i) => deckY - 0.03 - Math.sin((i / bents) * Math.PI) * 0.06
-
-  for (let i = 0; i <= bents; i++) {
-    const bx = x - span / 2 + (span * i) / bents
-    for (const dz of [-halfW, halfW]) {
-      const h = legTop(i) + 0.62
-      const leg = new THREE.BoxGeometry(0.1, h, 0.1)
-      // Every trestle leans its own way. Nothing here is plumb.
-      leg.rotateZ((rand() - 0.5) * 0.2)
-      leg.rotateX((rand() - 0.5) * 0.14)
-      leg.translate(bx + (rand() - 0.5) * 0.1, h / 2 - 0.62, z + dz)
-      parts.push(paint(leg, PALETTE.hullTimberDark, 0.82 + rand() * 0.3))
-    }
-    // A cross-brace, skewed, and not on every bent.
-    if (i < bents && rand() > 0.25) {
-      const brace = new THREE.BoxGeometry(0.075, 0.075, halfW * 2.1)
-      brace.rotateX((rand() - 0.5) * 0.3)
-      brace.translate(bx + span / bents / 2, deckY - 0.3 - rand() * 0.1, z)
-      parts.push(paint(brace, PALETTE.hullTimberDark, 0.8 + rand() * 0.25))
-    }
-  }
-
-  // Two stringers carrying the boards, sagging a little at midspan.
-  for (const dz of [-halfW * 0.72, halfW * 0.72]) {
-    const s1 = new THREE.BoxGeometry(span, 0.09, 0.1)
-    s1.translate(x, deckY - 0.09, z + dz)
-    parts.push(paint(s1, PALETTE.hullTimberDark, 0.9))
-  }
-
-  // Salvaged boards: uneven widths, uneven lengths, laid crooked, with gaps
-  // where there was nothing left to lay.
-  const boards = Math.round(span / 0.34)
-  for (let i = 0; i < boards; i++) {
-    if (rand() < 0.12) continue // a plank that never got laid
-    const bx = x - span / 2 + (span * (i + 0.5)) / boards
-    const len = halfW * 2 * (0.82 + rand() * 0.3)
-    const board = new THREE.BoxGeometry(span / boards - 0.05 - rand() * 0.05, 0.06, len)
-    board.rotateY((rand() - 0.5) * 0.16)
-    board.rotateX((rand() - 0.5) * 0.09)
-    board.translate(
-      bx + (rand() - 0.5) * 0.05,
-      deckY - Math.sin(((i + 0.5) / boards) * Math.PI) * 0.05,
-      z + (rand() - 0.5) * 0.16
-    )
-    parts.push(paint(board, PALETTE.hullTimber, 0.78 + rand() * 0.36))
-  }
-
-  const merged = mergeGeometries(parts, false)
-  parts.forEach((p) => p.dispose())
-  merged.computeVertexNormals()
-  return merged
-}
 
 /**
  * The camp: tents in lines, with the engines drawn off to one side of it.
@@ -335,6 +263,7 @@ export function buildMoatWorks({
   depth = 1.5,
   seed = 21,
   bays = 9,
+  gateZ = null,
 }) {
   const rand = rng(seed)
   const parts = []
@@ -369,10 +298,34 @@ export function buildMoatWorks({
     parts.push(paint(m, PALETTE.wallStoneAlt, 0.9 + rand() * 0.16))
   }
 
+  // The causeway at the gate.
+  //
+  // The crusaders' own timber bridge is gone: a gate has a permanent stone
+  // crossing, which is most of why an army attacks at one. It also answers
+  // "how do they get over the ditch" better than a bridge knocked together in
+  // a night, because the answer is that the Byzantines built it.
+  if (gateZ !== null) {
+    const deck = new THREE.BoxGeometry(moatWidth + 2.6, 0.4, 3.4)
+    deck.translate(moatX - 0.3, 0.12, gateZ)
+    parts.push(paint(deck, PALETTE.wallStoneAlt, 1.03))
+
+    const skirt = new THREE.BoxGeometry(moatWidth + 2.2, depth + 0.4, 3.0)
+    skirt.translate(moatX - 0.3, -depth / 2 + 0.1, gateZ)
+    parts.push(paint(skirt, PALETTE.wallStone, 0.93, { aoHeight: depth }))
+
+    // A parapet along each side of it.
+    for (const side of [-1, 1]) {
+      const kerb = new THREE.BoxGeometry(moatWidth + 2.6, 0.34, 0.26)
+      kerb.translate(moatX - 0.3, 0.42, gateZ + side * 1.6)
+      parts.push(paint(kerb, PALETTE.wallStoneAlt, 1.08))
+    }
+  }
+
   // The cross-walls, each one damming a bay of the ditch.
   const step = (to - from) / bays
   for (let i = 1; i < bays; i++) {
     const z = from + step * i
+    if (gateZ !== null && Math.abs(z - gateZ) < 2.6) continue
     const dam = new THREE.BoxGeometry(moatWidth + 1.4, depth + 0.7, 0.7)
     dam.translate(moatX - 0.3, -depth / 2 + 0.35, z)
     parts.push(paint(dam, PALETTE.wallStone, 0.97, { aoHeight: depth }))

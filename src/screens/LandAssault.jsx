@@ -89,13 +89,13 @@ function positionFor(level, index, count) {
       return [LANE.gateX + 4.5, 0, z * 0.9]
     case LEVELS.camp:
     default: {
-      // A loose block on the open ground, staggered across the approach.
-      //
-      // The rows stop short of the counterscarp. At 2.6 apart the third row
-      // landed on the narrow ledge between that low wall and the lip of the
-      // ditch, so a third of the army stood inside the masonry.
+      // A loose block on the open ground, staggered across the approach, and
+      // held well back from the counterscarp. At 2.6 apart and starting at the
+      // camp line, the third row landed on the narrow ledge between that low
+      // wall and the lip of the ditch, with a third of the army standing
+      // inside the masonry.
       const row = index % 3
-      return [LANE.campX + row * 1.9, 0, z + (row - 1) * 1.4]
+      return [LANE.musterX + row * LANE.musterRow, 0, z + (row - 1) * 1.4]
     }
   }
 }

@@ -231,9 +231,9 @@ console.log('\nThe army musters on open ground, not in the ditch')
   const blockedTo = outerLip + 0.35
 
   for (let row = 0; row < 3; row++) {
-    const x = L.LANE.campX + row * 1.9
+    const x = L.LANE.musterX + row * L.LANE.musterRow
     check(
-      `camp row ${row} musters clear of the ditch and its counterscarp`,
+      `muster row ${row} stands clear of the ditch and its counterscarp`,
       x < blockedFrom || x > blockedTo,
       `x ${x.toFixed(2)} vs blocked ${blockedFrom.toFixed(2)}..${blockedTo.toFixed(2)}`
     )

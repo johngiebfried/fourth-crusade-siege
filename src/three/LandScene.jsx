@@ -21,17 +21,18 @@
 
 import { useMemo } from 'react'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { PALETTE } from './palette.js'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater, Smoke } from './geometry/Field.jsx'
-import { buildSiegeCamp, buildMoatBridge, buildMoatWorks } from './geometry/siegeCamp.js'
+import { buildSiegeCamp, buildMoatWorks } from './geometry/siegeCamp.js'
 import { buildCityQuarter } from './geometry/landmarks.js'
 
 import {
   LANE,
   HEIGHTS,
+  LAND_GATE,
   INNER_TOWERS,
   OUTER_TOWERS,
   GATE_STREET,
@@ -40,70 +41,124 @@ import {
 export { LANE, HEIGHTS }
 
 function Walls() {
+  /**
+   * Each line is built as two runs with the gate between them, rather than as
+   * one continuous wall. The regular towers that would have fallen inside the
+   * opening are skipped; the gatehouse brings its own, heavier pair.
+   */
+  const runs = (from, to) => ({ depth: to - from, z: (from + to) / 2 })
+  const half = LANE.laneDepth / 2
+
   const outer = useMemo(() => {
+    const gap = LANE.LAND_GATE_OUTER ?? LAND_GATE.outerHalf
     const towers = []
     const spacing = LANE.laneDepth / OUTER_TOWERS
     for (let i = 0; i < OUTER_TOWERS; i++) {
+      const z = -half + spacing * i
+      if (Math.abs(z - LAND_GATE.z) < gap + 1.4) continue
       towers.push({
         radius: 0.95,
         height: HEIGHTS.outerTower,
         x: LANE.outerWallX - 0.55,
-        z: -LANE.laneDepth / 2 + spacing * i,
+        z,
         polygonal: i % 2 === 0,
       })
     }
-    return buildWallLine({
-      wall: {
-        width: LANE.outerWallWidth,
-        depth: LANE.laneDepth,
-        height: HEIGHTS.outerWall,
-        x: LANE.outerWallX,
-        merlonWidth: 0.5,
-        merlonGap: 0.42,
-        merlonHeight: 0.45,
-      },
-      towers,
-      rubble: {
-        from: -LANE.laneDepth / 2,
-        to: LANE.laneDepth / 2,
-        x: LANE.outerWallX - 1.0,
-        count: 150,
-      },
-      seed: 7,
-    })
+
+    const wallBase = {
+      width: LANE.outerWallWidth,
+      height: HEIGHTS.outerWall,
+      x: LANE.outerWallX,
+      merlonWidth: 0.5,
+      merlonGap: 0.42,
+      merlonHeight: 0.45,
+    }
+
+    const merged = [
+      buildWallLine({
+        wall: { ...wallBase, ...runs(-half, LAND_GATE.z - gap) },
+        towers,
+        rubble: { from: -half, to: half, x: LANE.outerWallX - 1.0, count: 150 },
+        seed: 7,
+      }),
+      buildWallLine({
+        wall: { ...wallBase, ...runs(LAND_GATE.z + gap, half) },
+        towers: [],
+        seed: 8,
+      }),
+      buildWallLine({
+        wall: { ...wallBase, depth: 0.001, z: LAND_GATE.z, merlons: false },
+        towers: [],
+        gate: {
+          x: LANE.outerWallX,
+          z: LAND_GATE.z,
+          halfGap: gap,
+          wallWidth: LANE.outerWallWidth,
+          wallHeight: HEIGHTS.outerWall,
+          towerRadius: 1.05,
+          towerHeight: HEIGHTS.outerTower + 0.6,
+          seed: 41,
+        },
+        seed: 9,
+      }),
+    ]
+    return mergeGeometries(merged, false)
   }, [])
 
   const inner = useMemo(() => {
+    const gap = LAND_GATE.innerHalf
     const towers = []
     const spacing = LANE.laneDepth / INNER_TOWERS
     for (let i = 0; i < INNER_TOWERS; i++) {
+      const z = -half + spacing * (i + 0.5)
+      if (Math.abs(z - LAND_GATE.z) < gap + 2.0) continue
       towers.push({
         radius: 1.5,
         height: HEIGHTS.tower,
         x: LANE.innerWallX - 0.9,
-        z: -LANE.laneDepth / 2 + spacing * (i + 0.5),
+        z,
         polygonal: i % 2 === 1,
       })
     }
-    return buildWallLine({
-      wall: {
-        width: LANE.innerWallWidth,
-        depth: LANE.laneDepth,
-        height: HEIGHTS.innerWall,
-        x: LANE.innerWallX,
-        merlonWidth: 0.62,
-        merlonGap: 0.5,
-        merlonHeight: 0.6,
-      },
-      towers,
-      rubble: {
-        from: -LANE.laneDepth / 2,
-        to: LANE.laneDepth / 2,
-        x: LANE.innerWallX - 1.5,
-        count: 170,
-      },
-      seed: 13,
-    })
+
+    const wallBase = {
+      width: LANE.innerWallWidth,
+      height: HEIGHTS.innerWall,
+      x: LANE.innerWallX,
+      merlonWidth: 0.62,
+      merlonGap: 0.5,
+      merlonHeight: 0.6,
+    }
+
+    const merged = [
+      buildWallLine({
+        wall: { ...wallBase, ...runs(-half, LAND_GATE.z - gap) },
+        towers,
+        rubble: { from: -half, to: half, x: LANE.innerWallX - 1.5, count: 170 },
+        seed: 13,
+      }),
+      buildWallLine({
+        wall: { ...wallBase, ...runs(LAND_GATE.z + gap, half) },
+        towers: [],
+        seed: 14,
+      }),
+      buildWallLine({
+        wall: { ...wallBase, depth: 0.001, z: LAND_GATE.z, merlons: false },
+        towers: [],
+        gate: {
+          x: LANE.innerWallX,
+          z: LAND_GATE.z,
+          halfGap: gap,
+          wallWidth: LANE.innerWallWidth,
+          wallHeight: HEIGHTS.innerWall,
+          towerRadius: 1.85,
+          towerHeight: HEIGHTS.tower + 1.4,
+          seed: 43,
+        },
+        seed: 15,
+      }),
+    ]
+    return mergeGeometries(merged, false)
   }, [])
 
   return (
@@ -229,6 +284,7 @@ function MoatWorks() {
         moatWidth: LANE.moatWidth,
         from: -LANE.laneDepth / 2,
         to: LANE.laneDepth / 2,
+        gateZ: LAND_GATE.z,
       }),
     []
   )
@@ -259,17 +315,6 @@ function SiegeCamp() {
  * assault, and a single crossing reads as an effort that cost something rather
  * than as fencing along the bank.
  */
-function MoatBridge() {
-  const geometry = useMemo(
-    () => buildMoatBridge({ x: LANE.moatX, z: -4, span: LANE.moatWidth + 1.5, seed: 3 }),
-    []
-  )
-  return (
-    <mesh geometry={geometry} castShadow receiveShadow>
-      <meshLambertMaterial vertexColors flatShading />
-    </mesh>
-  )
-}
 
 /** Defenders on all three lines, merged into one geometry each. */
 function Garrisons() {
@@ -353,7 +398,6 @@ export function LandTerrain() {
       />
 
       <SiegeCamp />
-      <MoatBridge />
       <Walls />
       <Gate />
       <CityBackdrop />

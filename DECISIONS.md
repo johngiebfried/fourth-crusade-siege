@@ -1494,6 +1494,67 @@ very old, half-derelict one that had been burning intermittently for nine
 months. Nothing in this build reflects that yet, and it argues against pushing
 the city toward polish for its own sake.
 
+## Revision: a gate to attack, and a tidier Galata
+
+### The crusaders' bridge is gone, and a causeway replaces it
+
+The timber bridge was the answer to "how does the army get over the ditch"
+back when the ditch was a stream in a field. With the moat works built it is
+redundant, and with a gate it is wrong: **a gate has a permanent stone
+crossing**, and that is a large part of why an army attacks at one. The
+causeway is now part of `buildMoatWorks`, with a skirt down into the ditch and
+a parapet either side, and the dams step aside for it.
+
+The answer to the question is better for it. It is not that the crusaders
+knocked something together in a night — it is that the Byzantines built the
+crossing centuries earlier and could not take it away.
+
+### The Adrianople Gate
+
+The army did not attack a stretch of blank curtain. In 1203 they fought at the
+north end of the land walls, up by the Blachernae, and a gate is where an
+assault concentrates: the one place the wall can be opened rather than climbed,
+with the causeway already there and a road rather than a slope in front of it.
+`LAND_GATE` stands in for the Gate of Charisius — the Adrianople Gate — the
+northernmost of the great gates and the nearest to the previous year's
+fighting.
+
+Both wall lines are now built as **two runs with the gate between them** rather
+than one continuous wall, with the regular towers that would have fallen inside
+the opening skipped; the gatehouse brings its own heavier pair. It carries an
+arched passage, spandrels, the wall over the top, and a machicolation on
+corbels — the box a defender drops things from, which is the detail that says
+this opening was expected to be attacked.
+
+The arch is a half-torus turned a quarter about Y, because the wall runs along
+Z and the opening faces along X. An extruded shape with a hole is the obvious
+way and the wrong one: it comes out non-indexed, and `mergeGeometries` will not
+take it alongside everything else.
+
+It sits off the centre line. Dead centre it would stand behind the roll readout
+and split the muster in two.
+
+### The army stands back
+
+Men waiting to go in do not crowd the lip of the ditch. `LANE.musterX` holds
+the rows off it, out of bowshot of the wall head, and they come forward when it
+is their turn.
+
+### Pera, and a hint of foreshore
+
+Galata was twenty-six boxes with flat slabs on them, which read as a shanty
+rather than as the Genoese and Amalfitan quarter it was. Sixty-four kit
+buildings now, the odd domed church among them, forty cypresses, and the
+crusader camp gathered between the town and the beach the fleet is drawn up on.
+The contingent banners planted along the shore are gone.
+
+At the foot of the sea wall there is now a narrow shelf of rubble, boulders
+along it, and two small landing stages on piles. Deliberately slight: the ships
+come in to `atWallX` and their gangways reach the wall face, so anything
+projecting more than a metre from the masonry would foul the one piece of
+staging the whole sequence depends on. It is only there to stop the wall
+reading as a slab dropped into a pond.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

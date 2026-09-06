@@ -17,6 +17,15 @@
 /** Lane landmarks, in world X. Everything else positions off these. */
 export const LANE = {
   campX: -20,
+  /**
+   * Where the army forms up, and the spacing of its rows.
+   *
+   * Held back from the counterscarp rather than crowding it. Men waiting to
+   * go in do not stand on the lip of the ditch — they stand off it, out of
+   * bowshot of the wall head, and come forward when it is their turn.
+   */
+  musterX: -23.2,
+  musterRow: 1.9,
   moatX: -13,
   moatWidth: 3.4,
   outerWallX: -8,
@@ -47,6 +56,27 @@ export const HEIGHTS = {
  * Set about a third further apart than they first were — close together, as
  * the real circuit is, but not shoulder to shoulder.
  */
+/**
+ * The gate the assault goes in at.
+ *
+ * The army did not pick a stretch of blank curtain. In 1203 they fought at the
+ * north end of the land walls, up by the Blachernae, and a gate is where an
+ * assault concentrates: it is the one place the wall can be opened rather than
+ * climbed, the causeway across the ditch is already built, and the ground in
+ * front of it is a road rather than a slope. This stands in for the Gate of
+ * Charisius — the Adrianople Gate — the northernmost of the great gates and
+ * the one nearest the fighting of the year before.
+ *
+ * Off the centre line on purpose: dead centre it would sit behind the roll
+ * readout and split the muster in two.
+ */
+export const LAND_GATE = {
+  z: -14.5,
+  /** Half the opening in each wall line. */
+  innerHalf: 3.4,
+  outerHalf: 2.4,
+}
+
 export const INNER_TOWERS = 19
 export const OUTER_TOWERS = 19
 

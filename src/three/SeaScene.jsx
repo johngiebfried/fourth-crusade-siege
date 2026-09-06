@@ -19,7 +19,8 @@ import { PALETTE } from './palette.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { RippleWater } from './geometry/Field.jsx'
-import { FACTIONS, factionFlagTexture } from './factions.js'
+import * as kit from './geometry/buildingKit.js'
+import { buildCypresses } from './geometry/landmarks.js'
 
 import { SEA_LANE, SEA_HEIGHTS, SEA_TOWERS } from './lane.js'
 import { buildCityQuarter } from './geometry/landmarks.js'
@@ -112,6 +113,81 @@ function Shore() {
   )
 }
 
+/**
+ * A hint of foreshore at the foot of the sea wall.
+ *
+ * The reconstructions show the Horn wall standing more or less in the water,
+ * but not quite: there is a narrow strip of rock and rubbish at its foot, a
+ * landing stage or two, and the odd boat pulled up. It is what stops the wall
+ * reading as a slab dropped into a pond.
+ *
+ * Deliberately narrow. The ships come in to `atWallX` and their gangways
+ * reach the wall face, so anything projecting more than a metre or so from the
+ * masonry would foul the one piece of staging the whole sequence depends on.
+ */
+function Foreshore() {
+  const geometry = useMemo(() => {
+    const rand = (n) => Math.abs((Math.sin(n * 91.7) * 43758.5453) % 1)
+    const parts = []
+    const paint = (g, hex, tone = 1) => {
+      const c = new THREE.Color(hex)
+      const n = g.attributes.position.count
+      const arr = new Float32Array(n * 3)
+      for (let i = 0; i < n; i++) {
+        arr[i * 3] = c.r * tone
+        arr[i * 3 + 1] = c.g * tone
+        arr[i * 3 + 2] = c.b * tone
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
+      return g
+    }
+
+    const face = SEA_LANE.wallX - SEA_LANE.wallWidth / 2
+
+    // A shelf of rubble along the base, barely proud of the water.
+    const shelf = new THREE.BoxGeometry(1.1, 0.34, 300)
+    shelf.translate(face - 0.5, 0.05, 0)
+    parts.push(paint(shelf, '#8b8368', 0.96))
+
+    // Boulders along it, at intervals rather than evenly.
+    for (let i = 0; i < 90; i++) {
+      const z = -140 + rand(i) * 280
+      const r = 0.12 + rand(i + 7) * 0.26
+      const rock = new THREE.BoxGeometry(r * 1.6, r * 1.3, r * 1.8)
+      rock.rotateY(rand(i + 13) * Math.PI)
+      rock.rotateX((rand(i + 17) - 0.5) * 0.5)
+      rock.translate(face - 0.35 - rand(i + 19) * 0.55, 0.12 + r * 0.4, z)
+      parts.push(paint(rock, '#7e7761', 0.82 + rand(i + 23) * 0.3))
+    }
+
+    // Two small landing stages on piles, of the kind every stretch of this
+    // wall had a postern and a jetty for.
+    for (const z of [-38, 46]) {
+      const deck = new THREE.BoxGeometry(2.2, 0.12, 1.5)
+      deck.translate(face - 1.2, 0.5, z)
+      parts.push(paint(deck, PALETTE.hullTimber, 1.02))
+      for (const dz of [-0.55, 0.55]) {
+        for (const dx of [-0.8, 0.3]) {
+          const pile = new THREE.CylinderGeometry(0.06, 0.07, 1.0, 5)
+          pile.translate(face - 1.2 + dx, 0.05, z + dz)
+          parts.push(paint(pile, PALETTE.hullTimberDark, 0.9))
+        }
+      }
+    }
+
+    const merged = mergeGeometries(parts, false)
+    parts.forEach((p) => p.dispose())
+    merged.computeVertexNormals()
+    return merged
+  }, [])
+
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
 /* ------------------------------------------------------------------- city */
 
 /** The city rising behind the sea wall, merged into one geometry. */
@@ -144,51 +220,6 @@ function CityBehind() {
  * assault somewhere to start from: the ships are drawn up on this beach, and
  * they row from here to the wall.
  */
-/**
- * The contingents' standards, planted on the Galata shore.
- *
- * The fleet is Venetian and flies Venice's colours from every mast-head; the
- * other four followings left their banners on the beach they embarked from.
- * It is a small thing that says who is aboard without dressing the ships in
- * four sets of livery.
- */
-function ShoreBanners() {
-  const banners = useMemo(
-    () =>
-      Object.keys(FACTIONS)
-        .filter((name) => name !== 'Venetian')
-        .map((name, i, all) => ({
-          name,
-          texture: factionFlagTexture(name),
-          z: -10.5 + (21 * i) / Math.max(1, all.length - 1),
-        })),
-    []
-  )
-
-  return (
-    <group>
-      {banners.map((b) => (
-        <group key={b.name} position={[SEA_LANE.shoreX - 2.6, 0.7, b.z]}>
-          <mesh position={[0, 1.9, 0]} castShadow>
-            <cylinderGeometry args={[0.07, 0.09, 3.8, 6]} />
-            <meshLambertMaterial color={PALETTE.hullTimberDark} />
-          </mesh>
-          <group position={[0, 3.15, 0]} rotation={[0, -0.5, 0]}>
-            <mesh position={[0.62, 0, 0]}>
-              <planeGeometry args={[1.24, 0.9]} />
-              <meshBasicMaterial
-                map={b.texture}
-                side={THREE.DoubleSide}
-                toneMapped={false}
-              />
-            </mesh>
-          </group>
-        </group>
-      ))}
-    </group>
-  )
-}
-
 function GalataBank() {
   const geometry = useMemo(() => {
     const rand = (n) => Math.abs((Math.sin(n * 45.164) * 43758.5453) % 1)
@@ -218,23 +249,63 @@ function GalataBank() {
     beach.translate(edge - 1.4, 0.35, 0)
     parts.push(paint(beach, '#8e8a6c'))
 
-    // Houses of Pera, set back from the water.
-    for (let i = 0; i < 26; i++) {
-      const x = edge - 11 - rand(i) * 13
-      const z = -105 + rand(i + 11) * 210
-      const w = 0.7 + rand(i + 3) * 1.1
-      const h = 0.7 + rand(i + 7) * 1.3
-      const body = new THREE.BoxGeometry(w, h, w)
-      body.translate(x, 0.8 + h / 2, z)
-      parts.push(paint(body, '#c3b79c', 0.9 + rand(i + 19) * 0.2))
-      const roof = new THREE.BoxGeometry(w * 1.15, 0.22, w * 1.15)
-      roof.translate(x, 0.8 + h + 0.09, z)
-      parts.push(paint(roof, '#9d6a4c'))
+    // Pera, set back from the water.
+    //
+    // This was twenty-six boxes with a flat slab on each, which read as a
+    // shanty rather than as the Genoese and Amalfitan quarter it was. Built
+    // from the kit now — pitched roofs, eaves, the odd domed church — and
+    // there are more of them, gathered into a settlement rather than
+    // scattered across the whole bank.
+    const town = []
+    for (let i = 0; i < 64; i++) {
+      const x = edge - 8 - rand(i) * 17
+      const z = -100 + rand(i + 11) * 200
+      const roll = rand(i + 29)
+      const w = 1.0 + rand(i + 3) * 1.5
+      const tone = 0.88 + rand(i + 19) * 0.26
+
+      const g =
+        roll > 0.88
+          ? kit.church({
+              r: 0.7 + rand(i + 5) * 0.4,
+              h: 1.5 + rand(i + 9) * 0.8,
+              wallHex: '#cdc2a6',
+              roofHex: '#9d6a4c',
+              domeHex: PALETTE.domeLead,
+              tone,
+            })
+          : kit.house({
+              w,
+              d: w * (0.7 + rand(i + 13) * 0.5),
+              h: 0.9 + rand(i + 7) * 1.5,
+              wallHex: rand(i + 23) > 0.5 ? '#c3b79c' : '#d2c6aa',
+              roofHex: '#9d6a4c',
+              tone,
+              roofPitch: 0.3 + rand(i + 31) * 0.2,
+            })
+      g.rotateY(rand(i + 37) * Math.PI)
+      g.translate(x, 0.8, z)
+      town.push(g)
     }
 
-    // The crusader camp, pitched along the shore.
-    for (let i = 0; i < 16; i++) {
-      const x = edge - 4 - rand(i + 41) * 6
+    // Cypresses through it, as on the city side.
+    const trees = []
+    for (let i = 0; i < 40; i++) {
+      trees.push({
+        x: edge - 7 - rand(i + 101) * 18,
+        z: -100 + rand(i + 113) * 200,
+        y: 0.8,
+        h: 1.6 + rand(i + 127) * 1.2,
+        tone: 0.85 + rand(i + 131) * 0.3,
+      })
+    }
+    town.push(buildCypresses(trees))
+    parts.push(...town)
+
+    // The crusader camp, pitched along the shore between the town and the
+    // beach the fleet is drawn up on.
+    for (let i = 0; i < 22; i++) {
+      const x = edge - 3.4 - rand(i + 41) * 4.2
       const z = -95 + rand(i + 53) * 190
       const r = 0.4 + rand(i + 61) * 0.3
       const h = 0.62 + rand(i + 67) * 0.4
@@ -354,8 +425,8 @@ export function SeaTerrain() {
       <Horn />
       <Shore />
       <GalataBank />
-      <ShoreBanners />
       <FleetAtAnchor />
+      <Foreshore />
       <SeaWall />
       <CityBehind />
       <SeaGarrison />
