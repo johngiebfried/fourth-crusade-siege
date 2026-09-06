@@ -44,6 +44,7 @@ import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
 import { useResolveNextKey } from './LandAssault.jsx'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
+import { Atmosphere } from '../three/geometry/Sky.jsx'
 
 /* ---------------------------------------------------------------- timing */
 
@@ -232,8 +233,7 @@ function Lighting() {
       />
       <hemisphereLight args={['#cddceb', '#4a5a5e', 0.62]} />
       <ambientLight intensity={0.3} />
-      <fog attach="fog" args={['#c4ccd2', 50, 130]} />
-      <color attach="background" args={['#b3c4d2']} />
+      <Atmosphere mood="horn" near={34} far={150} radius={420} />
     </>
   )
 }

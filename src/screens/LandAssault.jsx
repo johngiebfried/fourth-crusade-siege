@@ -26,6 +26,7 @@ import { SiegeLadder } from '../three/geometry/SiegeLadder.jsx'
 import { Die } from '../three/geometry/Die.jsx'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
+import { Atmosphere } from '../three/geometry/Sky.jsx'
 
 /* ---------------------------------------------------------------- timing */
 
@@ -205,8 +206,9 @@ function Lighting({ round = 1 }) {
       />
       <hemisphereLight args={late ? ['#b9bcc6', '#6d6448', 0.55] : ['#c4d6ea', '#7b7256', 0.68]} />
       <ambientLight intensity={late ? 0.3 : 0.22} />
-      <fog attach="fog" args={['#c9c1ac', 60, 170]} />
-      <color attach="background" args={[round > 1 ? '#c6bcae' : '#b9c6d4']} />
+      {/* Sky and aerial perspective from one palette, so the far towers fade
+          into the colour that is actually behind them. */}
+      <Atmosphere mood={round > 1 ? 'late' : 'day'} near={38} far={165} radius={330} />
     </>
   )
 }

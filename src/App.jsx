@@ -33,6 +33,29 @@ function RunRound({ players, onRun }) {
   return <div className="h-screen w-screen bg-[#1c1512]" />
 }
 
+/**
+ * A rehearsal jump: `?screen=bribery`, `?screen=results`, and so on.
+ *
+ * For an instructor setting up before a class, and for anyone working on a
+ * screen that sits four minutes of dice behind the title. It has to be typed
+ * into the address bar deliberately — no link reaches it — and the screens it
+ * lands on have no round behind them, so they show empty state. It cannot be
+ * used to skip a real siege: `Begin the Siege` starts a fresh one either way.
+ */
+const REHEARSAL_SCREENS = new Set([
+  'opening',
+  'bribery',
+  'gate-opening',
+  'first-to-enter',
+  'results',
+])
+
+function rehearsalScreen() {
+  if (typeof location === 'undefined') return null
+  const want = new URLSearchParams(location.search).get('screen')
+  return want && REHEARSAL_SCREENS.has(want) ? want : null
+}
+
 export default function App() {
   const [gameState, setGameState] = useState(rehearsalScreen() ?? 'opening')
   const [players, setPlayers] = useState([])
@@ -65,30 +88,7 @@ export default function App() {
     setGameState('execute')
   }, [])
 
-  /**
- * A rehearsal jump: `?screen=bribery`, `?screen=results`, and so on.
- *
- * For an instructor setting up before a class, and for anyone working on a
- * screen that sits four minutes of dice behind the title. It has to be typed
- * into the address bar deliberately — no link reaches it — and the screens it
- * lands on have no round behind them, so they show empty state. It cannot be
- * used to skip a real siege: `Begin the Siege` starts a fresh one either way.
- */
-const REHEARSAL_SCREENS = new Set([
-  'opening',
-  'bribery',
-  'gate-opening',
-  'first-to-enter',
-  'results',
-])
-
-function rehearsalScreen() {
-  if (typeof location === 'undefined') return null
-  const want = new URLSearchParams(location.search).get('screen')
-  return want && REHEARSAL_SCREENS.has(want) ? want : null
-}
-
-/* ------------------------------------------------- round resolution */
+  /* ------------------------------------------------- round resolution */
 
 /**
  * The final stage of each lane, by the label `rules.js` stamps on its rolls.

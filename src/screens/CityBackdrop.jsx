@@ -19,6 +19,7 @@ import { buildSiegeCamp } from '../three/geometry/siegeCamp.js'
 import { RippleWater } from '../three/geometry/Field.jsx'
 import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
+import { Atmosphere } from '../three/geometry/Sky.jsx'
 
 /** World units the shot must span, so the whole peninsula stays in frame. */
 const CITY_SPAN = 74
@@ -70,8 +71,7 @@ function CityLighting() {
       />
       <hemisphereLight args={['#cfe0f0', '#5d5b42', 0.95]} />
       <ambientLight intensity={0.32} />
-      <fog attach="fog" args={['#c2cedd', 150, 300]} />
-      <color attach="background" args={['#aec2d6']} />
+      <Atmosphere mood="day" near={120} far={330} radius={430} />
     </>
   )
 }
@@ -221,8 +221,7 @@ function CrusaderCamScene() {
       <directionalLight position={[-16, 22, 14]} intensity={1.5} color="#fff1d6" castShadow />
       <hemisphereLight args={['#cddceb', '#5a5f48', 0.8]} />
       <ambientLight intensity={0.3} />
-      <color attach="background" args={['#a8c0d4']} />
-      <fog attach="fog" args={['#a8c0d4', 34, 90]} />
+      <Atmosphere mood="horn" near={22} far={86} radius={170} />
 
       {/*
         The Galata shore, and the Horn in front of it.

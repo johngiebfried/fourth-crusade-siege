@@ -13,6 +13,7 @@ import { Pawn } from '../three/geometry/Pawn.jsx'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
+import { Atmosphere } from '../three/geometry/Sky.jsx'
 
 /**
  * Stands in front of the gate and pushes slowly in on it.
@@ -130,8 +131,7 @@ export default function GateOpening({ onDone }) {
         />
         <hemisphereLight args={['#cfe0f0', '#7b7256', 0.85]} />
         <ambientLight intensity={0.36} />
-        <fog attach="fog" args={['#c9c1ac', 30, 120]} />
-        <color attach="background" args={['#b9c6d4']} />
+        <Atmosphere mood="day" near={24} far={110} radius={260} />
 
         <LandTerrain />
         <GateDoors open={open} />
