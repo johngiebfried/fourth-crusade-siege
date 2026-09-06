@@ -501,6 +501,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
 
 
 
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-stone-800">
       <Canvas

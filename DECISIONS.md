@@ -1774,6 +1774,34 @@ mail going up a ladder under shot is not quick, and at the old rate he reached
 the parapet almost as soon as he left the ground. The sea lane keeps its own
 rate: crew there have to move at their ship's, or they slide off it.
 
+## Revision: the failure gloss comes off the assault screens
+
+Scheme C — a fact from `siegecraft` or `walls` printed under a failed roll — is
+removed from both lanes. Two reasons, and the first only appeared once the
+engines started shooting:
+
+**It was in the way.** The roll readout sits at the foot of the frame, and the
+engines throw across exactly that ground. A volley the class is meant to watch
+went on behind a panel three lines deeper than it needed to be.
+
+**It was on screen too briefly to read.** A resolution holds for about a second
+and a half. That is long enough for a name and a number; it is nowhere near
+long enough for three lines of prose, so the passage was scenery rather than
+teaching.
+
+### Held in reserve, not deleted
+
+Everything behind it stays. The six sets, the lane tagging, the picker that
+exhausts a set before repeating and never draws a sea fact for a land failure —
+all still there, all still checked by `check-lore.mjs`. Both `siegecraft` and
+`walls` are still drawn on the first-to-enter and results screens, where a
+reader has time, so the machinery is still exercised in the running game rather
+than sitting cold.
+
+Putting it back is a `pickLore('siegecraft', { lane })` and a block in
+`RollReadout` — but it should go somewhere a reader can finish it. Scheme B's
+waiting beats are unaffected and still carry their passages.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

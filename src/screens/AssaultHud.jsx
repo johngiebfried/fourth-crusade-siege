@@ -12,8 +12,6 @@
  * vermilion, which is how a manuscript marks anything.
  */
 
-import { useMemo } from 'react'
-import { pickLore } from '../game/lore.js'
 import { LineFiller } from './ui.jsx'
 
 /**
@@ -71,26 +69,27 @@ const stripMarker = (message) =>
 /**
  * The readout after a roll.
  *
- * A failure carries a gloss: a fact about siegecraft or about these walls,
- * drawn when the roll fails and not otherwise. Failure is when a student
- * actually has the question — why didn't that work? — and it is the one beat
- * in the sequence where nobody is mid-decision. Successes stay clean, because
- * a fact under every single roll becomes wallpaper and stops being read.
+ * ── The gloss that used to live here ─────────────────────────────────────
+ *
+ * A failed roll drew a fact from `siegecraft` or `walls` and printed it under
+ * the result. It is removed, and the reasons are worth keeping:
+ *
+ *   It was **in the way**. The readout sits at the foot of the frame, and the
+ *   engines throw across exactly that ground. A volley the class is meant to
+ *   watch went on behind a panel three lines deeper than it needed to be.
+ *
+ *   It was **on screen too briefly to read**. A resolution holds for about a
+ *   second and a half. That is long enough for a name and a number and not
+ *   nearly long enough for three lines of prose, so the passage was scenery.
+ *
+ * The sets, their lane tagging and the picker all remain, and both are still
+ * drawn on the first-to-enter and results screens, where a reader has time.
+ * Putting it back is a `pickLore('siegecraft', { lane })` and a block in this
+ * component — but somewhere it can be read.
  */
-export function RollReadout({ activeRoll, lane = 'land' }) {
-  const { entry } = activeRoll ?? {}
-  const failed = Boolean(entry) && !entry.success
-
-  // Keyed on the entry so a new failure draws a new passage, and re-renders
-  // during the same one do not shuffle it.
-  const gloss = useMemo(
-    () =>
-      failed ? pickLore(Math.random() < 0.5 ? 'siegecraft' : 'walls', { lane }) : null,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [failed, lane, entry?.playerId, entry?.player, entry?.roll]
-  )
-
+export function RollReadout({ activeRoll }) {
   if (!activeRoll || activeRoll.phase === 'tumbling') return null
+  const { entry } = activeRoll
   const good = entry.success
 
   return (
@@ -121,15 +120,6 @@ export function RollReadout({ activeRoll, lane = 'land' }) {
         >
           {stripMarker(entry.message)}
         </div>
-
-        {gloss && (
-          <div
-            className="mt-4 border-t pt-3 text-left text-[0.95rem] italic leading-relaxed"
-            style={{ borderColor: 'rgba(43,33,24,0.28)', color: 'var(--ink-soft)' }}
-          >
-            {gloss.text}
-          </div>
-        )}
       </div>
     </div>
   )

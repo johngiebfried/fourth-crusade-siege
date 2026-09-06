@@ -782,7 +782,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       ) : (
         <>
           <StageBanner stage={stage} remaining={remaining} total={stageIds.length} />
-          <RollReadout activeRoll={activeRoll} lane="sea" />
+          <RollReadout activeRoll={activeRoll} />
           <Prompt
             show={!activeRoll && remaining > 0}
             remaining={remaining}
