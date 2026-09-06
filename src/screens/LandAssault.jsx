@@ -219,12 +219,12 @@ function Lighting({ round = 1 }) {
 
 /* ------------------------------------------------------------------ scene */
 
-function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, round, onPawnClick }) {
+function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, round, engineFire, onPawnClick }) {
   return (
     <>
       <CameraRig focus={focus} />
       <Lighting round={round} />
-      <LandTerrain />
+      <LandTerrain engineFire={engineFire} />
 
       {pawns.map((p) => (
         <Pawn
@@ -370,6 +370,11 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
     [stage, resolvedIds]
   )
 
+  // Bumped on every attempt, which is what looses the engines. They fire
+  // alongside the die rather than before it: an extra beat per crusader would
+  // add a couple of minutes across a class of twenty-four.
+  const [engineFire, setEngineFire] = useState(0)
+
   const handlePawnClick = useCallback(
     (playerId) => {
       if (busy || !stage) return
@@ -379,6 +384,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
       if (!entry) return
 
       setBusy(true)
+      setEngineFire((n) => n + 1)
 
       const level = levels[playerId] ?? LEVELS.camp
       const pawnPos = positionFor(level, slots.get(playerId) ?? 0, stageIds.length)
@@ -460,6 +466,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
 
   const remaining = stageIds.filter((id) => !resolvedIds.has(id)).length
 
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-stone-800">
       <Canvas
@@ -475,6 +482,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
           bursts={bursts}
           focus={stage?.key}
           round={round}
+          engineFire={engineFire}
           onPawnClick={handlePawnClick}
         />
       </Canvas>

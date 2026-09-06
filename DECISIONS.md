@@ -1634,6 +1634,53 @@ rather than as a gate with clear wall either side.
 11.5 units on the outer line, 13 on the inner. One tower moves a little further
 down the wall and the gate stands on its own.
 
+## Revision: the road, and engines that shoot
+
+### Everything along the ditch now stops at the road
+
+The counterscarp had been cut for the causeway; the revetment and its coping
+had not. Both ran straight on through the crossing, and the coping — standing a
+few hundredths of a unit proud of the deck — surfaced along it as a line of
+bumps.
+
+Every length-wise piece is now built from **one list of runs**, so a gap for the
+road can only be forgotten in one place rather than three.
+
+### The causeway is a road, not a slab in a meadow
+
+It stopped a couple of units short at each end, leaving the crossing marooned
+with grass on both sides. It now runs from out in the field the army musters on,
+over the ditch, and up to the face of the outer wall. The parapet is only over
+the ditch, because a road in open field does not have one.
+
+### The mangonels were facing backwards
+
+A traction trebuchet works like a see-saw: the long arm is hauled *down* on the
+side away from the target, so the sling and its stone lie on the ground behind
+the machine, and the crew pull the short arm to sweep the long arm up, over and
+forward. The stone leaves as the head passes the top, flying the way the head
+was travelling.
+
+Ours had the loaded sling on the *wall* side, which is the throw pointing into
+the camp. Both engines are turned round.
+
+### They shoot
+
+The frame is baked into the camp's merged geometry and never moves; only the
+beam, the sling and the stone are live. An attempt looses one of the two, and
+they alternate, so a stone is in the air rather more often than either machine
+could manage alone.
+
+They fire **alongside the die rather than before it**. An extra beat per
+crusader is a couple of minutes across a class of twenty-four, and the phase is
+already the longest in the game.
+
+**The shot is not simulated.** It follows a parabola solved to land on a chosen
+point rather than an integration of whatever velocity the arm imparted. Real
+physics buys nothing here and costs control: a stone that sails over the wall
+or drops in the ditch reads as a bug rather than as a miss, and this is a
+classroom projector, not a ballistics exercise.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

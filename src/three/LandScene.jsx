@@ -25,8 +25,8 @@ import { PALETTE } from './palette.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
-import { GrassField, MoatWater, Smoke } from './geometry/Field.jsx'
-import { buildSiegeCamp, buildMoatWorks } from './geometry/siegeCamp.js'
+import { GrassField, MoatWater, Smoke, Mangonel } from './geometry/Field.jsx'
+import { buildSiegeCamp, buildMoatWorks, buildMangonelBeam, MANGONEL } from './geometry/siegeCamp.js'
 import { buildCityQuarter } from './geometry/landmarks.js'
 
 import {
@@ -300,6 +300,9 @@ function MoatWorks() {
         from: -LANE.laneDepth / 2,
         to: LANE.laneDepth / 2,
         gateZ: LAND_GATE.z,
+        // Out into the field the army crosses, and right up to the wall face.
+        roadFromX: LANE.musterX - 1.5,
+        roadToX: LANE.outerWallX - LANE.outerWallWidth / 2,
       }),
     []
   )
@@ -307,6 +310,40 @@ function MoatWorks() {
     <mesh geometry={geometry} castShadow receiveShadow>
       <meshLambertMaterial vertexColors flatShading />
     </mesh>
+  )
+}
+
+/**
+ * The two engines, drawn up in front of the camp and shooting at the wall.
+ *
+ * Their frames are baked into the camp's merged geometry; only the beams here
+ * are live. The engines were also facing the wrong way — see MANGONEL — and
+ * are turned round.
+ */
+function Mangonels({ fire = 0 }) {
+  const beam = useMemo(() => buildMangonelBeam({ withStone: true }), [])
+  const beamEmpty = useMemo(() => buildMangonelBeam({ withStone: false }), [])
+
+  return (
+    <>
+      {[-16, 4].map((z, i) => (
+        <Mangonel
+          key={z}
+          position={[LANE.campX - 5, 0, z]}
+          facing={-1}
+          // The two loose on alternate attempts, so a stone is in the air
+          // rather more often than either machine could manage alone.
+          fire={Math.floor((fire + (i === 0 ? 1 : 0)) / 2)}
+          target={[LANE.outerWallX, HEIGHTS.outerWall + 0.3, z + (i ? 2.5 : -2.5)]}
+          beamGeometry={beam}
+          beamEmptyGeometry={beamEmpty}
+          cocked={MANGONEL.cocked}
+          loosed={MANGONEL.loosed}
+          longArm={MANGONEL.longArm}
+          axleY={MANGONEL.axleY}
+        />
+      ))}
+    </>
   )
 }
 
@@ -385,7 +422,7 @@ function Garrisons() {
 }
 
 /** Static scenery for the land lane. Contains no game state. */
-export function LandTerrain() {
+export function LandTerrain({ engineFire = 0 }) {
   return (
     <group>
       <Ground />
@@ -413,6 +450,7 @@ export function LandTerrain() {
       />
 
       <SiegeCamp />
+      <Mangonels fire={engineFire} />
       <Walls />
       <Gate />
       <CityBackdrop />

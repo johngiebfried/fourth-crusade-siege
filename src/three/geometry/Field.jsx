@@ -7,7 +7,7 @@
  * textures at all — just code driving vertices and colour.
  */
 
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
@@ -341,6 +341,145 @@ export function Smoke({ plumes = [] }) {
           ))}
         </group>
       ))}
+    </group>
+  )
+}
+
+/**
+ * A mangonel that shoots.
+ *
+ * The frame is baked into the camp's merged geometry and never moves; this
+ * animates only the beam, the sling, and the stone that leaves it.
+ *
+ * ── Making the swing read ────────────────────────────────────────────────
+ *
+ * The machine is built facing the camp, so the group is turned about Y and a
+ * positive rotation of the beam in local space reads as the long arm sweeping
+ * up from behind the machine, over the top, and forward at the wall. That is
+ * the motion of a traction trebuchet, and it is the whole reason the loaded
+ * sling sits on the camp side rather than the wall side.
+ *
+ * ── Why the shot is not simulated ────────────────────────────────────────
+ *
+ * The stone follows a parabola solved to *land on a given point* rather than
+ * an integration of whatever velocity the arm happened to impart. Real physics
+ * here buys nothing and costs control: a shot that sails over the wall or drops
+ * in the ditch looks like a bug rather than like a miss, and this is a
+ * classroom projector, not a ballistics exercise. The arc is chosen to look
+ * right and to arrive where it should.
+ */
+export function Mangonel({
+  position,
+  facing = -1,
+  fire = 0,
+  target,
+  beamGeometry,
+  beamEmptyGeometry,
+  cocked,
+  loosed,
+  longArm,
+  axleY,
+}) {
+  const beam = useRef()
+  const stone = useRef()
+  const puff = useRef()
+  const clock = useRef(null)
+  const [loaded, setLoaded] = useState(true)
+
+  // A change of `fire` starts a shot. The counter rather than a boolean means
+  // repeated shots re-trigger cleanly without a reset in between.
+  useEffect(() => {
+    if (fire > 0) {
+      clock.current = 0
+      setLoaded(true)
+    }
+  }, [fire])
+
+  const SWING = 0.3 // seconds, cocked to loosed
+  const RELEASE = 0.62 // fraction of the swing at which the sling lets go
+  const FLIGHT = 0.85
+  const RESET_AT = 1.5
+  const RESET = 1.4
+
+  useFrame((_, delta) => {
+    if (clock.current === null) return
+    clock.current += delta
+    const t = clock.current
+
+    // The beam: a fast swing, then the crew winching it back down.
+    let angle = cocked
+    if (t < SWING) {
+      // Ease out — a hauled beam is quickest at the start of its travel.
+      const k = 1 - Math.pow(1 - t / SWING, 2.2)
+      angle = cocked + (loosed - cocked) * k
+    } else if (t < RESET_AT) {
+      angle = loosed
+    } else if (t < RESET_AT + RESET) {
+      const k = (t - RESET_AT) / RESET
+      angle = loosed + (cocked - loosed) * (k * k * (3 - 2 * k))
+    } else {
+      angle = cocked
+      clock.current = null
+      setLoaded(true)
+    }
+    if (beam.current) beam.current.rotation.z = angle
+
+    const releaseAt = SWING * RELEASE
+    if (loaded && t >= releaseAt) setLoaded(false)
+
+    // The stone, on its solved arc.
+    if (stone.current) {
+      const ft = (t - releaseAt) / FLIGHT
+      const flying = ft >= 0 && ft <= 1
+      stone.current.visible = flying
+      if (flying) {
+        // Launch point: the head of the long arm at the moment of release.
+        const a = cocked + (loosed - cocked) * (1 - Math.pow(1 - RELEASE, 2.2))
+        const sx = position[0] + -facing * Math.cos(a) * longArm
+        const sy = position[1] + axleY + Math.sin(a) * longArm
+        const sz = position[2]
+
+        stone.current.position.set(
+          sx + (target[0] - sx) * ft,
+          sy + (target[1] - sy) * ft + Math.sin(Math.PI * ft) * 3.4,
+          sz + (target[2] - sz) * ft
+        )
+      }
+    }
+
+    // A puff of dust where it strikes.
+    if (puff.current) {
+      const pt = (t - releaseAt - FLIGHT) / 0.7
+      const showing = pt >= 0 && pt <= 1
+      puff.current.visible = showing
+      if (showing) {
+        puff.current.position.set(...target)
+        const s = 0.4 + pt * 2.2
+        puff.current.scale.set(s, s * 0.8, s)
+        puff.current.material.opacity = 0.5 * (1 - pt)
+      }
+    }
+  })
+
+  return (
+    <group>
+      <group position={position} rotation={[0, facing > 0 ? 0 : Math.PI, 0]}>
+        <group ref={beam} position={[0, axleY, 0]}>
+          <mesh geometry={loaded ? beamGeometry : beamEmptyGeometry} castShadow>
+            <meshLambertMaterial vertexColors flatShading />
+          </mesh>
+        </group>
+      </group>
+
+      <mesh ref={stone} visible={false} castShadow>
+        <sphereGeometry args={[0.26, 8, 6]} />
+        <meshLambertMaterial color="#8f8673" flatShading />
+      </mesh>
+
+      <mesh ref={puff} visible={false}>
+        <sphereGeometry args={[1, 10, 8]} />
+        <meshBasicMaterial color="#cfc4ac" transparent opacity={0.5} depthWrite={false} />
+      </mesh>
     </group>
   )
 }
