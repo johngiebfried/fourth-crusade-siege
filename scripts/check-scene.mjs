@@ -580,6 +580,106 @@ console.log('\nEvery figure on screen has a livery')
   )
 }
 
+/* ------------------------------------------------------------ the farmland */
+
+/*
+ * Two field blocks may not lie on top of each other on the same plane.
+ *
+ * This is the flicker. The first version of the countryside scattered blocks
+ * at random over zones far too small to hold them and put every strip's top
+ * face at exactly the same height, so several thousand times a frame the
+ * graphics card had to choose between two surfaces at the same depth. Outside
+ * the land walls the ground crawled.
+ *
+ * The planner now rejects overlaps outright and gives every block its own
+ * plane regardless. Both are checked, because either alone would do and
+ * neither should be allowed to quietly stop working.
+ *
+ * The overlap test here is point sampling, not the separating-axis test the
+ * planner uses. A check that calls the predicate under test cannot catch that
+ * predicate being wrong — and the predicate *was* wrong once: it was a
+ * bounding-circle proxy, and it passed fifty-five real overlaps.
+ */
+{
+  const country = await import(base + 'src/three/geometry/countryside.js')
+  const plan = country.fieldPlan({})
+  const hills = country.hillPlan({})
+
+  check('the countryside is actually dressed', plan.length > 45, `${plan.length} blocks`)
+
+  const zones = new Set(plan.map((b) => b.zone))
+  check(
+    'every zone got fields — outside the walls, behind Galata, and in Asia',
+    ['thrace', 'pera', 'chalcedon'].every((z) => zones.has(z)),
+    [...zones].join(', ')
+  )
+
+  /** A scatter of points inside a block, in world coordinates. */
+  const sample = (b) => {
+    const c = Math.cos(b.angle)
+    const s = Math.sin(b.angle)
+    const out = []
+    for (let i = 0; i <= 6; i++) {
+      for (let j = 0; j <= 6; j++) {
+        const u = (i / 6 - 0.5) * b.width
+        const v = (j / 6 - 0.5) * b.depth
+        out.push([b.x + c * u + s * v, b.z - s * u + c * v])
+      }
+    }
+    return out
+  }
+  /** Is a world point inside a block? Rotate it back and compare. */
+  const holds = (b, [x, z]) => {
+    const c = Math.cos(-b.angle)
+    const s = Math.sin(-b.angle)
+    const dx = x - b.x
+    const dz = z - b.z
+    return (
+      Math.abs(dx * c + dz * s) <= b.width / 2 + 1e-9 &&
+      Math.abs(-dx * s + dz * c) <= b.depth / 2 + 1e-9
+    )
+  }
+
+  let overlapping = 0
+  let coplanar = 0
+  let worstGap = Infinity
+  const points = plan.map(sample)
+  for (let i = 0; i < plan.length; i++) {
+    for (let j = i + 1; j < plan.length; j++) {
+      const gap = Math.abs(plan[i].y - plan[j].y)
+      worstGap = Math.min(worstGap, gap)
+      if (gap < 1e-4) coplanar++
+      if (points[i].some((p) => holds(plan[j], p)) || points[j].some((p) => holds(plan[i], p))) {
+        overlapping++
+      }
+    }
+  }
+
+  check('no two blocks of fields lie on top of each other', overlapping === 0, `${overlapping} pairs`)
+  check('no two blocks of fields share a plane', coplanar === 0, `${coplanar} pairs`)
+  check(
+    'the planes are far enough apart to be told apart',
+    worstGap > 1e-3,
+    `closest ${worstGap.toExponential(1)} units`
+  )
+
+  // And nothing ploughed up a hillside: the hills are hemispheres, so a flat
+  // slab laid over one sinks into the near flank and comes out of the far.
+  let onHill = 0
+  for (const b of plan) {
+    for (const h of hills) {
+      const c = Math.cos(-h.angle)
+      const s = Math.sin(-h.angle)
+      const dx = b.x - h.x
+      const dz = b.z - h.z
+      const u = (dx * c - dz * s) / h.rx
+      const v = (dx * s + dz * c) / h.rz
+      if (u * u + v * v < 1) onHill++
+    }
+  }
+  check('no field is ploughed across a hill', onHill === 0, `${onHill} on hills`)
+}
+
 console.log('')
 if (failures) {
   console.error(`${failures} scene invariant(s) failed`)

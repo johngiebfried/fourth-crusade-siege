@@ -2012,6 +2012,50 @@ offset along the perpendicular of *that* — (cos θ, −sin θ). Offsetting alo
 only perpendicular at θ = 0. Everywhere else the strips walked diagonally
 across each other, and the first render had planks scattered over Thrace.
 
+### The fields flickered
+
+Z-fighting, and it was mine twice over.
+
+The first version scattered a hundred and ten field blocks over a Thracian zone
+with room for about forty, and laid every strip's top face at exactly the same
+height — `SHORE_Y + 0.05`, for all two hundred and thirty blocks in all three
+zones. So the graphics card was asked, several thousand times a frame, to
+choose between two surfaces at identical depth. It chose differently as the
+camera drifted, and the ground outside the land walls crawled.
+
+There were two separate faults under that, and both are fixed, because either
+one alone would have been enough and neither should be able to quietly stop
+working:
+
+- **Blocks no longer overlap.** A candidate that lands on one already placed is
+  thrown away. That is also better farmland — overlapping strip blocks read as
+  mush at any height.
+- **No two blocks share a plane anyway.** Each gets its own lift, four
+  thousandths of a unit apart. The camera is orthographic, so depth resolution
+  is uniform across the frustum and that is hundreds of times what it takes.
+
+A bounding-circle test was tried for the first of those and is not good enough:
+a block's reach is half its diagonal, so its circle is far larger than the
+block, and packing tightly enough to look like farmland let fifty-five real
+overlaps back in. It does separating axes now.
+
+### The hills were standing in the fields
+
+Found while fixing the flicker, and worth recording because the symptom was
+disguised. The inner hill lines sat at x −86 to −104 with radii up to
+twenty-six, and the Thracian fields ran from x −38 to −120 — so the hills were
+in the middle of the farmland. Since ploughing keeps off a hillside, they ate
+it: twenty-three blocks survived out of five thousand eight hundred candidates,
+nearly all of them on Pera.
+
+The bands now run in order out from the city — glacis, farmland, hills — which
+is both what the ground did and what makes the picture legible.
+
+Hills and fields are also planned before either is built, in `hillPlan` and
+`fieldPlan`, so the field planner can see the hills. It was laying flat slabs
+across hemispheres, which sink into the near flank and come out through the far
+one.
+
 ### And the checks were sharpened twice
 
 `check-scene.mjs` now reproduces the projection at eight window shapes across
