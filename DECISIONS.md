@@ -1243,6 +1243,38 @@ framerate is not measurable from this harness at all. The bundle is 1.2MB raw
 and 328KB gzipped, essentially all three.js. This still needs half an hour on
 the actual classroom laptop, and nothing here substitutes for that.
 
+## The crusader-camp inset had land and water occupying the same space
+
+The inset on the title screen read as a pale ground floating in a mixture of
+land and water, and it was exactly that. The shore box ran from z −9 to +21 and
+the Horn from z −31 to +3 — a twelve-unit overlap — with the water surface four
+hundredths of a unit *below* the turf. The swell then pushed crests up through
+the ground. The siege camp compounded it: its footprint ran z −22 to +22, so a
+third of the tents stood out in the water.
+
+They now meet at a single waterline at z = 0: water behind it and set low
+enough that no crest reaches the bank, a shingle strip along the edge as on the
+sea lane's Galata bank, then turf, with the camp kept entirely behind it.
+
+## Measured: the scenes are art-limited, not compute-limited
+
+Taken from `renderer.info` during a live sea assault, at 1741×1242:
+
+| | Draw calls | Triangles | Textures |
+| --- | --- | --- | --- |
+| Sea lane | 97 | 212,698 | 19 |
+| Title-screen city | 322 | 86,024 | 0 |
+
+That is a very small scene. The merging work means the whole sea wall with its
+towers, and a whole rampart of defenders, are one draw call each. Two hundred
+thousand triangles is not what limits an integrated GPU — fill rate and shadow
+passes are — and there is room for several times this geometry before the
+triangle count becomes the constraint.
+
+**So the current look is a consequence of the art direction, not the hardware.**
+Flat shading and vertex colours were chosen deliberately, and the budget for
+more detail exists whenever that choice is revisited.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

@@ -104,12 +104,14 @@ export function CityBackdrop() {
 function CampForeground() {
   const geometry = useMemo(
     () =>
+      // Kept behind the waterline. It used to run from z −22 to +22, which put
+      // a third of the tents out in the Horn.
       buildSiegeCamp({
         campX: 0,
         engineX: 0,
-        zFrom: -22,
-        zTo: 22,
-        tents: 16,
+        zFrom: 0.5,
+        zTo: 12.5,
+        tents: 14,
         seed: 12,
         engines: false,
       }),
@@ -200,7 +202,7 @@ function CrusaderCamScene() {
     const rand = rng(23)
     const out = []
     for (let i = 0; i < 9; i++) {
-      out.push({ x: -15 + rand() * 30, z: -8 - rand() * 14, r: rand() * 0.5 - 0.25 })
+      out.push({ x: -15 + rand() * 30, z: -4 - rand() * 18, r: rand() * 0.5 - 0.25 })
     }
     return out
   }, [])
@@ -222,19 +224,33 @@ function CrusaderCamScene() {
       <color attach="background" args={['#a8c0d4']} />
       <fog attach="fog" args={['#a8c0d4', 34, 90]} />
 
-      {/* The Galata shore the camp stands on. */}
-      <mesh position={[0, -0.15, 6]} receiveShadow>
-        <boxGeometry args={[150, 0.3, 30]} />
-        <meshLambertMaterial color="#77794f" />
+      {/*
+        The Galata shore, and the Horn in front of it.
+
+        These used to overlap by twelve units — the shore ran from z −9 to +21
+        and the water from −31 to +3 — with the water surface four hundredths
+        of a unit below the ground. The swell then pushed crests up through the
+        turf, and the whole inset read as a light ground floating in a mixture
+        of land and water. They now meet at a single waterline at z = 0, with
+        the water set low enough that no crest reaches the bank.
+      */}
+      <mesh position={[0, -0.45, 11]} receiveShadow>
+        <boxGeometry args={[150, 0.9, 22]} />
+        <meshLambertMaterial color="#6f7350" />
       </mesh>
 
-      {/* The Horn between the camp and the city. */}
+      {/* A shingle strip along the waterline, as on the sea lane's bank. */}
+      <mesh position={[0, -0.42, 0.9]} receiveShadow>
+        <boxGeometry args={[150, 0.86, 1.8]} />
+        <meshLambertMaterial color="#8e8a6c" />
+      </mesh>
+
       <RippleWater
         x={0}
-        z={-14}
+        z={-17}
         width={160}
         depth={34}
-        y={-0.04}
+        y={-0.34}
         colour={PALETTE.hornWater}
         swell={0.85}
         segmentsX={90}
@@ -247,7 +263,7 @@ function CrusaderCamScene() {
       <Pawn name="" showName={false} position={[-0.4, 0, 4.6]} />
 
       {moored.map((m, i) => (
-        <group key={i} position={[m.x, 0.16, m.z]} rotation={[0, m.r, 0]}>
+        <group key={i} position={[m.x, -0.16, m.z]} rotation={[0, m.r, 0]}>
           <mesh castShadow>
             <capsuleGeometry args={[0.3, 1.5, 3, 8]} />
             <meshLambertMaterial color={PALETTE.hullTimber} flatShading />
