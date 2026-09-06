@@ -205,19 +205,23 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
     switch (step) {
       case 'title':
         return (
-          <Panel>
+          // Deliberately the smallest leaf in the game. It is the only thing
+          // between the class and the model of the city they are about to
+          // attack, and at 16:9 the full-sized panel covered the Golden Horn
+          // and everything north of the Mese.
+          <Panel narrow className="py-5">
             <div className="text-center">
               <Eyebrow>The Fourth Crusade</Eyebrow>
               <h1
-                className="display mt-3 text-4xl font-bold md:text-5xl"
+                className="display mt-2 text-3xl font-bold md:text-4xl"
                 style={{ color: 'var(--rubric)' }}
               >
                 The Siege of Constantinople
               </h1>
-              <div className="mt-2 text-lg" style={{ color: 'var(--ink-soft)' }}>
+              <div className="mt-1.5" style={{ color: 'var(--ink-soft)' }}>
                 12 April 1204
               </div>
-              <div className="mt-7">
+              <div className="mt-5">
                 <PrimaryButton onClick={() => setStep('count')}>Begin the Siege</PrimaryButton>
               </div>
             </div>

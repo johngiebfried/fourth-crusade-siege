@@ -158,13 +158,20 @@ export function InkIcon({ name, size = 60, className = '' }) {
 
 /* ----------------------------------------------------------------- panels */
 
-/** A vellum leaf over the city. */
-export function Panel({ children, wide = false, className = '' }) {
+/**
+ * A vellum leaf over the city.
+ *
+ * The width is a prop rather than a class passed in through `className`,
+ * because two Tailwind `max-w-*` utilities on one element are resolved by
+ * their order in the stylesheet, not by their order in the attribute — so
+ * overriding the default from the call site works or does not work depending
+ * on how the build happened to emit them.
+ */
+export function Panel({ children, wide = false, narrow = false, className = '' }) {
+  const width = wide ? 'max-w-3xl' : narrow ? 'max-w-xl' : 'max-w-2xl'
   return (
     <div
-      className={`manuscript-scope vellum ink-frame pointer-events-auto mx-4 w-full ${
-        wide ? 'max-w-3xl' : 'max-w-2xl'
-      } px-8 py-6 ${className}`}
+      className={`manuscript-scope vellum ink-frame pointer-events-auto mx-4 w-full ${width} px-8 py-6 ${className}`}
     >
       {children}
     </div>

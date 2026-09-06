@@ -1908,6 +1908,25 @@ stops sitting below centre.
 Both discarded framings fail it. Mutation-checked, as ever — a check that
 cannot fail is not a check.
 
+### The title card is the smallest leaf in the game
+
+Everywhere else a panel is the thing the class is reading. Here it is the thing
+standing between them and the model of the city they are about to attack, so it
+is sized against the shot rather than against the other panels: `max-w-xl`
+instead of `max-w-2xl`, the title down a step to `text-3xl md:text-4xl`, and
+the internal gaps tightened. At 16:9 that takes it from 68% of the frame's
+width and 56% of its height to 54% and 45%.
+
+The width is a `narrow` prop on `Panel` rather than a `max-w-xl` passed in
+through `className`. Two Tailwind `max-w-*` utilities on one element are
+resolved by their order in the emitted stylesheet, not by their order in the
+attribute, so an override from the call site works or does not work depending
+on how the build happened to lay them out.
+
+The title still fits on two lines down to a 336px viewport — "CONSTANTINOPLE"
+sets at eight times the font size in this face — which is narrower than
+anything this will run on.
+
 ### The title card lost its gloss
 
 The panel is the one thing standing between the class and the model of the city
