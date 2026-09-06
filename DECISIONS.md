@@ -1437,6 +1437,63 @@ the line-height comes down to 1.12, or a title floats in its own block.
 A side benefit: "The Siege of Constantinople" now fits on one line rather than
 wrapping to two.
 
+## Revision: wall details, from the Byzantium 1200 reconstructions
+
+Read against the site's own renders of the Theodosian land walls and the sea
+walls, which show several things this had wrong or missing.
+
+### The moat was a work of masonry, not a stream in a field
+
+The largest gap. It was a channel of water in grass. In the reconstructions —
+and in what survives — it is a **revetted trench**: dressed masonry down both
+faces with a coping along the lip, a low **counterscarp wall with its own small
+merlons** along the field edge, and **cross-walls dividing it into sections**.
+
+That last one is the detail worth having. The site's text notes the ditch
+"could be filled with water", and the dams are how: the ground falls some sixty
+metres from the Horn to the Marmara, so a single continuous ditch could never
+have held any. It was a flight of separate basins, each level and each
+fillable. It is also the right thing to have on screen in a game whose first
+question is how the army gets across it.
+
+`buildMoatWorks` builds all three, merged into one geometry.
+
+### Merlons are narrower than the gaps between them
+
+They were drawn 0.55 wide with 0.45 gaps, which reads as a low wall with slots
+cut in it. The reconstructions show the opposite — upright teeth with air
+between them — so it is 0.44 against 0.56 now.
+
+### A corbel course under the wall head
+
+The surviving walls carry one, and it does a great deal at a distance: a hard
+line of shadow along the top of the masonry, so the wall reads as something
+built in stages rather than as one extruded slab. One small box per merlon
+pitch, plus a string course, and both merge into the wall line.
+
+### Something the moat works broke, and the check that now guards it
+
+The counterscarp occupies real width, and the army's third mustering row landed
+on the narrow ledge between it and the lip of the ditch — a third of the
+crusaders standing inside the masonry. The rows are 1.9 apart instead of 2.6,
+and `check-scene.mjs` now asserts every row clears the ditch and its
+counterscarp.
+
+### The caveat the site itself insists on
+
+Its front page carries a notice worth quoting to a class:
+
+> *"after 618 ... Byzantine economy never recovered ... Even in 1200 most of
+> the Great Palace was in ruins and was not used anymore ... Reconstructions on
+> this website will try to show the monuments as they were built or modified
+> until 1200 and as if they were maintained properly (which was never the
+> case)."*
+
+The crusaders did not arrive at a gleaming city. They arrived at a very large,
+very old, half-derelict one that had been burning intermittently for nine
+months. Nothing in this build reflects that yet, and it argues against pushing
+the city toward polish for its own sake.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

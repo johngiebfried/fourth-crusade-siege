@@ -26,7 +26,7 @@ import { PALETTE } from './palette.js'
 import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater, Smoke } from './geometry/Field.jsx'
-import { buildSiegeCamp, buildMoatBridge } from './geometry/siegeCamp.js'
+import { buildSiegeCamp, buildMoatBridge, buildMoatWorks } from './geometry/siegeCamp.js'
 import { buildCityQuarter } from './geometry/landmarks.js'
 
 import {
@@ -217,6 +217,28 @@ function CityBackdrop() {
   )
 }
 
+/**
+ * The ditch itself: revetted sides, a crenellated counterscarp on the field
+ * edge, and the cross-walls that divided it into fillable bays.
+ */
+function MoatWorks() {
+  const geometry = useMemo(
+    () =>
+      buildMoatWorks({
+        moatX: LANE.moatX,
+        moatWidth: LANE.moatWidth,
+        from: -LANE.laneDepth / 2,
+        to: LANE.laneDepth / 2,
+      }),
+    []
+  )
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
+  )
+}
+
 /** The camp the army came from, and the engines drawn up in front of it. */
 function SiegeCamp() {
   const geometry = useMemo(
@@ -307,6 +329,7 @@ export function LandTerrain() {
   return (
     <group>
       <Ground />
+      <MoatWorks />
       <MoatWater x={LANE.moatX} width={LANE.moatWidth} />
 
       {/* Grass over the ground the army crosses, and on the terrace between

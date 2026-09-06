@@ -220,6 +220,26 @@ console.log('\nCity landmarks stand on land')
   check('the chain tower stands on Galata', city.wellInside(city.GALATA, 27, -24.1, 1.2))
 }
 
+console.log('\nThe army musters on open ground, not in the ditch')
+{
+  // The moat works — revetment, counterscarp, dams — occupy real width now.
+  // The mustering rows have to stay outside them, and the check exists
+  // because the third row silently ended up standing in the counterscarp.
+  const outerLip = L.LANE.moatX - L.LANE.moatWidth / 2
+  const counterscarp = outerLip - 0.6
+  const blockedFrom = counterscarp - 0.25 - 0.35
+  const blockedTo = outerLip + 0.35
+
+  for (let row = 0; row < 3; row++) {
+    const x = L.LANE.campX + row * 1.9
+    check(
+      `camp row ${row} musters clear of the ditch and its counterscarp`,
+      x < blockedFrom || x > blockedTo,
+      `x ${x.toFixed(2)} vs blocked ${blockedFrom.toFixed(2)}..${blockedTo.toFixed(2)}`
+    )
+  }
+}
+
 console.log('\nA boarder walks the plank in, and lands clear of the towers')
 {
   const g = L.gangwayGeometry()

@@ -134,6 +134,24 @@ function wallParts({
     const parapetW = topW * 0.42
     const parapetX = x - topW * 0.29
 
+    // A course of corbels under the wall head, oversailing the face.
+    //
+    // The surviving walls carry this and it does a great deal of work at a
+    // distance: it puts a hard line of shadow along the top of the masonry, so
+    // the wall reads as something built in stages rather than as one extruded
+    // slab. Cheap — one small box per merlon pitch.
+    for (let i = 0; i < runs; i++) {
+      parts.push(
+        courseBox(topW * 0.16, merlonWidth * 0.8, 0.13, PALETTE.wallStoneAlt,
+          x - topW * 0.52, capY - 0.1, startZ + i * pitch,
+          { tone: 1.08 })
+      )
+    }
+    const stringCourse = courseBox(topW * 1.06, depth, 0.1, PALETTE.wallStoneAlt, x, capY - 0.02, z, {
+      tone: 1.04,
+    })
+    parts.push(stringCourse)
+
     // Walk floor, set a little below the parapet.
     parts.push(
       courseBox(topW, depth, 0.16, PALETTE.towerStone, x, capY + 0.08, z, {
@@ -189,8 +207,11 @@ export function buildBandedWall({
   z = 0,
   batter = 0.12,
   merlons = true,
-  merlonWidth = 0.55,
-  merlonGap = 0.45,
+  // Narrower than the gaps between them. Drawn the other way round the
+  // parapet reads as a low wall with slots cut in it; the reconstructions of
+  // these walls show the opposite — upright teeth with air between them.
+  merlonWidth = 0.44,
+  merlonGap = 0.56,
   merlonHeight = 0.55,
   seed = 3,
 } = {}) {

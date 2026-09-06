@@ -26,14 +26,30 @@ function rng(seed) {
   }
 }
 
-function paint(g, hex, tone = 1) {
+/**
+ * @param opts.aoHeight  darken the piece toward its foot, over this height. A
+ *   masonry face sunk in a ditch is in shadow at the bottom, and painting that
+ *   in is the difference between a trench and a slot cut in a lawn.
+ */
+function paint(g, hex, tone = 1, { aoHeight = 0 } = {}) {
   const c = new THREE.Color(hex)
-  const n = g.attributes.position.count
-  const arr = new Float32Array(n * 3)
-  for (let i = 0; i < n; i++) {
-    arr[i * 3] = c.r * tone
-    arr[i * 3 + 1] = c.g * tone
-    arr[i * 3 + 2] = c.b * tone
+  const pos = g.attributes.position
+  const arr = new Float32Array(pos.count * 3)
+
+  let lowest = Infinity
+  if (aoHeight > 0) {
+    for (let i = 0; i < pos.count; i++) lowest = Math.min(lowest, pos.getY(i))
+  }
+
+  for (let i = 0; i < pos.count; i++) {
+    let k = tone
+    if (aoHeight > 0) {
+      const t = Math.min(1, Math.max(0, (pos.getY(i) - lowest) / aoHeight))
+      k *= 0.62 + 0.38 * t
+    }
+    arr[i * 3] = c.r * k
+    arr[i * 3 + 1] = c.g * k
+    arr[i * 3 + 2] = c.b * k
   }
   g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
   return g
@@ -289,6 +305,81 @@ export function buildSiegeCamp({
     for (const z of [-16, 4]) {
       parts.push(...mangonelParts({ x: engineX, z, facing: 1 }))
     }
+  }
+
+  const merged = mergeGeometries(parts, false)
+  parts.forEach((p) => p.dispose())
+  merged.computeVertexNormals()
+  return merged
+}
+
+
+/**
+ * The moat as it was actually built: a revetted ditch, not a stream in a field.
+ *
+ * The Byzantium 1200 reconstructions show what this really was — a masonry-
+ * lined trench with a low crenellated counterscarp along the field edge, and
+ * **cross-walls dividing it into sections**. That last detail is the
+ * interesting one and it answers a question the shape otherwise raises: the
+ * ground falls some sixty metres from the Golden Horn to the Marmara, so a
+ * single continuous ditch could never have held water. The dams made it a
+ * flight of separate basins, each level, each fillable.
+ *
+ * It is also the right thing to have on screen in a game about crossing it.
+ */
+export function buildMoatWorks({
+  moatX,
+  moatWidth,
+  from,
+  to,
+  depth = 1.5,
+  seed = 21,
+  bays = 9,
+}) {
+  const rand = rng(seed)
+  const parts = []
+  const inner = moatX + moatWidth / 2
+  const outer = moatX - moatWidth / 2
+
+  // Revetment down both sides, battered slightly so the trench reads as cut
+  // masonry rather than as a slot.
+  for (const [x, tone] of [
+    [inner, 1.0],
+    [outer, 0.92],
+  ]) {
+    const face = new THREE.BoxGeometry(0.34, depth + 0.5, to - from)
+    face.translate(x, -depth / 2 + 0.25, (from + to) / 2)
+    parts.push(paint(face, PALETTE.wallStone, tone, { aoHeight: depth }))
+
+    const coping = new THREE.BoxGeometry(0.5, 0.16, to - from)
+    coping.translate(x, 0.3, (from + to) / 2)
+    parts.push(paint(coping, PALETTE.wallStoneAlt, tone * 1.06))
+  }
+
+  // The counterscarp: a low wall along the field edge, with its own small
+  // merlons. An attacker had to get over this before he even reached the ditch.
+  const cs = new THREE.BoxGeometry(0.46, 0.9, to - from)
+  cs.translate(outer - 0.6, 0.45, (from + to) / 2)
+  parts.push(paint(cs, PALETTE.wallStone, 0.95, { aoHeight: 0.9 }))
+
+  const merlonPitch = 1.5
+  for (let z = from; z < to; z += merlonPitch) {
+    const m = new THREE.BoxGeometry(0.5, 0.42, 0.8)
+    m.translate(outer - 0.6, 1.1, z + 0.4)
+    parts.push(paint(m, PALETTE.wallStoneAlt, 0.9 + rand() * 0.16))
+  }
+
+  // The cross-walls, each one damming a bay of the ditch.
+  const step = (to - from) / bays
+  for (let i = 1; i < bays; i++) {
+    const z = from + step * i
+    const dam = new THREE.BoxGeometry(moatWidth + 1.4, depth + 0.7, 0.7)
+    dam.translate(moatX - 0.3, -depth / 2 + 0.35, z)
+    parts.push(paint(dam, PALETTE.wallStone, 0.97, { aoHeight: depth }))
+
+    const cap = new THREE.BoxGeometry(moatWidth + 1.6, 0.16, 0.9)
+    cap.translate(moatX - 0.3, 0.42, z)
+    parts.push(paint(cap, PALETTE.wallStoneAlt, 1.05))
   }
 
   const merged = mergeGeometries(parts, false)
