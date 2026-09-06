@@ -305,18 +305,18 @@ export function buildMoatWorks({
   // "how do they get over the ditch" better than a bridge knocked together in
   // a night, because the answer is that the Byzantines built it.
   if (gateZ !== null) {
-    const deck = new THREE.BoxGeometry(moatWidth + 2.6, 0.4, 3.4)
+    const deck = new THREE.BoxGeometry(moatWidth + 2.6, 0.4, 2.4)
     deck.translate(moatX - 0.3, 0.12, gateZ)
     parts.push(paint(deck, PALETTE.wallStoneAlt, 1.03))
 
-    const skirt = new THREE.BoxGeometry(moatWidth + 2.2, depth + 0.4, 3.0)
+    const skirt = new THREE.BoxGeometry(moatWidth + 2.2, depth + 0.4, 2.1)
     skirt.translate(moatX - 0.3, -depth / 2 + 0.1, gateZ)
     parts.push(paint(skirt, PALETTE.wallStone, 0.93, { aoHeight: depth }))
 
     // A parapet along each side of it.
     for (const side of [-1, 1]) {
-      const kerb = new THREE.BoxGeometry(moatWidth + 2.6, 0.34, 0.26)
-      kerb.translate(moatX - 0.3, 0.42, gateZ + side * 1.6)
+      const kerb = new THREE.BoxGeometry(moatWidth + 2.6, 0.34, 0.22)
+      kerb.translate(moatX - 0.3, 0.42, gateZ + side * 1.1)
       parts.push(paint(kerb, PALETTE.wallStoneAlt, 1.08))
     }
   }

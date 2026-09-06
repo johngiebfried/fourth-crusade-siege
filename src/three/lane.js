@@ -72,13 +72,34 @@ export const HEIGHTS = {
  */
 export const LAND_GATE = {
   z: -14.5,
-  /** Half the opening in each wall line. */
-  innerHalf: 3.4,
-  outerHalf: 2.4,
+  /**
+   * Half the opening in each wall line.
+   *
+   * Small. The first version used 3.4 on a wall 7.4 high — a seven-unit hole
+   * in a seven-and-a-half-unit wall, which is a breach, not a gate. The Porta
+   * Rhegium reconstruction shows a doorway about a third of the wall's height,
+   * and the outer wall's opening smaller again.
+   */
+  innerHalf: 0.95,
+  outerHalf: 0.8,
 }
 
-export const INNER_TOWERS = 19
-export const OUTER_TOWERS = 19
+/**
+ * Towers along the lane's 150 units.
+ *
+ * Nineteen apiece was far too many: it put one every eight units against a
+ * tower three units wide, so the wall read as a row of buttresses with slots
+ * between them. The real ratio is nothing like that — ninety-six towers over
+ * five and a half kilometres is one every fifty-odd metres, against a tower
+ * some five metres wide — and the Byzantium 1200 renders show long unbroken
+ * runs of curtain with a big tower standing clear at intervals.
+ *
+ * Nine gives one every sixteen or so, which is about three in frame at the
+ * lane camera's framing. The two lines still interleave by half a spacing, so
+ * an outer tower always covers the gap between two inner ones.
+ */
+export const INNER_TOWERS = 9
+export const OUTER_TOWERS = 9
 
 export const LAND_FOV = 22
 

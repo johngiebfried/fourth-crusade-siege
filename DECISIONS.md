@@ -1555,6 +1555,55 @@ projecting more than a metre from the masonry would foul the one piece of
 staging the whole sequence depends on. It is only there to stop the wall
 reading as a slab dropped into a pond.
 
+## Revision: the gate rebuilt, and far fewer towers
+
+Both against the Byzantium 1200 reconstruction of the **Porta Rhegium** — the
+Silver Gate, the military gate of these walls — which is drawn at almost
+exactly the oblique angle the lane camera uses.
+
+### The first gate was wrong in the way beginners draw castles
+
+An enormous arch, nearly seven units wide in a wall seven and a half high,
+standing open. The reconstruction is the opposite on every count:
+
+- **The opening is small.** A doorway a cart passes through, about a third of
+  the wall's height. `innerHalf` went from 3.4 to 0.95. The wall is the point;
+  the gate is a hole in it.
+- **It is shut.** These are besieged walls, and the entire third round of this
+  game is about paying somebody to open one. Two leaves, banded with iron.
+- **It goes through.** The doors sit back a full wall-thickness behind the
+  face, with passage walls, a dark soffit and a floor, so the arch reads as the
+  mouth of a tunnel rather than a shape painted on masonry. That depth was the
+  thing most obviously missing.
+- **A relieving arch** in brick above the main ring, carrying the wall's weight
+  off the head of the opening. It is on the real gates and it stops the arch
+  looking pasted on.
+- **The flanking towers are square, large, and set behind**, rising well clear
+  of the curtain.
+
+The lintel block over the arch also sat proud of the wall by half its
+thickness, so the gate bulged out of the line. It is flush now.
+
+### Nineteen towers a side was roughly triple
+
+One every eight units against a tower three units wide — the wall read as a row
+of buttresses with slots between them. The real ratio is nothing like it:
+ninety-six towers over five and a half kilometres is one every fifty-odd metres
+against a tower some five metres wide, and the renders show long unbroken runs
+of curtain with a big tower standing clear at intervals.
+
+Nine a side now, which is one every sixteen units and about three in frame, and
+each is proportionally bigger. The two lines still interleave by half a
+spacing, so an outer tower always covers the gap between two inner ones.
+
+### Every tower is crenellated
+
+They ended in a plain slab. That is why the square ones read as featureless
+blocks — the gate's pair worst of all, being the largest. Every tower in the
+reconstructions is crenellated, and the teeth are most of what makes a tower
+read as a fighting platform rather than a pillar. Square towers get three
+merlons a side, polygonal ones a ring of seven.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be

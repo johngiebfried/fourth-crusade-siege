@@ -55,9 +55,9 @@ function Walls() {
     const spacing = LANE.laneDepth / OUTER_TOWERS
     for (let i = 0; i < OUTER_TOWERS; i++) {
       const z = -half + spacing * i
-      if (Math.abs(z - LAND_GATE.z) < gap + 1.4) continue
+      if (Math.abs(z - LAND_GATE.z) < gap + 3.4) continue
       towers.push({
-        radius: 0.95,
+        radius: 1.15,
         height: HEIGHTS.outerTower,
         x: LANE.outerWallX - 0.55,
         z,
@@ -95,8 +95,8 @@ function Walls() {
           halfGap: gap,
           wallWidth: LANE.outerWallWidth,
           wallHeight: HEIGHTS.outerWall,
-          towerRadius: 1.05,
-          towerHeight: HEIGHTS.outerTower + 0.6,
+          towerRadius: 1.25,
+          towerHeight: HEIGHTS.outerTower + 0.9,
           seed: 41,
         },
         seed: 9,
@@ -111,9 +111,9 @@ function Walls() {
     const spacing = LANE.laneDepth / INNER_TOWERS
     for (let i = 0; i < INNER_TOWERS; i++) {
       const z = -half + spacing * (i + 0.5)
-      if (Math.abs(z - LAND_GATE.z) < gap + 2.0) continue
+      if (Math.abs(z - LAND_GATE.z) < gap + 5.2) continue
       towers.push({
-        radius: 1.5,
+        radius: 1.9,
         height: HEIGHTS.tower,
         x: LANE.innerWallX - 0.9,
         z,
@@ -151,8 +151,8 @@ function Walls() {
           halfGap: gap,
           wallWidth: LANE.innerWallWidth,
           wallHeight: HEIGHTS.innerWall,
-          towerRadius: 1.85,
-          towerHeight: HEIGHTS.tower + 1.4,
+          towerRadius: 2.15,
+          towerHeight: HEIGHTS.tower + 2.2,
           seed: 43,
         },
         seed: 15,
