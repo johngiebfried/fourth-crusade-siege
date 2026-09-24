@@ -4,12 +4,15 @@
  *   character select -> attack declaration -> land assault [-> sea assault]
  *   -> first to enter -> results,  or round two, or round three's bribery.
  *
- * The round progression, sit-out penalties, shipwreck fama loss and sack-order
- * calculation are carried over from the original implementation unchanged.
+ * The dice are the original's, unchanged. What the game does with them — who
+ * got where, who pays fama, the sack order — lives in `game/siege.js`, where
+ * two of the original's faults are fixed and the first-assault fama penalty
+ * follows the Instructor's Manual. See that file.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { buildLandAssault, buildSeaAssault, buildSeaStages, carryRound } from './game/stages.js'
+import { buildLandAssault, buildSeaAssault, buildSeaStages } from './game/stages.js'
+import { carryRound, resolveRound, sackOrder as orderTheSack } from './game/siege.js'
 import Opening from './screens/Opening.jsx'
 import LandAssault from './screens/LandAssault.jsx'
 import SeaAssault from './screens/SeaAssault.jsx'
@@ -70,7 +73,9 @@ export default function App() {
   const [landStages, setLandStages] = useState([])
   const [seaAssault, setSeaAssault] = useState(null)
   const [seaStages, setSeaStages] = useState([])
-  const [roundQueue, setRoundQueue] = useState([])
+  // The round's rolls and the ships they were rolled on, kept together: a sunk
+  // ship's passengers appear only in its manifest, never in the rolls.
+  const [round, setRound] = useState({ queue: [], ships: [] })
   const [pendingEntrant, setPendingEntrant] = useState(null)
   // Sequences still to play this round, in order. Emptied as each finishes.
   const [pendingSequences, setPendingSequences] = useState([])
@@ -90,88 +95,16 @@ export default function App() {
 
   /* ------------------------------------------------- round resolution */
 
-/**
- * The final stage of each lane, by the label `rules.js` stamps on its rolls.
- * A man who rolled here and failed was on the wall when he did it.
- */
-const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
-
-
-  /**
-   * Sack order, per the instructor's manual.
-   *
-   * Four tiers, not three. Everyone who got *into* the city comes first, then
-   * everyone who got onto the second land wall or the sea wall without getting
-   * in, then everyone else by fama, then the shipwrecked last.
-   *
-   * That third tier was missing, and it is the one that credits the men who
-   * did the dangerous part and fell short. The manual has these students roll
-   * afresh against each other; we rank them on the roll they already made,
-   * which needs no extra step at the table and rewards the same thing.
-   *
-   * The fama ordering of the last tier is the point of the whole exercise —
-   * it reproduces Robert of Clari's complaint that the rich lords took the
-   * spoils and left the common knights nothing.
-   */
+  /** Sack order, per the manual. The rules for it live in `game/siege.js`. */
   const calculateSackOrder = useCallback((playerList) => {
-    const insiders = playerList.filter((p) => p.status === 'inside')
-    const onWalls = playerList
-      .filter((p) => p.status === 'walls')
-      .sort((a, b) => (b.wallRoll ?? 0) - (a.wallRoll ?? 0) || b.fama - a.fama)
-    const others = playerList.filter(
-      (p) => p.status !== 'inside' && p.status !== 'walls' && p.status !== 'shipwrecked'
-    )
-    const shipwrecked = playerList.filter((p) => p.status === 'shipwrecked')
-
-    const sorted = [
-      ...insiders,
-      ...onWalls,
-      ...others.sort((a, b) => b.fama - a.fama),
-      ...shipwrecked,
-    ]
-
-    setSackOrder(
-      sorted.map((p, idx) => ({
-        position: idx + 1,
-        name: p.name,
-        faction: p.faction,
-        status: p.status,
-      }))
-    )
+    setSackOrder(orderTheSack(playerList))
   }, [])
 
   const finishRound = useCallback(
-    (queue) => {
-      const updatedPlayers = players.map((p) => ({ ...p }))
-      let firstName = firstToEnter
-      let firstLane = 'land'
-
-      queue.forEach((item) => {
-        if (item.type === 'roll' && item.playerId) {
-          const idx = updatedPlayers.findIndex((p) => p.id === item.playerId)
-          if (idx === -1) return
-          updatedPlayers[idx].rollHistory.push(item)
-
-          if (item.enteredCity) {
-            updatedPlayers[idx].status = 'inside'
-            if (!firstName) {
-              firstName = updatedPlayers[idx].name
-              firstLane = item.stage === 'Breaking Through' ? 'sea' : 'land'
-            }
-          } else if (item.shipSunk) {
-            updatedPlayers[idx].status = 'shipwrecked'
-            updatedPlayers[idx].fama = Math.max(0, updatedPlayers[idx].fama - 1)
-          } else if (FINAL_STAGES.has(item.stage)) {
-            // He rolled in the last stage, so he was standing on the second
-            // land wall or on the sea wall when he failed. That is further
-            // than anyone below him got, and the sack order should say so.
-            if (updatedPlayers[idx].status === 'ready') {
-              updatedPlayers[idx].status = 'walls'
-              updatedPlayers[idx].wallRoll = item.total ?? item.roll ?? 0
-            }
-          }
-        }
-      })
+    ({ queue, ships }) => {
+      const { players: updatedPlayers, first } = resolveRound(players, queue, { ships })
+      const firstName = first?.name ?? null
+      const firstLane = first?.lane ?? 'land'
 
       const insiders = updatedPlayers.filter((p) => p.status === 'inside')
 
@@ -191,6 +124,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
       }
 
       if (currentRound < 2) {
+        // Round one failed: everyone who joined it pays a point, per the manual.
         const penalizedPlayers = carryRound(updatedPlayers)
         setPlayers(penalizedPlayers)
         /*
@@ -200,7 +134,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
          * list from whatever roster it is handed. That roster was last set
          * before round one rolled a single die, so everything round one
          * decided — who reached the walls, who was shipwrecked, the fama lost
-         * for sitting out or for losing a ship — was thrown away the moment
+         * for a failed assault or for losing a ship — was thrown away the moment
          * round two began. Every crusader arrived at the sack order marked
          * "Outside the walls", which is the one thing the sack order exists to
          * distinguish, and the two fama penalties were quietly refunded.
@@ -213,7 +147,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
         setGameState('bribery')
       }
     },
-    [players, currentRound, firstToEnter, calculateSackOrder]
+    [players, currentRound, calculateSackOrder]
   )
 
   /* --------------------------------------------------------- execution */
@@ -221,9 +155,10 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
   const executeAttack = useCallback((source) => {
     const attackers = source.filter((p) => p.attackChoice !== 'sit_out')
 
+    // An assault nobody joined is a failed assault. It used to end the whole
+    // game on the spot — skipping round two, and the bribe, entirely.
     if (attackers.length === 0) {
-      setFinalSummary(['No one attacked! The crusade has failed.'])
-      setGameState('results')
+      finishRound({ queue: [], ships: [] })
       return
     }
 
@@ -257,7 +192,8 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
     setLandStages(stages)
     setSeaAssault(sea)
     setSeaStages(seaStageList)
-    setRoundQueue(queue)
+    const thisRound = { queue, ships: sea?.ships ?? [] }
+    setRound(thisRound)
     setPendingSequences(sequences)
 
     if (sequences.length > 0) {
@@ -269,7 +205,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
             : 'sea-cancelled'
       )
     } else {
-      finishRound(queue)
+      finishRound(thisRound)
     }
   }, [finishRound])
 
@@ -288,11 +224,11 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
     const rest = pendingSequences.slice(1)
     setPendingSequences(rest)
     if (rest.length === 0) {
-      finishRound(roundQueue)
+      finishRound(round)
     } else {
       setGameState(SEQUENCE_SCREENS[rest[0]])
     }
-  }, [pendingSequences, finishRound, roundQueue])
+  }, [pendingSequences, finishRound, round])
 
 
 
@@ -336,7 +272,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
     setLandStages([])
     setSeaAssault(null)
     setSeaStages([])
-    setRoundQueue([])
+    setRound({ queue: [], ships: [] })
     setPendingSequences([])
     setPendingEntrant(null)
   }, [])
@@ -386,6 +322,7 @@ const FINAL_STAGES = new Set(['City Gates', 'Breaking Through'])
         <FirstToEnter
           name={pendingEntrant}
           lane={pendingEntrantLane}
+          faction={players.find((p) => p.name === pendingEntrant)?.faction}
           onContinue={() => setGameState('results')}
         />
       )

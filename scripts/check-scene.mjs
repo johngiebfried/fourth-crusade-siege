@@ -117,19 +117,36 @@ console.log('\nGate opening')
   ]) {
     const buried = insideSlab(p, slabs)
     check(`camera ${name} clear of masonry`, !buried, buried ? `inside ${buried}` : '')
-    check(`camera ${name} stands inside the city`, p[0] > L.LANE.gateX + L.LANE.gateWidth / 2)
+    // Outside the gate, in the ground between it and the inner wall — the
+    // crusaders' side, so the dressed face of the gatehouse is toward it.
+    const innerFace = L.LANE.innerWallX + L.LANE.innerWallWidth / 2
+    const gateFace = L.LANE.gateX - L.LANE.gateWidth / 2
+    check(
+      `camera ${name} stands between the inner wall and the gate`,
+      p[0] > innerFace + 0.5 && p[0] < gateFace - 1,
+      `x ${p[0]} between ${innerFace} and ${gateFace}`
+    )
   }
-  // The camera must be able to see the gate: the sight line may pass through
-  // the gate wall only at the arch, which is what it is aimed at.
   const off = L.GATE_CAMERA.look
   check(
     'camera is aimed at the gate itself',
-    Math.abs(off[0] - L.LANE.gateX) < 0.01 && Math.abs(off[2]) < 2
+    Math.abs(off[0] - L.LANE.gateX) < 0.01 && Math.abs(off[2] - L.CITY_GATE.z) < 0.5
   )
-  // And the street it stands on must actually be clear of buildings.
-  const inStreet = (p) => Math.abs(p[2]) < L.GATE_STREET.halfWidth && p[0] < L.GATE_STREET.untilX
-  check('camera start stands on the cleared street', inStreet(L.GATE_CAMERA.start))
-  check('camera end stands on the cleared street', inStreet(L.GATE_CAMERA.end))
+  // And it must look *through* the opening: where the line from the camera to
+  // its aim point crosses the gate's face, it has to be inside the doorway.
+  for (const [name, p] of [
+    ['start', L.GATE_CAMERA.start],
+    ['end', L.GATE_CAMERA.end],
+  ]) {
+    const face = L.LANE.gateX - L.LANE.gateWidth / 2
+    const t = (face - p[0]) / (off[0] - p[0])
+    const z = p[2] + (off[2] - p[2]) * t
+    check(
+      `camera ${name} sees through the doorway, not into the masonry beside it`,
+      Math.abs(z - L.CITY_GATE.z) < L.CITY_GATE.halfGap * 0.8,
+      `crosses the gate face at z ${z.toFixed(2)}`
+    )
+  }
 }
 
 console.log('\nSea lane')

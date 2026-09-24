@@ -17,11 +17,11 @@
  * siege through to the end and reading the final list.
  *
  * So the two halves of that seam are pure functions now, `carryRound` and
- * `enlist`, and this asserts what each is for.
+ * `enlist` in `game/siege.js`, and this asserts what each is for.
  */
 
 const base = new URL('..', import.meta.url).pathname
-const { carryRound, enlist } = await import(base + 'src/game/stages.js')
+const { carryRound, enlist } = await import(base + 'src/game/siege.js')
 
 let failures = 0
 const check = (name, ok, detail = '') => {
@@ -58,11 +58,13 @@ const afterRoundOne = [
 const carried = carryRound(afterRoundOne)
 const of = (list, n) => list.find((p) => p.name === n)
 
+// The manual's rule: a failed first assault costs everyone who joined it a
+// point, and refusing it costs nothing. (The original app had it backwards.)
 check(
-  'sitting out costs a fama, and only the man who sat out',
-  of(carried, 'Sat it out').fama === 8 &&
-    of(carried, 'On the walls').fama === 7 &&
-    of(carried, 'Failed').fama === 4,
+  'a failed first assault costs each man who joined it 1 fama, and the refuser nothing',
+  of(carried, 'Sat it out').fama === 9 &&
+    of(carried, 'On the walls').fama === 6 &&
+    of(carried, 'Failed').fama === 3,
   carried.map((p) => `${p.name} ${p.fama}`).join(', ')
 )
 check(
@@ -81,8 +83,8 @@ check(
 check('a shipwreck in round one is still a shipwreck', of(roundTwo, 'Shipwrecked').status === 'shipwrecked')
 check(
   'fama carries across the round rather than being refunded',
-  of(roundTwo, 'Sat it out').fama === 8,
-  `${of(roundTwo, 'Sat it out').fama}`
+  of(roundTwo, 'Failed').fama === 3 && of(roundTwo, 'On the walls').fama === 6,
+  `${of(roundTwo, 'Failed').fama}, ${of(roundTwo, 'On the walls').fama}`
 )
 check('a man who never got anywhere is still ready', of(roundTwo, 'Failed').status === 'ready')
 

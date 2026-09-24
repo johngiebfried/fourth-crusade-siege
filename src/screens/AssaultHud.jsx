@@ -12,7 +12,9 @@
  * vermilion, which is how a manuscript marks anything.
  */
 
+import { useEffect, useRef } from 'react'
 import { LineFiller } from './ui.jsx'
+import { factionOf } from '../three/factions.js'
 
 /**
  * A stage's threshold is usually one number. The sea breakthrough is the
@@ -133,13 +135,14 @@ export function Prompt({ show, remaining, noun = 'crusader' }) {
         className="manuscript-scope vellum ink-frame-light mx-4 px-8 py-3 text-center text-xl"
         style={{ color: 'var(--ink)' }}
       >
+        {/* The space bar was always there and never mentioned. On a projector
+            laptop it is much the easier of the two: the pawns are small. */}
         <span>
-          Click a {noun} to resolve their attempt —{' '}
+          Click a {noun}, or press Space —{' '}
           <span className="tally" style={{ color: 'var(--rubric)', fontWeight: 700 }}>
             {remaining}
           </span>{' '}
-          left in this
-          stage
+          left in this stage
         </span>
       </div>
     </div>
@@ -170,4 +173,95 @@ export function CancelledNotice({ lines, onContinue }) {
       </div>
     </button>
   )
+}
+
+/**
+ * The roll-call: everyone in this stage, in the order they roll.
+ *
+ * The name plates in the scene are sized for the instructor's laptop, and at
+ * twenty-four crusaders they stand close enough to collide. From the back of a
+ * room the only legible name was the one in the roll readout, and only for a
+ * second and a half. But the thing a student is watching for is their own
+ * name — whether it has gone up, whether it is next — so the whole stage is
+ * listed here at a size a room can read, with the man rolling marked and each
+ * result filled in as it lands. Never before: an outcome only appears once the
+ * die has settled and the climb has begun, so the list gives nothing away.
+ */
+export function RollCall({ entries, title = 'This stage' }) {
+  const activeRef = useRef(null)
+  const activeId = entries.find((e) => e.state === 'active')?.id
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [activeId])
+
+  if (!entries.length) return null
+  return (
+    <div className="pointer-events-none absolute right-3 top-1/2 hidden max-h-[70vh] w-64 -translate-y-1/2 md:block">
+      <div className="manuscript-scope vellum ink-frame-light flex max-h-[70vh] flex-col px-3 py-2">
+        <div className="rubric px-1 pb-1 text-sm">{title}</div>
+        <ol className="min-h-0 overflow-y-auto">
+          {entries.map((e) => {
+            const f = factionOf(e.faction)
+            const active = e.state === 'active'
+            return (
+              <li
+                key={e.id}
+                ref={active ? activeRef : null}
+                className="flex items-center gap-2 rounded-sm px-1 py-1"
+                style={{
+                  background: active ? 'rgba(201,162,39,0.32)' : 'transparent',
+                  opacity: e.state === 'fell' ? 0.55 : 1,
+                }}
+              >
+                <span
+                  className="h-3 w-3 shrink-0 border border-black/30"
+                  style={{ background: f.cape }}
+                  title={f.label}
+                />
+                <span
+                  className="min-w-0 flex-1 truncate text-[15px] leading-tight"
+                  style={{
+                    color: 'var(--ink)',
+                    fontWeight: active || e.state === 'next' ? 700 : 400,
+                    textDecoration: e.state === 'fell' ? 'line-through' : 'none',
+                  }}
+                >
+                  {e.name}
+                </span>
+                <span
+                  className="w-4 shrink-0 text-center text-base font-bold"
+                  style={{ color: e.state === 'fell' ? 'var(--rubric)' : 'var(--ink)' }}
+                >
+                  {e.state === 'over' ? '✓' : e.state === 'fell' ? '✗' : active ? '▸' : e.state === 'next' ? '›' : ''}
+                </span>
+              </li>
+            )
+          })}
+        </ol>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Build the roll-call's rows from a stage and what has happened in it so far.
+ * Shared by both lanes so they mark progress the same way.
+ */
+export function rollCallEntries({
+  entries,
+  resolvedIds,
+  activeId,
+  nextId,
+  idOf = (e) => e.playerId,
+  nameOf = (e) => e.player,
+  factionOfEntry = (e) => e.faction,
+}) {
+  return entries.map((e) => {
+    const id = idOf(e)
+    let state = 'pending'
+    if (resolvedIds.has(id)) state = e.success ? 'over' : 'fell'
+    else if (id === activeId) state = 'active'
+    else if (id === nextId) state = 'next'
+    return { id, name: nameOf(e), faction: factionOfEntry(e), state }
+  })
 }

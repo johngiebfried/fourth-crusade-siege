@@ -40,7 +40,7 @@ import { Die } from '../three/geometry/Die.jsx'
 import { PALETTE } from '../three/palette.js'
 import { factionFlagTexture } from '../three/factions.js'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
-import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
+import { StageBanner, RollReadout, Prompt, RollCall, rollCallEntries } from './AssaultHud.jsx'
 import { useResolveNextKey } from './LandAssault.jsx'
 import { Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
@@ -336,6 +336,8 @@ function SeaScene({
           faction={c.faction}
           bearer={c.bearer}
           travelSpeed={c.onBridge ? 1.5 : SHIP_DAMP}
+          highlight={c.highlight}
+          muted={c.muted}
           onClick={() => onCrewClick(c.id)}
         />
       ))}
@@ -717,6 +719,43 @@ export default function SeaAssault({ sea, stages, onComplete }) {
     return id ?? null
   }, [stageIds, resolvedIds])
 
+  // Who the room should be watching — see the land lane. While the ships are
+  // piloting it is a ship, so no man is singled out; after that it is the man
+  // on the bridge or the wall.
+  const piloting = stage?.key === 'piloting'
+  const activeKey = activeRoll ? (piloting ? activeRoll.entry.shipId : activeRoll.entry.playerId) : null
+  const crew = useMemo(
+    () =>
+      crewViews.map((c) => {
+        if (piloting || !stage) return c
+        const focusId = activeKey ?? nextUnresolved
+        return {
+          ...c,
+          highlight: c.id === activeKey ? 'active' : !activeKey && c.id === nextUnresolved ? 'next' : null,
+          muted: c.id !== focusId,
+        }
+      }),
+    [crewViews, piloting, stage, activeKey, nextUnresolved]
+  )
+  const rollCall = useMemo(
+    () =>
+      stage
+        ? rollCallEntries({
+            entries: stageEntries,
+            resolvedIds,
+            activeId: activeKey,
+            nextId: activeKey ? null : nextUnresolved,
+            idOf: (e) => (piloting ? e.shipId : e.playerId),
+            nameOf: (e) => (piloting ? (shipById.get(e.shipId)?.label ?? e.player) : e.player),
+            factionOfEntry: (e) =>
+              piloting
+                ? shipById.get(e.shipId)?.manifest?.captain?.faction
+                : roster.get(e.playerId)?.faction,
+          })
+        : [],
+    [stage, stageEntries, resolvedIds, activeKey, nextUnresolved, piloting, shipById, roster]
+  )
+
   useResolveNextKey(
     nextUnresolved,
     stage?.key === 'piloting' ? resolvePiloting : resolveCrew,
@@ -753,7 +792,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       <Canvas shadows dpr={DPR} gl={RENDERER_PROPS} onCreated={configureRenderer}>
         <SeaScene
           ships={shipViews}
-          crew={crewViews}
+          crew={crew}
           towerFlags={towerFlags}
           activeRoll={activeRoll}
           bursts={bursts}
@@ -782,6 +821,7 @@ export default function SeaAssault({ sea, stages, onComplete }) {
       ) : (
         <>
           <StageBanner stage={stage} remaining={remaining} total={stageIds.length} />
+          <RollCall entries={rollCall} title={stage?.title ?? 'This stage'} />
           <RollReadout activeRoll={activeRoll} />
           <Prompt
             show={!activeRoll && remaining > 0}

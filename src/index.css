@@ -271,3 +271,35 @@ canvas {
 .manuscript-scope *::after {
   border-radius: 0 !important;
 }
+
+/* ------------------------------------------------------- first to enter */
+
+/*
+ * The one screen in the game that is allowed to perform. Everything lands in
+ * order — the city dims, the eyebrow, the standard drops and unfurls, the name
+ * inks in, the gold rule draws, the details follow — and all of it is off for
+ * anyone who has asked their system for less motion.
+ */
+.first-vignette {
+  background: radial-gradient(ellipse at 50% 48%, rgba(20, 14, 10, 0.66) 0%, rgba(20, 14, 10, 0.84) 60%, rgba(12, 8, 6, 0.94) 100%);
+  animation: first-fade 900ms ease-out both;
+}
+.first-eyebrow { animation: first-rise 700ms 300ms ease-out both; }
+.first-staff { transform-origin: top; animation: first-drop 650ms 500ms cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+.first-flag { transform-origin: left center; animation: first-unfurl 700ms 1000ms cubic-bezier(0.2, 0.8, 0.3, 1.2) both; }
+.first-name { animation: first-ink 1100ms 1300ms ease-out both; }
+.first-rule { transform-origin: center; animation: first-draw 800ms 1900ms ease-out both; }
+.first-detail { animation: first-rise 700ms 2300ms ease-out both; }
+.first-footer { animation: first-fade 700ms 2900ms ease-out both; }
+
+@keyframes first-fade { from { opacity: 0 } to { opacity: 1 } }
+@keyframes first-rise { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: none } }
+@keyframes first-drop { from { transform: scaleY(0) } to { transform: scaleY(1) } }
+@keyframes first-unfurl { from { opacity: 0; transform: scaleX(0.05) skewY(6deg) } to { opacity: 1; transform: none } }
+@keyframes first-ink { from { opacity: 0; letter-spacing: 0.14em; filter: blur(3px) } to { opacity: 1; letter-spacing: normal; filter: none } }
+@keyframes first-draw { from { transform: scaleX(0) } to { transform: scaleX(1) } }
+
+@media (prefers-reduced-motion: reduce) {
+  .first-vignette, .first-eyebrow, .first-staff, .first-flag, .first-name,
+  .first-rule, .first-detail, .first-footer { animation: none; }
+}

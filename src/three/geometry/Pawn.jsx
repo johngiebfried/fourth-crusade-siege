@@ -75,13 +75,20 @@ export function plateLayout(slot, count) {
   }
 }
 
-function NamePlate({ name, y, height = 0.6 }) {
+function NamePlate({ name, y, height = 0.6, emphasis = 1, dim = false }) {
   const { texture, aspect } = useMemo(() => nameLabelTexture(name), [name])
+  const h = height * emphasis
   return (
-    <sprite position={[0, y, 0]} scale={[height * aspect, height, 1]} renderOrder={10}>
+    <sprite
+      position={[0, y, 0]}
+      scale={[h * aspect, h, 1]}
+      // The man rolling is drawn over every other plate, not among them.
+      renderOrder={emphasis > 1 ? 30 : 10}
+    >
       <spriteMaterial
         map={texture}
         transparent
+        opacity={dim ? 0.4 : 1}
         depthTest={false}
         depthWrite={false}
         toneMapped={false}
@@ -89,6 +96,18 @@ function NamePlate({ name, y, height = 0.6 }) {
     </sprite>
   )
 }
+
+/**
+ * Which pawn the room should be looking at.
+ *
+ * Every waiting pawn used to pulse its ring, so with twenty-four in the camp
+ * the whole field shimmered and nothing stood out. Now only two things are
+ * marked: the man rolling (`active` — a steady gold ring and his name drawn
+ * large over everyone else's), and, between rolls, the man the space bar will
+ * send next (`next` — the old pulse). While a roll is in the air every other
+ * plate dims, so a class can read the one name that matters from the back.
+ */
+const ACTIVE_PLATE = 1.75
 
 /**
  * @param {[number,number,number]} position  target position; the pawn damps toward it
@@ -111,6 +130,8 @@ export function Pawn({
   faction = 'Indeterminate',
   showFlag = true,
   bearer = false,
+  highlight = null,
+  muted = false,
 }) {
   const group = useRef()
   const bodyRef = useRef()
@@ -179,7 +200,12 @@ export function Pawn({
       plate.current.visible = showName && opacity > 0.4
     }
     if (ring.current) {
-      ring.current.material.opacity = clickable && !dissolving ? 0.35 + Math.sin(t * 3) * 0.2 : 0
+      const m = ring.current.material
+      if (dissolving) m.opacity = 0
+      else if (highlight === 'active') m.opacity = 0.9
+      else if (highlight === 'next') m.opacity = 0.35 + Math.sin(t * 3) * 0.2
+      else m.opacity = 0
+      ring.current.scale.setScalar(highlight === 'active' ? 1.3 : 1)
     }
   })
 
@@ -257,7 +283,17 @@ export function Pawn({
 
       {/* Plate sits outside the scaled group so it keeps a readable world size. */}
       <group ref={plate}>
-        {showName && <NamePlate name={name} y={2.15 + plateLift} height={plateHeight} />}
+        {showName && (
+          <NamePlate
+            name={name}
+            // The active plate rises clear of the ladder of lift levels, so it
+            // is never behind a neighbour's.
+            y={highlight === 'active' ? 3.4 : highlight === 'next' ? 3.0 : 2.15 + plateLift}
+            height={plateHeight}
+            emphasis={highlight === 'active' ? ACTIVE_PLATE : highlight === 'next' ? 1.3 : 1}
+            dim={muted}
+          />
+        )}
       </group>
     </group>
   )

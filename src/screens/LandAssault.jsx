@@ -25,7 +25,7 @@ import { Pawn, DissolveBurst, plateLayout } from '../three/geometry/Pawn.jsx'
 import { SiegeLadder } from '../three/geometry/SiegeLadder.jsx'
 import { Die } from '../three/geometry/Die.jsx'
 import { RENDERER_PROPS, configureRenderer, DPR, shadowMapSize } from '../three/renderer.js'
-import { StageBanner, RollReadout, Prompt } from './AssaultHud.jsx'
+import { StageBanner, RollReadout, Prompt, RollCall, rollCallEntries } from './AssaultHud.jsx'
 import { Atmosphere } from '../three/geometry/Sky.jsx'
 
 /* ---------------------------------------------------------------- timing */
@@ -258,6 +258,8 @@ function AssaultScene({ pawns, ladders, activeRoll, bursts, focus, round, engine
           travelSpeed={1.15}
           faction={p.faction}
           bearer={p.bearer}
+          highlight={p.highlight}
+          muted={p.muted}
           onClick={() => onPawnClick(p.id)}
         />
       ))}
@@ -355,7 +357,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
     [stage]
   )
 
-  const pawns = useMemo(() => {
+  const basePawns = useMemo(() => {
     const count = stageIds.length
     return stageIds
       .filter((id) => !goneIds.has(id))
@@ -389,6 +391,29 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
   const nextUnresolved = useMemo(
     () => stage?.entries.find((e) => !resolvedIds.has(e.playerId))?.playerId ?? null,
     [stage, resolvedIds]
+  )
+
+  // Who the room should be watching: the man rolling, or between rolls the man
+  // the space bar sends next. Every other plate dims while a die is in the air.
+  const activeId = activeRoll?.entry.playerId ?? null
+  const pawns = useMemo(
+    () =>
+      basePawns.map((p) => ({
+        ...p,
+        highlight: p.id === activeId ? 'active' : !activeId && p.id === nextUnresolved ? 'next' : null,
+        // Between rolls too: the roll-call carries every name at a size the
+        // room can read, so the scene only has to point at one man.
+        muted: p.id !== (activeId ?? nextUnresolved),
+      })),
+    [basePawns, activeId, nextUnresolved]
+  )
+
+  const rollCall = useMemo(
+    () =>
+      stage
+        ? rollCallEntries({ entries: stage.entries, resolvedIds, activeId, nextId: activeId ? null : nextUnresolved })
+        : [],
+    [stage, resolvedIds, activeId, nextUnresolved]
   )
 
   // Bumped on every attempt, which is what looses the engines. They fire
@@ -523,6 +548,7 @@ export default function LandAssault({ stages, round = 1, onComplete }) {
       </Canvas>
 
       <StageBanner stage={stage} remaining={remaining} total={stageIds.length} />
+      <RollCall entries={rollCall} title={stage?.title ?? 'This stage'} />
       <RollReadout activeRoll={activeRoll} />
       <Prompt show={!activeRoll && remaining > 0} remaining={remaining} />
     </div>

@@ -2211,6 +2211,155 @@ was a stale bundle served mid-rebuild, which has cost time in this project
 before. Worth writing down so the next person does not go hunting for a fault
 in the chooser.
 
+## The project review, and what came of it
+
+A full review — the code, the manual, the original app, and every quotation
+checked against the translations — found two real faults in how the game ranks
+the sack, a set of historical errors on live screens, and four screens that
+were visibly weaker than the rest. The rulings on it were: fix the faults,
+delete the quotations outright, follow the manual on the first-assault fama
+penalty and keep the app's rules everywhere else, leave the educational
+changes for later, and close the visual gaps.
+
+### Two faults in the sack order, both inherited from the original
+
+**A foundered ship marked only its captain.** The passengers of a sunk ship
+never roll, so a loop over the rolls never saw them: they kept their fama and
+were ranked by it. In one simulated run Boniface was aboard a ship that went
+down and came out near the *top* of the sack order. The manual says everyone
+aboard loses a point and goes last, and the app's own announcement said "All
+aboard lose 1 fama". The ship's manifest is now the record of who was aboard.
+
+**The men inside were listed in roster order.** In about one siege in six with
+several entrants, first place in the sack went to someone other than the man
+the screen had just crowned First to Enter. The manual gives first place to the
+first man in without exception; the men inside are now ranked by when they got
+in.
+
+Both lived in the step after the dice, which is why five green suites never
+saw them — each tested a die or a screen, and the faults were in what the game
+does with a whole round. That step is `game/siege.js` now, as pure functions,
+and `check-siege.mjs` plays twelve thousand whole sieges through the real rules
+and holds the outcome to the manual. Restoring either original behaviour fails
+it.
+
+A third fault turned up while wiring it in, and it would have been the worst of
+the three: App's `sackOrder` state variable shadowed the imported `sackOrder`
+function, so the results screen would have thrown. Lint caught it before a
+browser did.
+
+### The first-assault penalty follows the manual
+
+"In the first attack, any player may join in the attack, knowing that if they
+fail, they will each lose 1 fama." The original charged the men who *sat out*
+instead, which turns the manual's gamble inside out: joining round one was free
+and refusing it cost a point. Now a failed first assault costs everyone who
+joined it a point and refusing costs nothing, and the refusal screen says so.
+Round two carries no penalty either way, and its screen no longer claims one —
+it used to say "Sitting out costs a crusader 1 fama" in a round that never
+applied it.
+
+Two readings were settled without asking and can each be changed in a line.
+"If they fail" is read as the assault failing, not each man failing, because
+the manual's next sentences are about the attack succeeding or failing. And a
+man whose ship sank in a failed first assault pays both points — the manual
+states the two penalties separately and excuses neither.
+
+Everything else where the app and the manual differ stays as the app has it,
+by ruling: captain plus three to a ship, the boon not on the piloting roll,
+ships in roster order, only Venetians and Oberto as captains, round two open to
+refusal, and the floor of three at the gate.
+
+### An assault nobody joins is a failed assault
+
+It used to end the game on the spot — "No one attacked! The crusade has
+failed" — skipping round two and the bribe. It now fails like any other round.
+
+### The quotations are gone
+
+All of them: the eleven Villehardouin and Clari passages in rotation and the
+held-back set from Choniates, Gunther and Innocent III. Checked against Smith's
+Villehardouin and Noble's Clari, the rotation had the blind doge in the bow
+credited to Clari (it is Villehardouin §173), a reading of §128 that reversed
+"by as many men" into "by so few", one entry running Mourtzouphlos's camp of
+April 1204 and Alexios III's refusal to fight in July 1203 into one sentence,
+and five passages that are in neither book. The ruling was that they were too
+problematic to hunt down one by one, and it was the right one: a paraphrase in
+quotation form with a name on it is something a student cites.
+`check-lore.mjs` now refuses any entry with a `source`, so they cannot drift
+back in.
+
+### The facts were corrected where the point survived, and cut where it did not
+
+Corrected: Hagia Sophia was the largest *church* in Christendom, not the
+largest dome (the Pantheon's is bigger); the Venetian arrests were 1171 and the
+1182 massacre was of the city's Latins, mostly Genoese and Pisan; the papal
+apology to the Ecumenical Patriarch was 2004, after regret expressed in Athens
+in 2001; the crusaders were not the first hostile army to *enter* the city —
+Alexios Komnenos's men got in through a bribed gate in 1081 — only the first to
+take it by storm; and the claim that the brick bands let the walls survive the
+earthquakes was cut back, since the quake of 447 brought down 57 towers.
+
+Cut: "No crusader of the Fourth Crusade… ever fought a Muslim army", which was
+the last line on the results screen and is refuted by Villehardouin himself
+(§230: a company bound for Antioch was ambushed by Turks and entirely killed
+or captured); the claim that mining was useless because the land walls stood
+on rock (the Ottomans mined them in 1453); and two claims with no source behind
+them — ladders made deliberately short, and ships riding up and down with the
+wall.
+
+### The four weak screens
+
+**The gate.** The close-up showed the gate opened from within as a flat black
+slab, because the city gate was a placeholder: a plain wall, two plain boxes for
+towers, and a black box laid over the middle "rather than CSG". The door leaves
+that swung open were buried inside the black box, so opening them changed
+nothing anyone could see. The gate is now built like the inner wall's — the
+curtain in two runs, a gatehouse across the gap with flanking towers, arch
+rings, a relieving arch in brick and a passage the depth of the wall — and the
+leaves hang in that passage and swing inward on hinges.
+
+The camera moved outside it. It had stood in the city looking back, on the
+reasoning that the ground out here was too shallow to frame the gate; but from
+inside, the gatehouse showed its plain back, and through the opening you saw
+more wall. From outside, a low wide lens looking up frames the doorway, the
+doors swing away from you, and the city appears behind them — the crusaders'
+view, which is the students' view. A file of crusaders follows the first man
+through under a standard, and the sun comes over the camera's shoulder so the
+gate's face is not in its own shadow.
+
+One more fault surfaced here: carrying the gatehouse on a zero-depth "wall",
+the way the inner wall's gate is built, left a sliver of masonry standing in the
+middle of the passage. Invisible from the camp, obvious in the close-up. The
+city gate calls the gatehouse builder directly.
+
+**First to Enter** was the same leaf as every other step. It is a full-screen
+moment now: the city dimmed behind a vignette, the man's standard dropping in
+and unfurling over his name at the largest size in the game, how he got in, and
+the consequence — first place in the sack. The standard is the same
+canvas-drawn flag the standard-bearers carry in 3D. All of the entrance motion
+is switched off for anyone whose system asks for reduced motion.
+
+**The name plates.** Every waiting pawn pulsed its ring, so twenty-four of them
+shimmered and nothing stood out, and the plates collided in the camp. Now one
+man is marked at a time: the man rolling gets a steady gold ring and his name
+drawn large over everyone else's, and between rolls the man the space bar will
+send next is picked out instead. Every other plate dims. The names themselves
+moved to a **roll-call** down the right-hand side at a size a room can read —
+the whole stage in rolling order, the man rolling highlighted, and each result
+filled in once the die has landed, never before. In the sea lane it lists the
+ships while they pilot and the men after. The prompt now says "or press
+Space", which was always there and never mentioned.
+
+**The results page** was one numbered list with the tier repeated on every row
+— thirty or fifty rows, most of them "Outside the walls". It is now grouped by
+tier under headings, each saying how its men are ordered, with long tiers in
+two columns.
+
+Also: the setup's step counter read "1 of 3" in a round with four steps, and
+the split screen's castle and ship emoji are the ink icons the rest of the page
+uses.
+
 ## Still open, and the caveat that goes with them
 
 Faction colour is a **game convention, not a historical one**, and it should be
@@ -2226,8 +2375,12 @@ Deferred by choice, not forgotten:
 
 - **Round two should feel more desperate than round one** — no visual
   distinction between them yet.
-- **The first-to-enter callout is undressed** — it is the dramatic peak of the
-  whole sequence and currently reads as plain text.
-- **Name plates still collide** when tokens bunch. Legible, but untidy.
+- **The text siege still ranks the sack the way the original did** — it is the
+  original, byte for byte, and `check-text-version.mjs` holds it there. The
+  chooser now says the visual siege corrects it rather than claiming the two
+  give the same outcomes.
+- **The educational changes from the review** — current fama, the actual
+  roster, a printable sack order, the bribe recorded against fama — are
+  waiting on a later pass, by ruling.
 - **Helm and shield variety** was considered and declined: one great helm for
   everybody, no shields.

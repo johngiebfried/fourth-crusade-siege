@@ -41,6 +41,19 @@ export const LANE = {
   laneDepth: 150,
 }
 
+/**
+ * The city gate: the third barrier, at `LANE.gateX`, dead on the lane's centre
+ * line. Shared by the land assault, where it stays shut, and by the bribery's
+ * close-up, where it is opened from within — so both screens are looking at
+ * the same gatehouse rather than two different ideas of one.
+ */
+export const CITY_GATE = {
+  z: 0,
+  /** Half the opening: a doorway two crusaders wide, not a breach. */
+  halfGap: 1.3,
+  towerRadius: 1.55,
+}
+
 export const HEIGHTS = {
   outerWall: 3.4,
   innerWall: 7.4,
@@ -189,16 +202,24 @@ export function ladderFor(stageKey, z) {
 /* ---------------------------------------------------------- gate opening */
 
 /**
- * Standing inside the city, looking back at the gate. The ground between the
- * inner wall and the gate is under seven units deep — nowhere near enough to
- * frame the gate from outside — and this is the better shot anyway: the city
- * is what is being entered, so the city is where the camera should be.
+ * Standing just outside the gate, in the ground between it and the inner wall,
+ * looking up at it and through it into the city.
+ *
+ * This used to stand inside the city looking back, on the reasoning that the
+ * ground out here — under seven units — was too shallow to frame the gate. It
+ * is shallow, but a low camera with a wide lens looking up frames a doorway
+ * well, and the view from inside had two faults the move fixes. It showed the
+ * gatehouse's back: the towers, arch rings and relieving arch all face the
+ * field, so from the city the gate was a plain wall with a hole in it. And it
+ * showed the wrong thing through the opening — more wall. From out here the
+ * doors swing away from the camera and the city appears behind them, which is
+ * the crusaders' view, and the students are the crusaders.
  */
 export const GATE_CAMERA = {
-  start: [LANE.gateX + 15, 5.2, 8.5],
-  end: [LANE.gateX + 9.5, 4.0, 5.0],
-  look: [LANE.gateX, 2.6, 0],
-  fov: 38,
+  start: [LANE.gateX - 6.3, 1.55, 1.1],
+  end: [LANE.gateX - 5.1, 1.5, 0.45],
+  look: [LANE.gateX, 3.3, 0],
+  fov: 64,
 }
 
 /** The street kept clear in front of the gate, so the camera has ground. */

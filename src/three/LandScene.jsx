@@ -20,10 +20,9 @@
  */
 
 import { useMemo } from 'react'
-import * as THREE from 'three'
 import { PALETTE } from './palette.js'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { buildWallLine, buildGround } from './geometry/wallBuilder.js'
+import { buildWallLine, buildGround, buildGatehouse } from './geometry/wallBuilder.js'
 import { buildGarrison } from './geometry/garrisonBuilder.js'
 import { GrassField, MoatWater, Smoke, Mangonel } from './geometry/Field.jsx'
 import { buildSiegeCamp, buildMoatWorks, buildMangonelBeam, MANGONEL } from './geometry/siegeCamp.js'
@@ -36,6 +35,7 @@ import {
   INNER_TOWERS,
   OUTER_TOWERS,
   GATE_STREET,
+  CITY_GATE,
 } from './lane.js'
 
 export { LANE, HEIGHTS }
@@ -188,45 +188,70 @@ function Walls() {
   )
 }
 
-function Gate() {
-  const gate = useMemo(
-    () =>
-      buildWallLine({
-        wall: {
-          width: LANE.gateWidth,
-          depth: LANE.laneDepth,
-          height: HEIGHTS.gate,
-          merlonWidth: 0.55,
-          merlonGap: 0.45,
-          merlonHeight: 0.5,
-        },
-        seed: 21,
-      }),
-    []
-  )
+/** A gatehouse as one merged geometry, the way `buildWallLine` finishes its. */
+function gatehouseGeometry(options) {
+  const parts = buildGatehouse(options)
+  const merged = mergeGeometries(parts, false)
+  parts.forEach((p) => p.dispose())
+  merged.computeVertexNormals()
+  return merged
+}
+
+/**
+ * The city gate, with a real passage through it.
+ *
+ * This was a flat wall with two plain boxes for towers and a black box laid
+ * over the middle to suggest an arch — "cut visually with a dark recess rather
+ * than CSG". From the camp it passed. In the bribery close-up it did not: the
+ * gate that is opened from within was a solid black slab, the door leaves that
+ * swing open were buried inside it, and the wall carried on unbroken behind.
+ *
+ * It is now built the way the inner wall's gate is: the curtain in two runs
+ * with a gap between them, and a gatehouse across the gap with flanking
+ * towers, a passage the depth of the wall, arch rings and a vault. `doors`
+ * leaves the leaves off, for the close-up, which hangs and swings its own.
+ */
+function Gate({ doors = true }) {
+  const gate = useMemo(() => {
+    const half = LANE.laneDepth / 2
+    const gap = CITY_GATE.halfGap
+    const run = (from, to) => ({ depth: to - from, z: (from + to) / 2 })
+    const wall = {
+      width: LANE.gateWidth,
+      height: HEIGHTS.gate,
+      x: LANE.gateX,
+      merlonWidth: 0.55,
+      merlonGap: 0.45,
+      merlonHeight: 0.5,
+    }
+    return mergeGeometries(
+      [
+        buildWallLine({ wall: { ...wall, ...run(-half, CITY_GATE.z - gap) }, seed: 21 }),
+        buildWallLine({ wall: { ...wall, ...run(CITY_GATE.z + gap, half) }, seed: 22 }),
+        // The gatehouse on its own. Carrying it on a zero-depth "wall" the way
+        // the inner wall's gate does left a sliver of masonry standing in the
+        // middle of the passage — invisible from the camp, plain as day from
+        // the close-up that walks men through it.
+        gatehouseGeometry({
+          x: LANE.gateX,
+          z: CITY_GATE.z,
+          halfGap: gap,
+          wallWidth: LANE.gateWidth,
+          wallHeight: HEIGHTS.gate,
+          towerRadius: CITY_GATE.towerRadius,
+          towerHeight: HEIGHTS.gate + 2.4,
+          doors,
+          seed: 47,
+        }),
+      ],
+      false
+    )
+  }, [doors])
 
   return (
-    <group position={[LANE.gateX, 0, 0]}>
-      <mesh geometry={gate} castShadow receiveShadow>
-        <meshLambertMaterial vertexColors flatShading />
-      </mesh>
-      {/* Gate towers flanking the opening */}
-      {[-2.6, 2.6].map((z, i) => (
-        <mesh key={i} position={[0, HEIGHTS.gate / 2 + 0.6, z]} castShadow>
-          <boxGeometry args={[3.0, HEIGHTS.gate + 1.2, 2.0]} />
-          <meshLambertMaterial color={PALETTE.towerStone} flatShading />
-        </mesh>
-      ))}
-      {/* Arched opening, cut visually with a dark recess rather than CSG. */}
-      <mesh position={[0, 1.5, 0]}>
-        <boxGeometry args={[2.7, 3.0, 2.6]} />
-        <meshBasicMaterial color="#241a15" />
-      </mesh>
-      <mesh position={[0, 3.0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[1.3, 1.3, 2.7, 16, 1, false, 0, Math.PI]} />
-        <meshBasicMaterial color="#241a15" />
-      </mesh>
-    </group>
+    <mesh geometry={gate} castShadow receiveShadow>
+      <meshLambertMaterial vertexColors flatShading />
+    </mesh>
   )
 }
 
@@ -421,7 +446,7 @@ function Garrisons() {
 }
 
 /** Static scenery for the land lane. Contains no game state. */
-export function LandTerrain({ engineFire = 0 }) {
+export function LandTerrain({ engineFire = 0, gateDoors = true }) {
   return (
     <group>
       <Ground />
@@ -451,7 +476,7 @@ export function LandTerrain({ engineFire = 0 }) {
       <SiegeCamp />
       <Mangonels fire={engineFire} />
       <Walls />
-      <Gate />
+      <Gate doors={gateDoors} />
       <CityBackdrop />
 
       <Garrisons />

@@ -20,7 +20,7 @@ import { canCaptain } from '../game/rules.js'
 import { CityBackdrop, CrusaderCamPanel } from './CityBackdrop.jsx'
 import { Panel, Eyebrow, Heading, PrimaryButton, GhostButton, InkIcon } from './ui.jsx'
 import { FACTIONS } from '../three/factions.js'
-import { enlist } from '../game/stages.js'
+import { enlist } from '../game/siege.js'
 
 /** The five factions, in the order the boon step lists them. */
 const FACTION_ORDER = Object.keys(FACTIONS)
@@ -231,7 +231,7 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
           <Panel wide>
             <StepHeading
               step={1}
-              of={3}
+              of={4}
               title="How many crusaders are attacking?"
               blurb="The roster is set in order, so a count of fifteen means the first fifteen names."
             />
@@ -282,9 +282,12 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
               step={2}
               of={round > 1 ? 3 : 4}
               title="Does anyone refuse to attack?"
-              blurb={`Sitting out costs a crusader 1 fama.${
-                round > 1 ? ' This is round two — the choice is open again.' : ''
-              }`}
+              blurb={
+                round > 1
+                  ? 'This is round two — the choice is open again.'
+                  : // The manual's rule: joining the first assault is the gamble.
+                    'If the first assault fails, everyone who joined it loses 1 fama. Refusing costs nothing.'
+              }
             />
             <div className="mt-6">
               <NameDropdown
@@ -445,11 +448,15 @@ export default function Opening({ round = 1, roster: existingRoster = null, onCo
 
             <div className="mt-6 flex flex-wrap items-end justify-center gap-8">
               <label className="text-center">
-                <div className="mb-2 text-lg font-bold text-stone-700">🏰 Land walls</div>
+                <div className="mb-2 flex items-center justify-center gap-2 text-lg font-bold text-stone-700">
+                  <InkIcon name="wall" size={30} /> Land walls
+                </div>
                 <NumberField value={landText} onChange={setLandText} max={attackers.length} />
               </label>
               <label className="text-center">
-                <div className="mb-2 text-lg font-bold text-stone-700">🚢 Sea walls</div>
+                <div className="mb-2 flex items-center justify-center gap-2 text-lg font-bold text-stone-700">
+                  <InkIcon name="ship" size={30} /> Sea walls
+                </div>
                 <NumberField value={seaText} onChange={setSeaText} max={attackers.length} />
               </label>
             </div>

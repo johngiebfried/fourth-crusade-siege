@@ -77,8 +77,8 @@ export default function Chooser({ onVisual }) {
 
           <Choice
             title="The text siege"
-            blurb="The original game: the same dice, the same rules, the same outcomes,
-                   reported as text. Nothing is drawn."
+            blurb="The original game: the same dice and the same walls, reported as text.
+                   Nothing is drawn."
             note="Runs on anything, including a machine that cannot manage the 3D at all."
           >
             <GhostButton onClick={() => window.location.assign(TEXT_URL)}>
@@ -88,8 +88,10 @@ export default function Chooser({ onVisual }) {
         </div>
 
         <p className="mt-6 text-center text-xs" style={{ color: 'var(--ink-soft)' }}>
-          Both play the same siege. The dice logic is identical — it is tested against the
-          text version, roll for roll, on every build.
+          The dice rules are identical — tested against the text version, roll for roll, on
+          every build. The visual siege also corrects how the original ranked shipwrecks and
+          the first man in, and follows the Instructor&rsquo;s Manual on the first-assault
+          fama penalty.
         </p>
       </Panel>
     </div>

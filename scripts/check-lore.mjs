@@ -34,33 +34,25 @@ check(
   all.every((e) => e.text.length <= 300),
   all.filter((e) => e.text.length > 300).map((e) => `${e.set}[${e.index}]`).join(', ')
 )
+/*
+ * No quotations, from anyone.
+ *
+ * The eyewitness set was removed after it turned out to hold a misattribution,
+ * a reversed reading, a conflation of two emperors a year apart and five
+ * passages that are in neither chronicle. A paraphrase in quotation form with a
+ * name on it is something a student will cite. If quotations ever come back
+ * they need a verbatim text and a paragraph reference, and this check will have
+ * to be changed on purpose to let them in.
+ */
 check(
-  'every passage in the chronicle set names who said it',
-  lore.CHRONICLE.every((e) => e.source && e.source.length > 3)
-)
-
-// The set that plays during the siege is the two men who watched the siege.
-// Choniates and the rest are about the sack, and a passage about mules in the
-// Hagia Sophia answers a question nobody has asked yet.
-check(
-  'only the two eyewitnesses of the siege are in rotation',
-  lore.CHRONICLE.every((e) => /Villehardouin|Robert of Clari/.test(e.source)),
-  [...new Set(lore.CHRONICLE.map((e) => e.source))].join(' / ')
-)
-check(
-  'both of them are represented',
-  lore.CHRONICLE.some((e) => /Villehardouin/.test(e.source)) &&
-    lore.CHRONICLE.some((e) => /Clari/.test(e.source))
+  'no passage is attributed to a writer',
+  all.every((e) => !e.source),
+  all.filter((e) => e.source).map((e) => `${e.set}[${e.index}] ${e.source}`).join(', ')
 )
 check(
-  'the sack passages are written but out of the picker\'s reach',
-  lore.HELD_BACK.sack.length >= 5 && !Object.keys(lore.SETS).includes('sack')
-)
-check(
-  'the general sets carry no false attribution',
-  ['siegecraft', 'walls', 'city', 'aftermath', 'fleet'].every((k) =>
-    lore.SETS[k].every((e) => !e.source)
-  )
+  'no quotation sets remain',
+  !('CHRONICLE' in lore) && !('HELD_BACK' in lore) && !('chronicle' in lore.SETS),
+  Object.keys(lore).join(', ')
 )
 // The gloss under a failed roll has to match the lane the student just watched.
 {

@@ -53,7 +53,7 @@ nothing else has drifted.
 ## Sharing it — the classroom link
 
 The siege is published to GitHub Pages by `.github/workflows/pages.yml`. Every
-push to `main` runs the five check suites, and if they pass, rebuilds and
+push to `main` runs the check suites, and if they pass, rebuilds and
 republishes. A reader needs nothing but the link: no Node, no terminal, no
 install.
 
@@ -173,6 +173,20 @@ Every one of those assertions exists because something broke. The gate-opening
 camera was written against a fifteen-unit gate wall; when the wall grew to a
 hundred and fifty it ended up buried in masonry, and nothing caught it for two
 commits.
+
+A third suite plays **whole sieges** — twelve thousand of them, land, sea and
+split, through the real rules — and holds what comes out to the Instructor's
+Manual: everyone aboard a sunk ship shipwrecked and last, first place in the
+sack always the man crowned First to Enter, the four tiers never interleaved,
+and a failed first assault costing each man who joined it a point. Two faults
+the original app had lived exactly there, after the dice, where no test of a
+single roll or screen could see them:
+
+```bash
+node scripts/check-siege.mjs
+```
+
+`npm run check` runs all of these and the rest together.
 
 ## State of the build
 

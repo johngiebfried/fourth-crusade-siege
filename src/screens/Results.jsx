@@ -10,14 +10,55 @@ import { CityBackdrop } from './CityBackdrop.jsx'
 import { GhostButton } from './ui.jsx'
 import { ManuscriptBordered, Marginalia } from './manuscript.jsx'
 import { pickLore } from '../game/lore.js'
+import { TIERS } from '../game/siege.js'
 
-const STATUS = {
-  inside: { label: 'Entered the city', tone: 'text-emerald-800' },
-  // Got onto the second land wall or the sea wall and no further. The manual
-  // ranks these men above everyone who never left the ground.
-  walls: { label: 'Reached the walls', tone: 'text-amber-800' },
-  shipwrecked: { label: 'Shipwrecked', tone: 'text-sky-800' },
-  ready: { label: 'Outside the walls', tone: 'text-stone-500' },
+/**
+ * The sack order in its four tiers, each under its own heading.
+ *
+ * It used to be one numbered list with the tier repeated as a label on every
+ * row — thirty or fifty rows, most of them reading "Outside the walls". The
+ * list was correct and illegible: the one thing a class needs from this page is
+ * to see *why* the order is what it is, and a column of identical labels hid
+ * the only structure it had. Grouped, the reason is the heading.
+ */
+const TIER_NOTES = {
+  inside: 'In the order they got in.',
+  walls: 'Stood on the second land wall or the sea wall. Highest roll first.',
+  fama: 'Everyone else, by fama.',
+  shipwrecked: 'Their ships went down. They choose last.',
+}
+
+function SackTier({ tier, entries }) {
+  // Long tiers go to two columns, filled down the first and then the second,
+  // so the order still reads top to bottom.
+  const columns = entries.length > 10 ? 'md:columns-2 md:gap-6' : ''
+  return (
+    <section className="mt-6">
+      <div className="flex items-baseline justify-between gap-3 border-b border-red-900/30 pb-1">
+        <h3 className="rubric text-base">{tier.label}</h3>
+        <span className="tally text-sm" style={{ color: 'var(--ink-soft)' }}>
+          {entries.length}
+        </span>
+      </div>
+      <p className="mt-1 text-sm" style={{ color: 'var(--ink-soft)' }}>
+        {TIER_NOTES[tier.key]}
+      </p>
+      <ol className={`mt-2 ${columns}`}>
+        {entries.map((entry) => (
+          <li
+            key={entry.position}
+            className="flex break-inside-avoid items-baseline gap-3 border-b border-red-900/10 py-1.5"
+          >
+            <span className="tally w-8 shrink-0 text-right text-lg font-bold text-red-900">
+              {entry.position}
+            </span>
+            <span className="min-w-0 flex-1 text-lg leading-snug text-stone-900">{entry.name}</span>
+            <span className="shrink-0 text-sm text-stone-600">{entry.faction}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
 }
 
 export default function Results({ cityFallen, firstToEnter, finalSummary, sackOrder, onReset }) {
@@ -60,31 +101,12 @@ export default function Results({ cityFallen, firstToEnter, finalSummary, sackOr
                 Sack order
               </div>
               <p className="mt-2 text-base text-stone-600">
-                Order of priority for choosing a region to plunder. Those who entered the city
-                come first, then those who reached the walls, then the rest by fama, then the
-                shipwrecked.
+                The order in which crusaders choose a region to plunder.
               </p>
-              <ol className="mt-4 divide-y divide-red-900/15 border border-red-900/25 bg-[#eadcbc]/60">
-                {sackOrder.map((entry) => {
-                  const status = STATUS[entry.status] ?? STATUS.ready
-                  return (
-                    <li key={entry.position} className="flex items-center gap-3 px-3 py-2.5">
-                      <span className="tally w-9 shrink-0 text-right text-xl font-bold text-red-900">
-                        {entry.position}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-lg font-medium leading-snug text-stone-900">
-                          {entry.name}
-                        </span>
-                        <span className="text-sm text-stone-600">{entry.faction}</span>
-                      </span>
-                      <span className={`shrink-0 text-right text-sm leading-tight ${status.tone}`}>
-                        {status.label}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ol>
+              {TIERS.map((tier) => {
+                const entries = sackOrder.filter((e) => e.tier === tier.key)
+                return entries.length ? <SackTier key={tier.key} tier={tier} entries={entries} /> : null
+              })}
             </div>
           )}
 
